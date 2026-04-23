@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: xiujiao-ai
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./src/data.json:/app/src/data.json
+    environment:
+      - NODE_ENV=production
+      - PORT=3000

@@ -199,3 +199,4 @@
 3. 点击“确认加入网站”过慢，要避免 preview 阶段重复 search
 先检查 server.ts、scripts/collect_bilibili_test.py、src/App.tsx、src/components/CollectModal.tsx、src/types.ts 的当前最新状态，再直接继续改。
 ```
+111

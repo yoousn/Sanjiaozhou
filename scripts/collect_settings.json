@@ -23,6 +23,10 @@
   "defaultModel": "builtin-default::openai/gpt-oss-120b",
   "concurrency": {
     "searchEnabled": true,
-    "applyEnabled": true
+    "applyEnabled": false
+  },
+  "autoCollect": {
+    "enabled": false,
+    "model": "builtin-default::openai/gpt-oss-120b"
   }
 }

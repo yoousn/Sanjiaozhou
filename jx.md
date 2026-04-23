@@ -191,7 +191,7 @@
 把下面这段直接带到新会话最前面：
 
 ```md
-先读 DEPLOYMENT_GUIDE.md，再继续 d:\Desktop\网站2 项目。
+先读 jx.md，再继续 d:\Desktop\网站2 项目。
 不要重做 server.ts 的 collect 接口结构。
 当前优先修 3 个问题：
 1. 搜索实时日志要在搜索过程中持续显示

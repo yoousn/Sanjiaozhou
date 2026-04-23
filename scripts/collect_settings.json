@@ -1,0 +1,28 @@
+{
+  "presetGuns": [
+    "M4A1",
+    "AKM",
+    "SCAR-L",
+    "AUG",
+    "MP7"
+  ],
+  "providers": [
+    {
+      "id": "builtin-default",
+      "name": "yousn.me 接口",
+      "baseUrl": "https://api.yousn.me/v1",
+      "apiKey": "sk-88AqJeSQhfrmVTDcSAOTZDb6NqEbG3X8C3na3WqolNdasdpb",
+      "models": [
+        "glm-5",
+        "openai/gpt-oss-20b",
+        "openai/gpt-oss-120b",
+        "stepfun-ai/step-3.5-flash"
+      ]
+    }
+  ],
+  "defaultModel": "builtin-default::openai/gpt-oss-120b",
+  "concurrency": {
+    "searchEnabled": true,
+    "applyEnabled": true
+  }
+}

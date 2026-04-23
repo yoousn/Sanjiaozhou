@@ -79,13 +79,15 @@ export function VariantItem({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           <span className={cn("inline-block text-[10px] font-black tracking-widest px-1.5 py-0.5 rounded-[4px] border leading-none", badgeColor)}>
-            {variant.tier || '?'}
+            {variant.tier || '-'}
           </span>
-          <span className="text-[10px] font-bold text-zinc-700 bg-white px-1.5 py-0.5 rounded-[4px] border border-zinc-200 shadow-sm shrink-0 leading-none">
-            {variant.price}
-          </span>
+          {variant.price && (
+            <span className="text-[10px] font-bold text-zinc-700 bg-white px-1.5 py-0.5 rounded-[4px] border border-zinc-200 shadow-sm shrink-0 leading-none">
+              {variant.price}
+            </span>
+          )}
           <span className="text-[12px] font-black text-zinc-900 tracking-tight leading-none px-1">
-            {variant.buildType}
+            {variant.buildType || '默认配置'}
           </span>
         </div>
         <div className="flex items-center gap-1.5">

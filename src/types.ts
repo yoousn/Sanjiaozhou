@@ -1,3 +1,33 @@
+export type CollectModelProviderInput = {
+  id?: string;
+  name: string;
+  baseUrl: string;
+  apiKey: string;
+  models: string[];
+  selectedModel?: string;
+};
+
+export type CollectModelProvider = {
+  id: string;
+  name: string;
+  baseUrl: string;
+  models: string[];
+  hasApiKey: boolean;
+};
+
+export type CollectModelOption = {
+  value: string;
+  providerId: string;
+  providerName: string;
+  model: string;
+  label: string;
+};
+
+export type CollectConcurrencySettings = {
+  searchEnabled: boolean;
+  applyEnabled: boolean;
+};
+
 export type GunVariant = {
   id: string;
   tier: string;
@@ -69,6 +99,9 @@ export type CollectMeta = {
   models: string[];
   defaultModel: string;
   defaultGuns: string[];
+  providers: CollectModelProvider[];
+  modelOptions: CollectModelOption[];
+  concurrency: CollectConcurrencySettings;
 };
 
 export type CollectSearchResult = {

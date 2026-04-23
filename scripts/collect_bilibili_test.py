@@ -26,7 +26,7 @@ AI_API_KEY = os.getenv("OPENAI_API_KEY", "sk-88AqJeSQhfrmVTDcSAOTZDb6NqEbG3X8C3n
 DEFAULT_AI_MODEL = os.getenv("OPENAI_MODEL", "openai/gpt-oss-120b")
 WRITE_DEBUG_FILES = os.getenv("COLLECT_WRITE_DEBUG_FILES", "false").lower() == "true"
 DEFAULT_TARGET_GUNS = ["M14", "M250"]
-ALLOWED_MODES = ["search", "preview", "test-model"]
+ALLOWED_MODES = ["search", "preview", "test-model", "auto"]
 CATEGORY_VALUES = {"ar", "smg", "sr", "dmr", "sg", "lmg", "pistol", "other"}
 YT_DLP_SOCKET_TIMEOUT = "45"
 LOG_PREFIX = "__COLLECT_LOG__"
@@ -129,6 +129,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--videos-json", default="")
     parser.add_argument("--model", default=DEFAULT_AI_MODEL)
     parser.add_argument("--max-videos", type=int, default=12)
+    parser.add_argument("--base-url", default=AI_BASE_URL)
+    parser.add_argument("--api-key", default=AI_API_KEY)
+    parser.add_argument("--concurrent", default="false")
     return parser.parse_args()
 
 
@@ -206,22 +209,47 @@ def build_prompt(video: dict) -> str:
 """.strip()
 
 
-def call_ai(prompt: str, model: str) -> str:
-    response = requests.post(
-        f"{AI_BASE_URL.rstrip('/')}/chat/completions",
-        headers={
-            "Authorization": f"Bearer {AI_API_KEY}",
-            "Content-Type": "application/json",
-        },
-        json={
-            "model": model,
-            "messages": [{"role": "user", "content": prompt}],
-            "temperature": 0.1,
-        },
-        timeout=120,
-    )
-    response.raise_for_status()
-    payload = response.json()
+def call_ai(prompt: str, model: str, base_url: str, api_key: str, timeout: int = 120) -> str:
+    url = f"{base_url.rstrip('/')}/chat/completions"
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            response = requests.post(
+                url,
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": model,
+                    "messages": [{"role": "user", "content": prompt}],
+                    "temperature": 0.1,
+                },
+                timeout=timeout,
+            )
+        except Exception as exc:
+            if attempt < max_retries - 1:
+                time.sleep(3)
+                continue
+            raise RuntimeError(f"网络请求错误: {exc}")
+
+        if not response.ok:
+            if response.status_code in [502, 503, 504] and attempt < max_retries - 1:
+                time.sleep(3)
+                continue
+            raise RuntimeError(f"接口请求失败 (HTTP {response.status_code}): {response.text}")
+        
+        break
+
+    try:
+        payload = response.json()
+    except Exception as exc:
+        raise RuntimeError(f"解析 JSON 响应失败，接口地址可能不正确。返回内容为: {response.text[:200]}") from exc
+
+    error_msg = payload.get("error")
+    if error_msg:
+        raise RuntimeError(f"API 返回错误: {error_msg}")
+
     return payload.get("choices", [{}])[0].get("message", {}).get("content", "") or ""
 
 
@@ -258,9 +286,9 @@ def normalize_variant(item: dict, video: dict) -> dict | None:
         "category": category,
         "variant": {
             "id": f"v_{int(time.time() * 1000)}_{abs(hash((gun_name, code, video.get('bvid')))) % 100000}",
-            "tier": str(item.get("tier") or "").strip() or "未标注",
-            "price": str(item.get("price") or "").strip() or "未标注",
-            "buildType": str(item.get("buildType") or "").strip() or "未标注",
+            "tier": str(item.get("tier") or "").strip(),
+            "price": str(item.get("price") or "").strip(),
+            "buildType": str(item.get("buildType") or "").strip(),
             "code": code,
             "date": format_upload_date(video.get("upload_date") or video.get("uploadDate") or ""),
             "author": video.get("uploader") or video.get("author") or "",
@@ -270,7 +298,7 @@ def normalize_variant(item: dict, video: dict) -> dict | None:
     }
 
 
-def build_groups_from_videos(videos: list[dict], target_guns: list[str], model: str) -> tuple[list[dict], list[dict], list[str]]:
+def build_groups_from_videos(videos: list[dict], target_guns: list[str], model: str, base_url: str, api_key: str, concurrent: bool) -> tuple[list[dict], list[dict], list[str]]:
     groups_by_name: dict[str, dict] = {}
     extraction_logs: list[dict] = []
     errors: list[str] = []
@@ -278,7 +306,7 @@ def build_groups_from_videos(videos: list[dict], target_guns: list[str], model: 
 
     for video in videos:
         try:
-            raw_text = call_ai(build_prompt(video), model)
+            raw_text = call_ai(build_prompt(video), model, base_url, api_key)
             parsed_items = parse_ai_json_array(raw_text)
             extraction_logs.append({
                 "bvid": video.get("bvid"),
@@ -319,7 +347,7 @@ def build_groups_from_videos(videos: list[dict], target_guns: list[str], model: 
     return result_groups, extraction_logs, errors
 
 
-def fetch_creator_videos(creator_ids: list[str], max_videos: int) -> tuple[list[dict], list[dict], str, list[dict]]:
+def fetch_creator_videos(creator_ids: list[str], max_videos: int, concurrent: bool) -> tuple[list[dict], list[dict], str, list[dict]]:
     collected_sources = []
     errors = []
     _, cookie_source = load_cookie_args()
@@ -361,8 +389,8 @@ def fetch_creator_videos(creator_ids: list[str], max_videos: int) -> tuple[list[
     return collected_sources, errors, cookie_source, logs
 
 
-def search_mode(target_guns: list[str], creator_ids: list[str], max_videos: int) -> dict:
-    sources, errors, cookie_source, logs = fetch_creator_videos(creator_ids, max_videos)
+def search_mode(target_guns: list[str], creator_ids: list[str], max_videos: int, concurrent: bool) -> dict:
+    sources, errors, cookie_source, logs = fetch_creator_videos(creator_ids, max_videos, concurrent)
     videos = []
     seen_video_ids = set()
 
@@ -402,10 +430,10 @@ def parse_selected_videos(value: str) -> list[dict]:
     return parsed if isinstance(parsed, list) else []
 
 
-def preview_mode(target_guns: list[str], creator_ids: list[str], video_ids: list[str], model: str, max_videos: int, selected_videos: list[dict] | None = None) -> dict:
+def preview_mode(target_guns: list[str], creator_ids: list[str], video_ids: list[str], model: str, base_url: str, api_key: str, max_videos: int, selected_videos: list[dict] | None = None, concurrent: bool = False) -> dict:
     selected_videos = selected_videos or []
     if selected_videos:
-        groups, logs, ai_errors = build_groups_from_videos(selected_videos, target_guns, model)
+        groups, logs, ai_errors = build_groups_from_videos(selected_videos, target_guns, model, base_url, api_key, concurrent)
         result = {
             "success": len(groups) > 0 and len(ai_errors) == 0,
             "model": model,
@@ -421,7 +449,7 @@ def preview_mode(target_guns: list[str], creator_ids: list[str], video_ids: list
             AI_OUTPUT_FILE.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
         return result
 
-    search_result = search_mode(target_guns, creator_ids, max_videos)
+    search_result = search_mode(target_guns, creator_ids, max_videos, concurrent)
     videos_by_id = {video.get("bvid") or video.get("id"): video for source in search_result.get("sources", []) for video in source.get("videos", [])}
     selected_videos = [videos_by_id[video_id] for video_id in video_ids if video_id in videos_by_id]
 
@@ -440,7 +468,7 @@ def preview_mode(target_guns: list[str], creator_ids: list[str], video_ids: list
             AI_OUTPUT_FILE.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
         return result
 
-    groups, logs, ai_errors = build_groups_from_videos(selected_videos, target_guns, model)
+    groups, logs, ai_errors = build_groups_from_videos(selected_videos, target_guns, model, base_url, api_key, concurrent)
     result = {
         "success": len(groups) > 0 and len(ai_errors) == 0,
         "model": model,
@@ -457,10 +485,32 @@ def preview_mode(target_guns: list[str], creator_ids: list[str], video_ids: list
     return result
 
 
-def test_model_mode(model: str) -> dict:
+def auto_mode(creator_ids: list[str], model: str, base_url: str, api_key: str) -> dict:
+    sources, errors, cookie_source, logs = fetch_creator_videos(creator_ids, max_videos=1, concurrent=False)
+    videos = []
+    for source in sources:
+        videos.extend(source.get("videos", []))
+
+    if not videos:
+        return {
+            "success": False,
+            "groups": [],
+            "logs": logs,
+            "errors": [str(item.get("error") or "") for item in errors if item.get("error")] or ["未获取到博主视频"]
+        }
+
+    groups, ai_logs, ai_errors = build_groups_from_videos(videos, [], model, base_url, api_key, False)
+    return {
+        "success": len(groups) > 0,
+        "groups": groups,
+        "logs": logs + ai_logs,
+        "errors": [str(item.get("error") or "") for item in errors if item.get("error")] + ai_errors
+    }
+
+def test_model_mode(model: str, base_url: str, api_key: str) -> dict:
     started_at = time.perf_counter()
     try:
-        content = call_ai('请只返回{"ok":true}', model)
+        content = call_ai('请只返回{"ok":true}', model, base_url, api_key, timeout=15)
         latency_ms = int((time.perf_counter() - started_at) * 1000)
         return {
             "model": model,
@@ -484,13 +534,16 @@ def main():
     creator_ids = [uid for uid in split_csv(args.creator_ids) if uid in TARGET_UIDS] or list(TARGET_UIDS.keys())
     video_ids = split_csv(args.video_ids)
     selected_videos = parse_selected_videos(args.videos_json)
+    concurrent = str(args.concurrent).lower() == "true"
 
     if args.mode == "search":
-        result = search_mode(target_guns, creator_ids, args.max_videos)
+        result = search_mode(target_guns, creator_ids, args.max_videos, concurrent)
     elif args.mode == "preview":
-        result = preview_mode(target_guns, creator_ids, video_ids, args.model, args.max_videos, selected_videos)
+        result = preview_mode(target_guns, creator_ids, video_ids, args.model, args.base_url, args.api_key, args.max_videos, selected_videos, concurrent)
+    elif args.mode == "auto":
+        result = auto_mode(creator_ids, args.model, args.base_url, args.api_key)
     else:
-        result = test_model_mode(args.model)
+        result = test_model_mode(args.model, args.base_url, args.api_key)
 
     print(json.dumps(result, ensure_ascii=False, indent=2))
 

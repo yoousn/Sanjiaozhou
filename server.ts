@@ -137,6 +137,7 @@ type CollectPreview = {
 type SearchRequest = {
   guns?: string[];
   creatorIds?: string[];
+  maxVideos?: number;
 };
 
 type SearchStreamRequest = {
@@ -144,6 +145,7 @@ type SearchStreamRequest = {
   creatorIds?: string[];
   requestId?: string;
   concurrent?: boolean;
+  maxVideos?: number;
 };
 
 type PreviewRequest = {
@@ -557,11 +559,11 @@ async function fetchModelsFromProvider(baseUrl: string, apiKey: string) {
   return [...new Set(models)];
 }
 
-async function runSearchCollectorStream(requestId: string, guns: string[], creatorIds: string[], concurrent: boolean) {
+async function runSearchCollectorStream(requestId: string, guns: string[], creatorIds: string[], concurrent: boolean, maxVideos: number) {
   const state: SearchStreamState = { logs: [], done: false };
   searchStreams.set(requestId, state);
 
-  const child = spawn("python", [COLLECT_SCRIPT, "--mode", "search", "--guns", guns.join(","), "--creator-ids", creatorIds.join(","), "--concurrent", concurrent ? "true" : "false"], {
+  const child = spawn("python", [COLLECT_SCRIPT, "--mode", "search", "--guns", guns.join(","), "--creator-ids", creatorIds.join(","), "--max-videos", String(maxVideos), "--concurrent", concurrent ? "true" : "false"], {
     cwd: __dirname,
     stdio: ["ignore", "pipe", "pipe"],
     env: {
@@ -628,7 +630,7 @@ async function runSearchCollectorStream(requestId: string, guns: string[], creat
   });
 }
 
-async function searchCollectVideos(guns: string[], creatorIds: string[], concurrent: boolean) {
+async function searchCollectVideos(guns: string[], creatorIds: string[], concurrent: boolean, maxVideos: number) {
   const parsed = await runCollector([
     "--mode",
     "search",
@@ -636,6 +638,8 @@ async function searchCollectVideos(guns: string[], creatorIds: string[], concurr
     guns.join(","),
     "--creator-ids",
     creatorIds.join(","),
+    "--max-videos",
+    String(maxVideos),
     "--concurrent",
     concurrent ? "true" : "false",
   ]);
@@ -844,7 +848,7 @@ async function startServer() {
       const settings = readCollectSettings();
       const guns = uniqueTrimmed(body.guns, settings.presetGuns);
       const creatorIds = ensureCreatorIds(body.creatorIds);
-      const result = await searchCollectVideos(guns, creatorIds, Boolean(body.concurrent));
+      const result = await searchCollectVideos(guns, creatorIds, Boolean(body.concurrent), Number(body.maxVideos) || 5);
       res.json(result);
     } catch (e) {
       console.error("API COLLECT SEARCH Error:", e);
@@ -859,7 +863,7 @@ async function startServer() {
       const guns = uniqueTrimmed(body.guns, settings.presetGuns);
       const creatorIds = ensureCreatorIds(body.creatorIds);
       const requestId = (body.requestId || `search_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`).trim();
-      await runSearchCollectorStream(requestId, guns, creatorIds, Boolean(body.concurrent));
+      await runSearchCollectorStream(requestId, guns, creatorIds, Boolean(body.concurrent), Number(body.maxVideos) || 5);
       res.json({ success: true, requestId, guns, creatorIds });
     } catch (e) {
       console.error("API COLLECT SEARCH START Error:", e);

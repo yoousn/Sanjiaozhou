@@ -128,7 +128,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--video-ids", default="")
     parser.add_argument("--videos-json", default="")
     parser.add_argument("--model", default=DEFAULT_AI_MODEL)
-    parser.add_argument("--max-videos", type=int, default=12)
+    parser.add_argument("--max-videos", type=int, default=5)
     parser.add_argument("--base-url", default=AI_BASE_URL)
     parser.add_argument("--api-key", default=AI_API_KEY)
     parser.add_argument("--concurrent", default="false")
@@ -187,7 +187,8 @@ def build_prompt(video: dict) -> str:
 3. 同一把枪可以有多个配置，每个配置单独返回一条。
 4. 不要编造不存在的信息；没有就留空字符串。
 5. category 只能从这些值里选一个：ar, smg, sr, dmr, sg, lmg, pistol, other。
-6. 返回内容必须是 JSON 数组，不要 markdown，不要解释。
+6. “price”字段请精准提取金额数字（如“23万”、“35W”），“tier”字段请精准提取评级（如 SSS, SS, S, A, B, C, D 或是 T0, T1, T2, T3）。若无则留空。
+7. 返回内容必须是 JSON 数组，不要 markdown，不要解释。
 
 视频标题：
 {video.get('title', '')}

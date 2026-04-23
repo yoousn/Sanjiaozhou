@@ -591,7 +591,7 @@ export default function App() {
     showToast('已新增枪械体系！');
   };
 
-  const handleSearchCollect = async (guns: string[], creatorIds: string[]) => {
+  const handleSearchCollect = async (guns: string[], creatorIds: string[], maxVideos: number) => {
     stopSearchPolling();
     setIsSearchingCollect(true);
     setCollectPreview(null);
@@ -602,7 +602,7 @@ export default function App() {
       const startRes = await fetch('/api/collect/search/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ guns, creatorIds, concurrent: searchConcurrencyEnabled }),
+        body: JSON.stringify({ guns, creatorIds, concurrent: searchConcurrencyEnabled, maxVideos }),
       });
       const startData = await safeJson(startRes);
       if (!startRes.ok) throw new Error(startData?.error || '搜索启动失败');
@@ -1121,7 +1121,7 @@ export default function App() {
 
       {toast && (
         <div
-          className="fixed bottom-24 md:bottom-10 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-2 px-5 py-3 rounded-xl shadow-[0_12px_44px_rgba(0,0,0,0.12)] pointer-events-none animate-fade-in"
+          className="fixed bottom-24 md:bottom-10 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-2 px-5 py-3 rounded-xl shadow-[0_12px_44px_rgba(0,0,0,0.12)] pointer-events-none animate-fade-in"
           style={{ backgroundColor: toast.type === 'success' ? '#18181B' : '#DC2626' }}
         >
           {toast.type === 'success' ? <CheckCircle2 size={16} className="text-emerald-400" strokeWidth={2.5} /> : <AlertCircle size={16} className="text-white" strokeWidth={2.5} />}

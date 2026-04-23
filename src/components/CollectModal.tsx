@@ -85,7 +85,7 @@ export function CollectModal({
   searchConcurrencyEnabled: boolean;
   applyConcurrencyEnabled: boolean;
   onClose: () => void;
-  onSearch: (guns: string[], creatorIds: string[]) => void;
+  onSearch: (guns: string[], creatorIds: string[], maxVideos: number) => void;
   onCancelSearch: () => void;
   onSelectedVideoIdsChange: (videoIds: string[]) => void;
   onSelectedModelChange: (model: string) => void;
@@ -105,6 +105,7 @@ export function CollectModal({
 }) {
   const [selectedGuns, setSelectedGuns] = useState<string[]>([]);
   const [selectedCreatorIds, setSelectedCreatorIds] = useState<string[]>([]);
+  const [maxVideos, setMaxVideos] = useState(5);
 
   useEffect(() => {
     if (!isOpen) {
@@ -169,7 +170,7 @@ export function CollectModal({
   };
 
   const handleSearch = () => {
-    onSearch(mergedGuns, selectedCreatorIds);
+    onSearch(mergedGuns, selectedCreatorIds, maxVideos);
   };
 
   const handleApply = () => {
@@ -285,6 +286,21 @@ export function CollectModal({
                     })}
                   </div>
                 </div>
+
+        <div className="rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3">
+          <label className="mb-3 block text-[11px] font-bold uppercase tracking-widest text-zinc-500">主页抓取数量</label>
+          <div className="flex items-center gap-4">
+            <input
+              type="range"
+              min="1"
+              max="100"
+              value={maxVideos}
+              onChange={(e) => setMaxVideos(Number(e.target.value))}
+              className="flex-1 accent-emerald-500 h-1.5 bg-zinc-200 rounded-lg appearance-none cursor-pointer"
+            />
+            <span className="text-[13px] font-black text-zinc-700 w-10 text-right">{maxVideos} 条</span>
+          </div>
+        </div>
 
                 <div className="rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3">
                   <div className="mb-3 text-[11px] font-bold uppercase tracking-widest text-zinc-500">模式</div>

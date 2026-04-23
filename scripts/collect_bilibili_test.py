@@ -82,6 +82,10 @@ def run_yt_dlp(url: str, flat_playlist: bool = False):
         "--dump-single-json",
         "--socket-timeout",
         YT_DLP_SOCKET_TIMEOUT,
+        "--retries", "3",
+        "--no-check-certificate",
+        "--add-header", "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "--add-header", "Referer: https://www.bilibili.com"
     ]
     if flat_playlist:
         cmd.extend(["--flat-playlist", "--playlist-end", "12"])

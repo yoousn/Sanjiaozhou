@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Sparkles, CheckCircle2, AlertCircle, X, Radio } from 'lucide-react';
+import { Sparkles, CheckCircle2, AlertCircle, X, Radio, Loader2, Settings2, Download } from 'lucide-react';
 import { arrayMove } from '@dnd-kit/sortable';
 import {
   GunGroup,
@@ -205,7 +205,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('home');
   const [isEditing, setIsEditing] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [activeModal, setActiveModal] = useState<'none' | 'mode-select' | 'collect' | 'auto-collect' | 'settings'>('none');
+  const [activeModal, setActiveModal] = useState<'none' | 'mode-select' | 'collect' | 'auto-collect'>('none');
   const [isSearchingCollect, setIsSearchingCollect] = useState(false);
   const [isPreviewingCollect, setIsPreviewingCollect] = useState(false);
   const [isTestingModel, setIsTestingModel] = useState(false);
@@ -227,6 +227,34 @@ export default function App() {
   const [modelTestResult, setModelTestResult] = useState<ModelTestResult | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const searchPollRef = useRef<number | null>(null);
+
+  const [isUploadingCookie, setIsUploadingCookie] = useState(false);
+  const [cookieTestResult, setCookieTestResult] = useState<{success: boolean; message: string} | null>(null);
+  const [cookieStatus, setCookieStatus] = useState<{ exists: boolean; mtime?: string } | null>(null);
+  const [isDownloadingData, setIsDownloadingData] = useState(false);
+  const [settingsFileStatus, setSettingsFileStatus] = useState<{ exists: boolean; mtime?: string } | null>(null);
+  const [isDownloadingSettings, setIsDownloadingSettings] = useState(false);
+
+  const fetchCookieStatus = () => {
+    fetch('/api/config/cookie/status')
+      .then(res => res.json())
+      .then(data => setCookieStatus(data))
+      .catch(console.error);
+  };
+
+  const fetchSettingsFileStatus = () => {
+    fetch('/api/config/settings-file/status')
+      .then(res => res.json())
+      .then(data => setSettingsFileStatus(data))
+      .catch(console.error);
+  };
+
+  useEffect(() => {
+    if (activeTab === 'settings') {
+      fetchCookieStatus();
+      fetchSettingsFileStatus();
+    }
+  }, [activeTab]);
 
   type CustomTheme = {
     themeColor: string;
@@ -526,6 +554,82 @@ export default function App() {
     const variant = group?.variants.find(v => v.id === variantId);
     handleDeleteVariant(groupId, variantId);
     showToast(`已删除配置 ${variant?.buildType || '该配置'}`, 'warn');
+  };
+
+  const handleCookieUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingCookie(true);
+    setCookieTestResult(null);
+    try {
+      const content = await file.text();
+      const res = await fetch('/api/config/cookie', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content }),
+      });
+      const data = await safeJson(res);
+      if (!res.ok) throw new Error(data?.message || data?.error || '上传失败');
+      setCookieTestResult({ success: Boolean(data.success), message: String(data.message || '测试完成') });
+      fetchCookieStatus();
+    } catch(err) {
+      setCookieTestResult({ success: false, message: err instanceof Error ? err.message : '上传异常' });
+    } finally {
+      setIsUploadingCookie(false);
+      e.target.value = ''; // 允许重复上传相同文件
+    }
+  };
+
+  const handleDownloadData = async () => {
+    setIsDownloadingData(true);
+    try {
+      const res = await fetch('/api/builds');
+      const data = await safeJson(res);
+      if (!res.ok) throw new Error('获取数据失败');
+      
+      const jsonString = JSON.stringify(data, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'data.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('数据文件 data.json 已开始下载');
+    } catch (err) {
+      console.error('下载数据失败:', err);
+      showToast(err instanceof Error ? err.message : '下载数据失败', 'warn');
+    } finally {
+      setIsDownloadingData(false);
+    }
+  };
+
+  const handleDownloadSettingsFile = async () => {
+    setIsDownloadingSettings(true);
+    try {
+      const res = await fetch('/api/config/settings-file');
+      const data = await safeJson(res);
+      if (!res.ok) throw new Error('获取配置失败');
+      
+      const jsonString = JSON.stringify(data, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'collect_settings.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('配置文件 collect_settings.json 已开始下载');
+    } catch (err) {
+      console.error('下载配置失败:', err);
+      showToast(err instanceof Error ? err.message : '下载配置失败', 'warn');
+    } finally {
+      setIsDownloadingSettings(false);
+    }
   };
 
   const [sortBy, setSortBy] = useState('default');
@@ -960,104 +1064,221 @@ export default function App() {
           '--user-gun-color': isDarkMode ? customTheme.gunNameColorDark : customTheme.gunNameColorLight,
         } as React.CSSProperties}
       >
-        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} onOpenSettings={() => setActiveModal('settings')} />
+        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} onOpenSettings={() => setActiveTab('settings')} />
 
-      <main className="flex-1 md:ml-20 lg:ml-56 p-4 md:p-6 lg:p-8 pb-32">
-        <div className="max-w-[1600px] mx-auto">
-          <Header
-            isEditing={isEditing}
-            onEditStart={handleEditStart}
-            onSave={handleSave}
-            onCancel={handleCancel}
-            onAddNew={() => setIsModalOpen(true)}
-            onOpenCollect={() => setActiveModal('mode-select')}
-            sortBy={sortBy}
-            onSortChange={setSortBy}
-            isDarkMode={isDarkMode}
-            onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            searchSuggestions={Array.from(new Set(sourceData.map(g => g.name)))}
-          />
+        <main className="flex-1 md:ml-20 lg:ml-56 p-4 md:p-6 lg:p-8 pb-32">
+          <div className="max-w-[1600px] mx-auto">
+            {activeTab === 'settings' ? (
+              <div className="max-w-3xl mx-auto animate-fade-in mt-4">
+                <h2 className="text-3xl font-black tracking-tighter mb-8 flex items-center gap-3">
+                  系统设置
+                </h2>
 
-          <div className="mb-6 pl-1 mt-2">
-            <h1 className="text-3xl md:text-4xl font-black tracking-tighter mb-2" style={{ color: 'inherit' }}>
-              <span className="bg-clip-text text-transparent bg-gradient-to-br from-zinc-800 to-zinc-500">马坤时代</span> <span className="text-zinc-300 font-bold tracking-normal opacity-50 text-2xl">/ Base</span>
-            </h1>
-            <p className="text-[13px] opacity-70 font-medium max-w-lg" style={{ color: 'inherit' }}>
-              专注修脚。基于顶级重回修脚时代架构运行。
-            </p>
-          </div>
+                <div className="bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 md:p-8 shadow-sm mb-6">
+                  <h3 className="text-lg font-black mb-2 text-zinc-900 dark:text-white">数据管理</h3>
+                  <p className="text-[13px] text-zinc-500 mb-6">为方便多端同步，部署代码前可先下载线上最新的数据和配置文件进行备份与替换。</p>
+                  <div className="flex flex-wrap items-center gap-4">
+                    <button
+                      onClick={handleDownloadData}
+                      disabled={isDownloadingData}
+                      className="px-6 py-2.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[13px] font-black rounded-xl hover:opacity-80 transition cursor-pointer flex items-center gap-2 disabled:opacity-60"
+                    >
+                      {isDownloadingData ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+                      {isDownloadingData ? '正在准备...' : '下载 data.json'}
+                    </button>
+                    <button
+                      onClick={handleDownloadSettingsFile}
+                      disabled={isDownloadingSettings}
+                      className="px-6 py-2.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[13px] font-black rounded-xl hover:opacity-80 transition cursor-pointer flex items-center gap-2 disabled:opacity-60"
+                    >
+                      {isDownloadingSettings ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+                      {isDownloadingSettings ? '正在准备...' : '下载 collect_settings.json'}
+                    </button>
+                  </div>
+                </div>
 
-          {isEditing && sortBy === 'default' ? (
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleCardDragEnd}
-            >
-              <SortableContext items={viewData.map(g => g.id)} strategy={rectSortingStrategy}>
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 md:gap-5 relative">
-                  {viewData.map((group, idx) => (
-                    <SortableGunCard
-                      key={`${activeTab}-${group.id}`}
-                      group={group}
-                      idx={idx}
-                      isEditing={isEditing}
-                      activeTab={activeTab}
-                      onUpdateGroup={handleUpdateGroup}
-                      onDeleteGroup={requestDeleteGroup}
-                      onUpdateVariant={handleUpdateVariant}
-                      onDeleteVariant={requestDeleteVariant}
-                      onAddVariant={handleAddVariant}
-                      onReorderVariants={handleReorderVariants}
-                      onTogglePin={handleTogglePin}
-                    />
-                  ))}
-                  {viewData.length === 0 && (
-                    <div className="col-span-full py-24 flex flex-col items-center justify-center text-zinc-400 animate-fade-in">
-                      <div className="w-16 h-16 bg-white shadow-sm border border-zinc-200/50 rounded-2xl flex items-center justify-center mb-4">
-                        <Sparkles size={24} className="text-zinc-300" />
-                      </div>
-                      <p className="font-bold text-xs tracking-widest uppercase text-zinc-500">该分类下暂无任何条目</p>
+                <div className="bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 md:p-8 shadow-sm mb-6">
+                  <h3 className="text-lg font-black mb-2 text-zinc-900 dark:text-white">Bilibili 采集 Cookie</h3>
+                  <p className="text-[13px] text-zinc-500 mb-6">上传 Netscape 格式的 cookies.txt 文件以更新采集凭证。上传后会自动进行一次抓取测试以验证有效性。</p>
+                  
+                  {cookieStatus && (
+                    <div className="mb-6 p-4 bg-zinc-50 dark:bg-[#18181b] rounded-2xl border border-zinc-200 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-4">
+                      {cookieStatus.exists ? (
+                        <>
+                          <div className="flex items-center gap-2">
+                            <CheckCircle2 size={18} className="text-emerald-500" strokeWidth={2.5} />
+                            <span className="text-[13px] font-black text-zinc-700 dark:text-zinc-300">当前已有生效的 Cookie 文件</span>
+                          </div>
+                          <span className="text-[12px] font-bold text-zinc-500">更新于: {new Date(cookieStatus.mtime!).toLocaleString('zh-CN')}</span>
+                        </>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <AlertCircle size={18} className="text-zinc-400" strokeWidth={2.5} />
+                          <span className="text-[13px] font-black text-zinc-500">当前未上传任何 Cookie 文件</span>
+                        </div>
+                      )}
                     </div>
                   )}
-                </div>
-              </SortableContext>
-            </DndContext>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 md:gap-5 relative">
-              {viewData.map((group, idx) => (
-                <div
-                  key={`${activeTab}-${group.id}`}
-                  className="self-start animate-fade-in w-full shadow-sm hover:shadow-md transition-shadow rounded-2xl"
-                  style={{ animationDelay: `${idx * 0.04}s` }}
-                >
-                  <GunCard
-                    group={group}
-                    isEditing={isEditing}
-                    onUpdateGroup={handleUpdateGroup}
-                    onDeleteGroup={requestDeleteGroup}
-                    onUpdateVariant={handleUpdateVariant}
-                    onDeleteVariant={requestDeleteVariant}
-                    onAddVariant={handleAddVariant}
-                    onReorderVariants={handleReorderVariants}
-                    onTogglePin={handleTogglePin}
-                  />
-                </div>
-              ))}
-
-              {viewData.length === 0 && (
-                <div className="col-span-full py-24 flex flex-col items-center justify-center text-zinc-400 animate-fade-in">
-                  <div className="w-16 h-16 bg-white shadow-sm border border-zinc-200/50 rounded-2xl flex items-center justify-center mb-4">
-                    <Sparkles size={24} className="text-zinc-300" />
+                  
+                  <div className="flex flex-wrap items-center gap-4">
+                    <input type="file" accept=".txt" id="cookie-upload" className="hidden" onChange={handleCookieUpload} />
+                    <label htmlFor="cookie-upload" className="px-6 py-2.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[13px] font-black rounded-xl hover:opacity-80 transition cursor-pointer flex items-center gap-2">
+                      {isUploadingCookie && <Loader2 size={14} className="animate-spin" />}
+                      {isUploadingCookie ? '正在测试...' : '上传 cookies.txt'}
+                    </label>
+                    {cookieTestResult && (
+                      <span className={cn("text-[13px] font-bold px-4 py-2.5 rounded-xl border", cookieTestResult.success ? "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20 text-emerald-600 dark:text-emerald-400" : "bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400")}>
+                        {cookieTestResult.message}
+                      </span>
+                    )}
                   </div>
-                  <p className="font-bold text-xs tracking-widest uppercase text-zinc-500">该分类下暂无任何条目</p>
                 </div>
-              )}
-            </div>
-          )}
-        </div>
-      </main>
+
+                <div className="bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 md:p-8 shadow-sm">
+                  <h3 className="text-lg font-black mb-6 text-zinc-900 dark:text-white">个性化设置</h3>
+                  <div className="flex flex-col gap-6">
+                    <div>
+                      <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">主题强调色</label>
+                      <div className="flex items-center gap-3">
+                        <input type="color" value={customTheme.themeColor} onChange={e => setCustomTheme(p => ({...p, themeColor: e.target.value}))} className="w-10 h-10 rounded cursor-pointer border-0 p-0" />
+                        <span className="text-sm font-bold font-mono text-zinc-700 dark:text-zinc-300 uppercase">{customTheme.themeColor}</span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">日间文字颜色</label>
+                        <div className="flex items-center gap-3">
+                          <input type="color" value={customTheme.textColorLight} onChange={e => setCustomTheme(p => ({...p, textColorLight: e.target.value}))} className="w-8 h-8 rounded cursor-pointer border-0 p-0" />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">暗黑文字颜色</label>
+                        <div className="flex items-center gap-3">
+                          <input type="color" value={customTheme.textColorDark} onChange={e => setCustomTheme(p => ({...p, textColorDark: e.target.value}))} className="w-8 h-8 rounded cursor-pointer border-0 p-0" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">日间枪械名颜色</label>
+                        <div className="flex items-center gap-3">
+                          <input type="color" value={customTheme.gunNameColorLight} onChange={e => setCustomTheme(p => ({...p, gunNameColorLight: e.target.value}))} className="w-8 h-8 rounded cursor-pointer border-0 p-0" />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">暗黑枪械名颜色</label>
+                        <div className="flex items-center gap-3">
+                          <input type="color" value={customTheme.gunNameColorDark} onChange={e => setCustomTheme(p => ({...p, gunNameColorDark: e.target.value}))} className="w-8 h-8 rounded cursor-pointer border-0 p-0" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-2 flex items-center justify-between pt-6 border-t border-zinc-100 dark:border-zinc-800">
+                      <button onClick={() => setCustomTheme(DEFAULT_THEME)} className="text-[13px] font-bold text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition">恢复默认配置</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <>
+                <Header
+                  isEditing={isEditing}
+                  onEditStart={handleEditStart}
+                  onSave={handleSave}
+                  onCancel={handleCancel}
+                  onAddNew={() => setIsModalOpen(true)}
+                  onOpenCollect={() => setActiveModal('mode-select')}
+                  sortBy={sortBy}
+                  onSortChange={setSortBy}
+                  isDarkMode={isDarkMode}
+                  onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
+                  searchQuery={searchQuery}
+                  onSearchChange={setSearchQuery}
+                  searchSuggestions={Array.from(new Set(sourceData.map(g => g.name)))}
+                />
+
+                <div className="mb-6 pl-1 mt-2">
+                  <h1 className="text-3xl md:text-4xl font-black tracking-tighter mb-2" style={{ color: 'inherit' }}>
+                    <span className="bg-clip-text text-transparent bg-gradient-to-br from-zinc-800 to-zinc-500">马坤时代</span> <span className="text-zinc-300 font-bold tracking-normal opacity-50 text-2xl">/ Base</span>
+                  </h1>
+                  <p className="text-[13px] opacity-70 font-medium max-w-lg" style={{ color: 'inherit' }}>
+                    专注修脚。基于顶级重回修脚时代架构运行。
+                  </p>
+                </div>
+
+                {isEditing && sortBy === 'default' ? (
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleCardDragEnd}
+                  >
+                    <SortableContext items={viewData.map(g => g.id)} strategy={rectSortingStrategy}>
+                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 md:gap-5 relative">
+                        {viewData.map((group, idx) => (
+                          <SortableGunCard
+                            key={`${activeTab}-${group.id}`}
+                            group={group}
+                            idx={idx}
+                            isEditing={isEditing}
+                            activeTab={activeTab}
+                            onUpdateGroup={handleUpdateGroup}
+                            onDeleteGroup={requestDeleteGroup}
+                            onUpdateVariant={handleUpdateVariant}
+                            onDeleteVariant={requestDeleteVariant}
+                            onAddVariant={handleAddVariant}
+                            onReorderVariants={handleReorderVariants}
+                            onTogglePin={handleTogglePin}
+                          />
+                        ))}
+                        {viewData.length === 0 && (
+                          <div className="col-span-full py-24 flex flex-col items-center justify-center text-zinc-400 animate-fade-in">
+                            <div className="w-16 h-16 bg-white shadow-sm border border-zinc-200/50 rounded-2xl flex items-center justify-center mb-4">
+                              <Sparkles size={24} className="text-zinc-300" />
+                            </div>
+                            <p className="font-bold text-xs tracking-widest uppercase text-zinc-500">该分类下暂无任何条目</p>
+                          </div>
+                        )}
+                      </div>
+                    </SortableContext>
+                  </DndContext>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 md:gap-5 relative">
+                    {viewData.map((group, idx) => (
+                      <div
+                        key={`${activeTab}-${group.id}`}
+                        className="self-start animate-fade-in w-full shadow-sm hover:shadow-md transition-shadow rounded-2xl"
+                        style={{ animationDelay: `${idx * 0.04}s` }}
+                      >
+                        <GunCard
+                          group={group}
+                          isEditing={isEditing}
+                          onUpdateGroup={handleUpdateGroup}
+                          onDeleteGroup={requestDeleteGroup}
+                          onUpdateVariant={handleUpdateVariant}
+                          onDeleteVariant={requestDeleteVariant}
+                          onAddVariant={handleAddVariant}
+                          onReorderVariants={handleReorderVariants}
+                          onTogglePin={handleTogglePin}
+                        />
+                      </div>
+                    ))}
+
+                    {viewData.length === 0 && (
+                      <div className="col-span-full py-24 flex flex-col items-center justify-center text-zinc-400 animate-fade-in">
+                        <div className="w-16 h-16 bg-white shadow-sm border border-zinc-200/50 rounded-2xl flex items-center justify-center mb-4">
+                          <Sparkles size={24} className="text-zinc-300" />
+                        </div>
+                        <p className="font-bold text-xs tracking-widest uppercase text-zinc-500">该分类下暂无任何条目</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </main>
 
       <div className="fixed inset-0 pointer-events-none z-[-1]"
         style={{
@@ -1072,63 +1293,6 @@ export default function App() {
           onClose={() => setIsModalOpen(false)}
           onConfirm={handleConfirmNewGun}
         />
-      )}
-
-      {activeModal === 'settings' && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-zinc-900/60" onClick={() => setActiveModal('none')} />
-          <div className="bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 md:p-8 relative z-10 w-full max-w-md flex flex-col gap-6 shadow-2xl animate-fade-in">
-            <div className="flex justify-between items-center">
-               <h3 className="text-xl font-black text-zinc-900 dark:text-white">外观设置</h3>
-               <button onClick={() => setActiveModal('none')} className="p-2 bg-zinc-100 dark:bg-zinc-800 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-500 dark:text-zinc-400"><X size={16} strokeWidth={2.5}/></button>
-            </div>
-
-            <div className="flex flex-col gap-5">
-              <div>
-                <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">主题强调色</label>
-                <div className="flex items-center gap-3">
-                  <input type="color" value={customTheme.themeColor} onChange={e => setCustomTheme(p => ({...p, themeColor: e.target.value}))} className="w-10 h-10 rounded cursor-pointer border-0 p-0" />
-                  <span className="text-sm font-bold font-mono text-zinc-700 dark:text-zinc-300 uppercase">{customTheme.themeColor}</span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">日间文字颜色</label>
-                  <div className="flex items-center gap-3">
-                    <input type="color" value={customTheme.textColorLight} onChange={e => setCustomTheme(p => ({...p, textColorLight: e.target.value}))} className="w-8 h-8 rounded cursor-pointer border-0 p-0" />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">暗黑文字颜色</label>
-                  <div className="flex items-center gap-3">
-                    <input type="color" value={customTheme.textColorDark} onChange={e => setCustomTheme(p => ({...p, textColorDark: e.target.value}))} className="w-8 h-8 rounded cursor-pointer border-0 p-0" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">日间枪械名颜色</label>
-                  <div className="flex items-center gap-3">
-                    <input type="color" value={customTheme.gunNameColorLight} onChange={e => setCustomTheme(p => ({...p, gunNameColorLight: e.target.value}))} className="w-8 h-8 rounded cursor-pointer border-0 p-0" />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">暗黑枪械名颜色</label>
-                  <div className="flex items-center gap-3">
-                    <input type="color" value={customTheme.gunNameColorDark} onChange={e => setCustomTheme(p => ({...p, gunNameColorDark: e.target.value}))} className="w-8 h-8 rounded cursor-pointer border-0 p-0" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-2 flex items-center justify-between pt-5 border-t border-zinc-100 dark:border-zinc-800">
-              <button onClick={() => setCustomTheme(DEFAULT_THEME)} className="text-[13px] font-bold text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition">恢复默认配置</button>
-              <button onClick={() => setActiveModal('none')} className="px-6 py-2.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[13px] font-black rounded-xl hover:opacity-80 transition active:scale-95">完成</button>
-            </div>
-          </div>
-        </div>
       )}
 
       {activeModal === 'mode-select' && (

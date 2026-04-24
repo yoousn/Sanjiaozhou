@@ -27,7 +27,7 @@ AI_API_KEY = os.getenv("OPENAI_API_KEY", "sk-88AqJeSQhfrmVTDcSAOTZDb6NqEbG3X8C3n
 DEFAULT_AI_MODEL = os.getenv("OPENAI_MODEL", "openai/gpt-oss-120b")
 WRITE_DEBUG_FILES = os.getenv("COLLECT_WRITE_DEBUG_FILES", "false").lower() == "true"
 DEFAULT_TARGET_GUNS = ["M14", "M250"]
-ALLOWED_MODES = ["search", "preview", "test-model", "auto", "fetch-models"]
+ALLOWED_MODES = ["search", "preview", "test-model", "auto", "fetch-models", "check-cookie"]
 CATEGORY_VALUES = {"ar", "br", "smg", "lmg", "dmr", "sr", "pistol", "other"}
 YT_DLP_SOCKET_TIMEOUT = "45"
 LOG_PREFIX = "__COLLECT_LOG__"
@@ -599,6 +599,18 @@ def test_model_mode(model: str, base_url: str, api_key: str) -> dict:
         }
 
 
+def check_cookie_mode() -> dict:
+    try:
+        # 访问一个博主视频列表进行连通性测试
+        url = "https://space.bilibili.com/52717408/video"
+        payload = run_yt_dlp(url, flat_playlist=True)
+        if payload and payload.get("entries") is not None:
+            return {"success": True, "message": "Cookie 有效且风控通过，连通性测试成功"}
+        return {"success": False, "message": "测试返回空列表，可能已过期或被风控"}
+    except Exception as exc:
+        return {"success": False, "message": f"Cookie 失效或网络异常: {exc}"}
+
+
 def main():
     args = parse_args()
     target_guns = split_csv(args.guns) or DEFAULT_TARGET_GUNS
@@ -615,6 +627,8 @@ def main():
         result = auto_mode(creator_ids, args.model, args.base_url, args.api_key)
     elif args.mode == "fetch-models":
         result = fetch_models_mode(args.base_url, args.api_key)
+    elif args.mode == "check-cookie":
+        result = check_cookie_mode()
     else:
         result = test_model_mode(args.model, args.base_url, args.api_key)
 

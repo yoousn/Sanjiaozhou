@@ -60,7 +60,7 @@ export function Sidebar({ activeTab, setActiveTab, onOpenSettings }: { activeTab
             className="flex items-center lg:justify-start justify-center gap-3 px-3 py-2.5 rounded-xl transition duration-200 outline-none hover:bg-black/5 dark:hover:bg-white/5 text-zinc-500 hover:text-zinc-900 dark:hover:text-white w-full group"
           >
             <Settings size={16} strokeWidth={2} className="group-hover:rotate-45 transition-transform duration-300" />
-            <span className="hidden lg:block text-[13px] font-bold">外观设置</span>
+            <span className="hidden lg:block text-[13px] font-bold">系统设置</span>
           </button>
         </div>
       </nav>

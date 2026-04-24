@@ -46,7 +46,7 @@ export function VariantItem({
 
   if (isEditing) {
     return (
-      <div className="flex flex-col gap-2 p-2.5 rounded-xl bg-zinc-50 border-2 border-emerald-500/20 shadow-sm transition group/edit">
+      <div className="flex flex-col gap-2 p-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/40 border-2 border-emerald-500/20 shadow-sm transition group/edit">
         <div className="flex gap-1.5 items-center">
           <input className={cn(inputClasses, "py-1 px-1.5 w-9 text-[11px] font-bold text-center bg-white border border-zinc-200")} defaultValue={variant.tier} onBlur={e => handleBlur(e, 'tier')} placeholder="T1" />
           <input className={cn(inputClasses, "py-1 px-1.5 w-14 text-[11px] font-bold bg-white border border-zinc-200")} defaultValue={variant.price} onBlur={e => handleBlur(e, 'price')} placeholder="金额" />
@@ -88,18 +88,18 @@ export function VariantItem({
   }
 
   return (
-    <div className="flex flex-col gap-1.5 p-2 md:p-2.5 bg-zinc-50/50 rounded-xl border border-zinc-200/60 hover:border-zinc-300 hover:bg-zinc-50 transition-colors duration-200 group/variant">
+    <div className="flex flex-col gap-1.5 p-2 md:p-2.5 bg-zinc-50/50 dark:bg-zinc-800/30 rounded-xl border border-zinc-200/60 dark:border-zinc-700/50 hover:border-zinc-300 dark:hover:border-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 transition-colors duration-200 group/variant">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           <span className={cn("inline-block text-[10px] font-black tracking-widest px-1.5 py-0.5 rounded-[4px] border leading-none", badgeColor)}>
             {variant.tier || '-'}
           </span>
           {variant.price && (
-            <span className="text-[10px] font-bold text-zinc-700 bg-white px-1.5 py-0.5 rounded-[4px] border border-zinc-200 shadow-sm shrink-0 leading-none">
+            <span className="text-[10px] font-bold text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-800 px-1.5 py-0.5 rounded-[4px] border border-zinc-200 dark:border-zinc-700 shadow-sm shrink-0 leading-none">
               {variant.price}
             </span>
           )}
-          <span className="text-[12px] font-black text-zinc-900 tracking-tight leading-none px-1">
+          <span className="text-[12px] font-black text-zinc-900 dark:text-zinc-100 tracking-tight leading-none px-1">
             {variant.buildType || '默认配置'}
           </span>
         </div>
@@ -110,7 +110,7 @@ export function VariantItem({
               已锁定
             </div>
           )}
-            <div className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest bg-white border border-zinc-200 px-1.5 py-0.5 rounded-full whitespace-nowrap leading-none">
+            <div className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 px-1.5 py-0.5 rounded-full whitespace-nowrap leading-none">
               {addedDate}
             </div>
         </div>
@@ -118,8 +118,8 @@ export function VariantItem({
 
       <div className="mt-0.5 flex flex-col gap-1.5">
         <div className="flex items-center gap-1.5">
-          <div className="flex-1 px-2.5 py-2 rounded-lg bg-white border border-zinc-200/80 flex items-center overflow-hidden shadow-[inset_0_1px_2px_rgba(0,0,0,0.01)]">
-            <code className="text-[11px] text-zinc-600 group-hover/variant:text-zinc-900 font-mono tracking-wide font-bold text-left truncate transition-colors">
+          <div className="flex-1 px-2.5 py-2 rounded-lg bg-white dark:bg-[#0b0b0c] border border-zinc-200/80 dark:border-zinc-800 flex items-center overflow-hidden shadow-[inset_0_1px_2px_rgba(0,0,0,0.01)]">
+            <code className="text-[11px] text-zinc-600 dark:text-zinc-400 group-hover/variant:text-zinc-900 dark:group-hover/variant:text-zinc-200 font-mono tracking-wide font-bold text-left truncate transition-colors">
               {variant.code || '暂无代码'}
             </code>
           </div>

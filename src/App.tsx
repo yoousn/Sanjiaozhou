@@ -237,6 +237,17 @@ export default function App() {
   const [isSavingAuto, setIsSavingAuto] = useState(false);
   const { toast, showToast } = useToast();
 
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    return localStorage.getItem('darkMode') === 'true' ||
+      (!('darkMode' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  });
+
+  useEffect(() => {
+    if (isDarkMode) document.documentElement.classList.add('dark');
+    else document.documentElement.classList.remove('dark');
+    localStorage.setItem('darkMode', String(isDarkMode));
+  }, [isDarkMode]);
+
   const stopSearchPolling = () => {
     if (searchPollRef.current !== null) {
       window.clearInterval(searchPollRef.current);
@@ -496,6 +507,12 @@ export default function App() {
     if (activeTab === 'home') return true;
     return g.category === activeTab;
   }).sort((a, b) => {
+      const pinA = (a as any).pinned ? 1 : 0;
+      const pinB = (b as any).pinned ? 1 : 0;
+      if (pinA !== pinB) {
+        return pinB - pinA;
+      }
+
     if (sortBy === 'name') {
       return a.name.localeCompare(b.name, 'zh-CN');
     }
@@ -550,6 +567,28 @@ export default function App() {
 
   const handleDeleteGroup = (groupId: string) => {
     setDraftData(prev => prev.filter(g => g.id !== groupId));
+  };
+
+  const handleTogglePin = async (groupId: string) => {
+    if (isEditing) {
+      setDraftData(prev => prev.map(g => g.id === groupId ? { ...g, pinned: !(g as any).pinned } : g));
+      return;
+    }
+
+    const updateFn = (prev: GunGroup[]) => prev.map(g => g.id === groupId ? { ...g, pinned: !(g as any).pinned } : g);
+    const newSavedData = updateFn(savedData);
+    setSavedData(newSavedData);
+    
+    try {
+      await fetch('/api/builds', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newSavedData)
+      });
+    } catch(e) {
+      console.error('置顶保存失败:', e);
+      showToast('置顶失败，请检查网络', 'warn');
+    }
   };
 
   const handleUpdateVariant = (groupId: string, variantId: string, field: keyof GunVariant, val: string | boolean) => {
@@ -873,7 +912,7 @@ export default function App() {
   };
 
   return (
-    <div className="flex min-h-screen bg-[#F8F9FA] text-zinc-900 selection:bg-zinc-200">
+    <div className="flex min-h-screen bg-[#F8F9FA] dark:bg-[#0b0b0c] text-zinc-900 dark:text-zinc-100 selection:bg-zinc-200 dark:selection:bg-zinc-800 transition-colors duration-300">
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
       <main className="flex-1 md:ml-20 lg:ml-56 p-4 md:p-6 lg:p-8 pb-32">
@@ -887,6 +926,8 @@ export default function App() {
             onOpenCollect={() => setActiveModal('mode-select')}
             sortBy={sortBy}
             onSortChange={setSortBy}
+            isDarkMode={isDarkMode}
+            onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
           />
 
           <div className="mb-6 pl-1 mt-2">
@@ -919,6 +960,7 @@ export default function App() {
                       onDeleteVariant={requestDeleteVariant}
                       onAddVariant={handleAddVariant}
                       onReorderVariants={handleReorderVariants}
+                      onTogglePin={handleTogglePin}
                     />
                   ))}
                   {viewData.length === 0 && (
@@ -949,6 +991,7 @@ export default function App() {
                     onDeleteVariant={requestDeleteVariant}
                     onAddVariant={handleAddVariant}
                     onReorderVariants={handleReorderVariants}
+                    onTogglePin={handleTogglePin}
                   />
                 </div>
               ))}
@@ -1083,7 +1126,7 @@ export default function App() {
               onClick={async () => {
                 setIsSavingAuto(true);
                 try {
-                  await fetch('/api/collect/auto', {
+                  const res = await fetch('/api/collect/auto', {
                      method: 'POST',
                      headers: { 'Content-Type': 'application/json' },
                      body: JSON.stringify({ 
@@ -1093,9 +1136,11 @@ export default function App() {
                        creatorIds: autoCollectConfig.creatorIds || []
                      })
                   });
+                  const data = await safeJson(res);
+                  if (!res.ok) throw new Error(data?.error || '保存配置失败');
                   showToast('自动采集配置已保存');
                 } catch(e) {
-                  showToast('保存失败', 'warn');
+                  showToast(e instanceof Error ? e.message : '保存配置失败', 'warn');
                 } finally {
                   setIsSavingAuto(false);
                 }

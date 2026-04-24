@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trash2, Plus, GripVertical } from 'lucide-react';
+import { Trash2, Plus, GripVertical, Pin } from 'lucide-react';
 import { cn, inputClasses } from '../utils';
 import { GunGroup, GunVariant } from '../types';
 import { VariantItem } from './VariantItem';
@@ -99,6 +99,7 @@ export function GunCard({
   onDeleteVariant,
   onAddVariant,
   onReorderVariants,
+  onTogglePin,
   cardDragHandleProps
 }: {
   group: GunGroup,
@@ -109,10 +110,13 @@ export function GunCard({
   onDeleteVariant: (groupId: string, variantId: string) => void,
   onAddVariant: (groupId: string) => void,
   onReorderVariants?: (groupId: string, activeId: string, overId: string) => void,
+  onTogglePin?: (groupId: string) => void,
   cardDragHandleProps?: any
 }) {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [page, setPage] = useState(0);
+  const [pinMessage, setPinMessage] = useState<{ text: string, type: 'pin' | 'unpin' } | null>(null);
+  const pinTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const pageSize = 3;
   const totalPages = Math.ceil(group.variants.length / pageSize);
@@ -142,6 +146,16 @@ export function GunCard({
     setTimeout(() => { setCopiedId(null); }, 2000);
   };
 
+  const handlePinClick = () => {
+    if (onTogglePin) {
+      const isCurrentlyPinned = !!(group as any).pinned;
+      onTogglePin(group.id);
+      setPinMessage({ text: !isCurrentlyPinned ? '已置顶！' : '取消！', type: !isCurrentlyPinned ? 'pin' : 'unpin' });
+      if (pinTimeoutRef.current) clearTimeout(pinTimeoutRef.current);
+      pinTimeoutRef.current = setTimeout(() => setPinMessage(null), 1500);
+    }
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (over && active.id !== over.id && onReorderVariants) {
@@ -153,15 +167,15 @@ export function GunCard({
     <div
       className={cn(
         "group/card relative flex flex-col p-4 md:p-5 rounded-2xl transition duration-200 h-full",
-        "bg-white border hover:-translate-y-0.5",
+        "bg-white dark:bg-[#121214] border hover:-translate-y-0.5",
         isEditing
-          ? "border-emerald-500/40 ring-4 ring-emerald-500/10 shadow-[0_8px_30px_rgb(16,185,129,0.06)] bg-white/80"
-          : "border-zinc-200/80"
+          ? "border-emerald-500/40 ring-4 ring-emerald-500/10 shadow-[0_8px_30px_rgb(16,185,129,0.06)] bg-white/80 dark:bg-[#121214]/80"
+          : "border-zinc-200/80 dark:border-zinc-800"
       )}
     >
-      <div className="absolute inset-0 rounded-2xl pointer-events-none border border-white/50" />
+      <div className="absolute inset-0 rounded-2xl pointer-events-none border border-white/50 dark:border-white/5" />
 
-      <div className="mb-3 pb-3 border-b border-zinc-100 relative z-10">
+      <div className="mb-3 pb-3 border-b border-zinc-100 dark:border-zinc-800/80 relative z-10">
         {isEditing ? (
           <div className="flex flex-col gap-2 w-full">
              <div className="flex items-center gap-2 w-full">
@@ -189,32 +203,72 @@ export function GunCard({
                 <Trash2 size={16} strokeWidth={2.5}/>
               </button>
             </div>
-            <div className="flex items-center gap-2">
-               <span className="text-[11px] font-bold text-zinc-500 bg-zinc-100 px-1.5 py-0.5 rounded">归属:</span>
-               <select
-                  className={cn(inputClasses, "py-0.5 bg-white border border-zinc-200 text-[11px] w-auto shadow-sm cursor-pointer")}
-                  defaultValue={group.category}
-                  onBlur={e => { if(e.target.value !== group.category) onUpdateGroup(group.id, 'category', e.target.value) }}
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center gap-2">
+                 <span className="text-[11px] font-bold text-zinc-500 bg-zinc-100 px-1.5 py-0.5 rounded">归属:</span>
+                 <select
+                    className={cn(inputClasses, "py-0.5 bg-white border border-zinc-200 text-[11px] w-auto shadow-sm cursor-pointer")}
+                    defaultValue={group.category}
+                    onBlur={e => { if(e.target.value !== group.category) onUpdateGroup(group.id, 'category', e.target.value) }}
+                  >
+                    <option value="ar">突击步枪 (AR)</option>
+                    <option value="br">战斗步枪 (BR)</option>
+                    <option value="smg">冲锋枪 (SMG)</option>
+                    <option value="lmg">轻机枪 (LMG)</option>
+                    <option value="dmr">精准射手步枪 (DMR)</option>
+                    <option value="sr">狙击步枪 (SR)</option>
+                    <option value="pistol">手枪 (Pistol)</option>
+                 </select>
+              </div>
+              <div className="relative flex items-center">
+                <button
+                  type="button"
+                  onClick={handlePinClick}
+                  className={cn("p-1 rounded-md transition-colors outline-none", (group as any).pinned ? "text-yellow-600 bg-yellow-50 hover:bg-yellow-100" : "text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100")}
+                  title={(group as any).pinned ? "取消置顶" : "置顶卡片"}
                 >
-                  <option value="ar">突击步枪 (AR)</option>
-                  <option value="br">战斗步枪 (BR)</option>
-                  <option value="smg">冲锋枪 (SMG)</option>
-                  <option value="lmg">轻机枪 (LMG)</option>
-                  <option value="dmr">精准射手步枪 (DMR)</option>
-                  <option value="sr">狙击步枪 (SR)</option>
-                  <option value="pistol">手枪 (Pistol)</option>
-               </select>
+                  <Pin size={14} className={cn((group as any).pinned && "fill-yellow-500")} />
+                </button>
+                {pinMessage && (
+                  <div className={cn(
+                    "absolute -top-7 -right-3 z-50 px-1.5 py-0.5 rounded shadow-sm text-[11px] font-black text-white italic transform -rotate-12 whitespace-nowrap pointer-events-none animate-fade-in",
+                    pinMessage.type === 'pin' ? "bg-emerald-500" : "bg-zinc-400"
+                  )}>
+                    {pinMessage.text}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         ) : (
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-black text-zinc-900 tracking-tight flex items-center gap-2">
-              <span className="w-1.5 h-4 bg-zinc-900 rounded-full" />
+          <span className="w-1.5 h-4 bg-zinc-900 dark:bg-zinc-100 rounded-full" />
               {group.name}
             </h3>
-            <span className="text-[9px] font-bold uppercase tracking-widest text-zinc-400 bg-zinc-100 px-1.5 py-0.5 rounded border border-zinc-200/60">
-               {group.category.toUpperCase()}
-            </span>
+            <div className="flex items-center gap-1.5">
+              <div className="relative flex items-center">
+                <button
+                  type="button"
+                  onClick={handlePinClick}
+                  className={cn("p-1 rounded-md transition-colors outline-none", (group as any).pinned ? "text-yellow-600 bg-yellow-50 hover:bg-yellow-100" : "text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100")}
+                  title={(group as any).pinned ? "取消置顶" : "置顶卡片"}
+                >
+                  <Pin size={14} className={cn((group as any).pinned && "fill-yellow-500")} />
+                </button>
+                {pinMessage && (
+                  <div className={cn(
+                    "absolute -top-7 -right-3 z-50 px-1.5 py-0.5 rounded shadow-sm text-[11px] font-black text-white italic transform -rotate-12 whitespace-nowrap pointer-events-none animate-fade-in",
+                    pinMessage.type === 'pin' ? "bg-emerald-500" : "bg-zinc-400"
+                  )}>
+                    {pinMessage.text}
+                  </div>
+                )}
+              </div>
+              <span className="text-[9px] font-bold uppercase tracking-widest text-zinc-400 bg-zinc-100 px-1.5 py-0.5 rounded border border-zinc-200/60">
+                 {group.category.toUpperCase()}
+              </span>
+            </div>
           </div>
         )}
       </div>

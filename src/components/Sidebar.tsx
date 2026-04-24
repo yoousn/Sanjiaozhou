@@ -16,13 +16,13 @@ export function Sidebar({ activeTab, setActiveTab }: { activeTab: string, setAct
 
   return (
     <>
-      <nav className="hidden md:flex flex-col w-20 lg:w-56 h-screen fixed left-0 top-0 border-r border-zinc-200/50 bg-[#F8F9FA] z-40 p-4 pt-8 shadow-[1px_0_20px_rgba(0,0,0,0.02)]">
+      <nav className="hidden md:flex flex-col w-20 lg:w-56 h-screen fixed left-0 top-0 border-r border-zinc-200/50 dark:border-zinc-800/50 bg-[#F8F9FA] dark:bg-[#0b0b0c] transition-colors duration-300 z-40 p-4 pt-8 shadow-[1px_0_20px_rgba(0,0,0,0.02)]">
         <div className="flex items-center gap-3 px-2 mb-8 w-full hover:opacity-80 transition-opacity cursor-pointer">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-zinc-900 to-zinc-700 flex items-center justify-center text-white shrink-0 shadow-sm">
             <span className="font-extrabold text-sm tracking-tighter">🐴</span>
           </div>
           <div className="hidden lg:flex flex-col">
-            <span className="font-black text-[14px] tracking-tight text-zinc-900 leading-tight">Arsenal</span>
+            <span className="font-black text-[14px] tracking-tight text-zinc-900 dark:text-zinc-100 leading-tight">Arsenal</span>
             <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Base</span>
           </div>
         </div>
@@ -41,8 +41,8 @@ export function Sidebar({ activeTab, setActiveTab }: { activeTab: string, setAct
                 className={cn(
                   "flex items-center lg:justify-start justify-center gap-3 px-3 py-2.5 rounded-xl transition duration-200 outline-none focus:ring-2 focus:ring-zinc-900/10 active:scale-95 group w-full",
                   isActive 
-                    ? "bg-zinc-900 text-white shadow-sm" 
-                    : "text-zinc-500 font-semibold hover:bg-black/5 hover:text-zinc-900"
+                    ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-sm" 
+                    : "text-zinc-500 font-semibold hover:bg-black/5 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white"
                 )}
               >
                 <Icon size={16} className={cn("transition-transform duration-300", isActive && "scale-110")} strokeWidth={isActive ? 2.5 : 2} />

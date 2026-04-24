@@ -51,6 +51,7 @@ type GunGroup = {
   name: string;
   category: string;
   variants: GunVariant[];
+  pinned?: boolean;
 };
 
 type CollectModelProvider = {
@@ -293,6 +294,7 @@ function ensureGroupShape(group: Partial<GunGroup>): GunGroup {
     name: group.name || "未知枪械",
     category: group.category || "other",
     variants: Array.isArray(group.variants) ? group.variants.map(ensureVariantShape) : [],
+    pinned: Boolean(group.pinned),
   };
 }
 

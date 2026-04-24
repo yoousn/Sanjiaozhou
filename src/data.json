@@ -1,1 +1,508 @@
-[]
+[
+  {
+    "id": "g_9_509",
+    "name": "AKM",
+    "category": "ar",
+    "variants": [
+      {
+        "id": "v_1777020324420_87916",
+        "tier": "",
+        "price": "23万",
+        "buildType": "性价比版",
+        "code": "6JJ97MC06J0496PHE5FDQ",
+        "date": "2026-04-12",
+        "author": "初水改枪-三角洲行动",
+        "sourceUrl": "https://www.bilibili.com/video/BV1JTDQBTE5C",
+        "locked": false
+      },
+      {
+        "id": "v_1777020324420_85942",
+        "tier": "",
+        "price": "38万",
+        "buildType": "满改3倍",
+        "code": "6JMQ5MC06J0496PHE5FDQ",
+        "date": "2026-04-12",
+        "author": "初水改枪-三角洲行动",
+        "sourceUrl": "https://www.bilibili.com/video/BV1JTDQBTE5C",
+        "locked": false
+      }
+    ]
+  },
+  {
+    "id": "g_8_64724",
+    "name": "SG552",
+    "category": "sg",
+    "variants": [
+      {
+        "id": "v_1777020320355_24348",
+        "tier": "",
+        "price": "11万",
+        "buildType": "基础版",
+        "code": "6JO422K06J0496PHE5FDQ",
+        "date": "2026-04-16",
+        "author": "初水改枪-三角洲行动",
+        "sourceUrl": "https://www.bilibili.com/video/BV1Nzd8BeEXV",
+        "locked": false
+      },
+      {
+        "id": "v_1777020320355_1560",
+        "tier": "",
+        "price": "19万",
+        "buildType": "满改版",
+        "code": "6JO424K06J0496PHE5FDQ",
+        "date": "2026-04-16",
+        "author": "初水改枪-三角洲行动",
+        "sourceUrl": "https://www.bilibili.com/video/BV1Nzd8BeEXV",
+        "locked": false
+      },
+      {
+        "id": "v_1777020265029_80332",
+        "tier": "",
+        "price": "11万",
+        "buildType": "基础版",
+        "code": "-6JO422K06J0496PHE5FDQ",
+        "date": "2026-04-16",
+        "author": "初水改枪-三角洲行动",
+        "sourceUrl": "https://www.bilibili.com/video/BV1Nzd8BeEXV",
+        "locked": false
+      },
+      {
+        "id": "v_1777020265029_92901",
+        "tier": "",
+        "price": "19万",
+        "buildType": "满改版",
+        "code": "-6JO424K06J0496PHE5FDQ",
+        "date": "2026-04-16",
+        "author": "初水改枪-三角洲行动",
+        "sourceUrl": "https://www.bilibili.com/video/BV1Nzd8BeEXV",
+        "locked": false
+      }
+    ]
+  },
+  {
+    "id": "g_4_92584",
+    "name": "M249",
+    "category": "lmg",
+    "variants": [
+      {
+        "id": "v_1777020320355_89414",
+        "tier": "",
+        "price": "22万",
+        "buildType": "链锯套件版",
+        "code": "6JO3SA006J0496PHE5FDQ",
+        "date": "2026-04-16",
+        "author": "初水改枪-三角洲行动",
+        "sourceUrl": "https://www.bilibili.com/video/BV1Nzd8BeEXV",
+        "locked": false
+      },
+      {
+        "id": "v_1777020320355_63239",
+        "tier": "",
+        "price": "27万",
+        "buildType": "开镜版",
+        "code": "6JO3S5K06J0496PHE5FDQ",
+        "date": "2026-04-16",
+        "author": "初水改枪-三角洲行动",
+        "sourceUrl": "https://www.bilibili.com/video/BV1Nzd8BeEXV",
+        "locked": false
+      },
+      {
+        "id": "v_1777020265029_33035",
+        "tier": "",
+        "price": "22万",
+        "buildType": "链锯套件版",
+        "code": "-6JO3SA006J0496PHE5FDQ",
+        "date": "2026-04-16",
+        "author": "初水改枪-三角洲行动",
+        "sourceUrl": "https://www.bilibili.com/video/BV1Nzd8BeEXV",
+        "locked": false
+      },
+      {
+        "id": "v_1777020265029_6593",
+        "tier": "",
+        "price": "27万",
+        "buildType": "开镜版",
+        "code": "-6JO3S5K06J0496PHE5FDQ",
+        "date": "2026-04-16",
+        "author": "初水改枪-三角洲行动",
+        "sourceUrl": "https://www.bilibili.com/video/BV1Nzd8BeEXV",
+        "locked": false
+      }
+    ]
+  },
+  {
+    "id": "g_3_30398",
+    "name": "M16A4",
+    "category": "ar",
+    "variants": [
+      {
+        "id": "v_1777020320355_58441",
+        "tier": "",
+        "price": "13万",
+        "buildType": "腰射版",
+        "code": "6JO3SFO06J0496PHE5FDQ",
+        "date": "2026-04-16",
+        "author": "初水改枪-三角洲行动",
+        "sourceUrl": "https://www.bilibili.com/video/BV1Nzd8BeEXV",
+        "locked": false
+      },
+      {
+        "id": "v_1777020265029_23505",
+        "tier": "",
+        "price": "13万",
+        "buildType": "腰射版",
+        "code": "-6JO3SFO06J0496PHE5FDQ",
+        "date": "2026-04-16",
+        "author": "初水改枪-三角洲行动",
+        "sourceUrl": "https://www.bilibili.com/video/BV1Nzd8BeEXV",
+        "locked": false
+      }
+    ]
+  },
+  {
+    "id": "g_2_82716",
+    "name": "KC17",
+    "category": "ar",
+    "variants": [
+      {
+        "id": "v_1777020310818_66086",
+        "tier": "T0",
+        "price": "31万",
+        "buildType": "短管超绝性价比版",
+        "code": "6JQE4G406J0496PHE5FDQ",
+        "date": "2026-04-23",
+        "author": "初水改枪-三角洲行动",
+        "sourceUrl": "https://www.bilibili.com/video/BV1N9oYByEz3",
+        "locked": false
+      },
+      {
+        "id": "v_1777020310819_15807",
+        "tier": "T0",
+        "price": "39万",
+        "buildType": "短管2倍镜版",
+        "code": "6JQ3OD406J0496PHE5FDQ",
+        "date": "2026-04-23",
+        "author": "初水改枪-三角洲行动",
+        "sourceUrl": "https://www.bilibili.com/video/BV1N9oYByEz3",
+        "locked": false
+      },
+      {
+        "id": "v_1777020310819_10225",
+        "tier": "T0",
+        "price": "43万",
+        "buildType": "短管满改版",
+        "code": "6JQ3OF806J0496PHE5FDQ",
+        "date": "2026-04-23",
+        "author": "初水改枪-三角洲行动",
+        "sourceUrl": "https://www.bilibili.com/video/BV1N9oYByEz3",
+        "locked": false
+      },
+      {
+        "id": "v_1777020310819_39231",
+        "tier": "T0",
+        "price": "43万",
+        "buildType": "长管2倍镜版",
+        "code": "6JQ3OIC06J0496PHE5FDQ",
+        "date": "2026-04-23",
+        "author": "初水改枪-三角洲行动",
+        "sourceUrl": "https://www.bilibili.com/video/BV1N9oYByEz3",
+        "locked": false
+      },
+      {
+        "id": "v_1777020310819_17392",
+        "tier": "T0",
+        "price": "47万",
+        "buildType": "长管满改版",
+        "code": "6JQ3O8O06J0496PHE5FDQ",
+        "date": "2026-04-23",
+        "author": "初水改枪-三角洲行动",
+        "sourceUrl": "https://www.bilibili.com/video/BV1N9oYByEz3",
+        "locked": false
+      }
+    ]
+  },
+  {
+    "id": "g_1_83482",
+    "name": "K437",
+    "category": "ar",
+    "variants": [
+      {
+        "id": "v_1777020303217_49308",
+        "tier": "",
+        "price": "46万",
+        "buildType": "满改",
+        "code": "6JQGQ6G06J0496PHE5FDQ",
+        "date": "2026-04-23",
+        "author": "初水改枪-三角洲行动",
+        "sourceUrl": "https://www.bilibili.com/video/BV1oxoMBoEBV",
+        "locked": false
+      }
+    ]
+  },
+  {
+    "id": "g_5_51346",
+    "name": "K416",
+    "category": "ar",
+    "variants": [
+      {
+        "id": "v_1777020320355_73603",
+        "tier": "",
+        "price": "25万",
+        "buildType": "基础版",
+        "code": "6JO40FS06J0496PHE5FDQ",
+        "date": "2026-04-16",
+        "author": "初水改枪-三角洲行动",
+        "sourceUrl": "https://www.bilibili.com/video/BV1Nzd8BeEXV",
+        "locked": false
+      },
+      {
+        "id": "v_1777020320355_38302",
+        "tier": "",
+        "price": "43万",
+        "buildType": "30发满改版",
+        "code": "6JO415K06J0496PHE5FDQ",
+        "date": "2026-04-16",
+        "author": "初水改枪-三角洲行动",
+        "sourceUrl": "https://www.bilibili.com/video/BV1Nzd8BeEXV",
+        "locked": false
+      },
+      {
+        "id": "v_1777020320355_74077",
+        "tier": "",
+        "price": "49万",
+        "buildType": "45发满改版",
+        "code": "6JO40U806J0496PHE5FDQ",
+        "date": "2026-04-16",
+        "author": "初水改枪-三角洲行动",
+        "sourceUrl": "https://www.bilibili.com/video/BV1Nzd8BeEXV",
+        "locked": false
+      },
+      {
+        "id": "v_1777019839616_85206",
+        "tier": "",
+        "price": "35万",
+        "buildType": "均衡中改版",
+        "code": "6JO8S040B0GKDDOTE9T6Q",
+        "date": "2026-04-17",
+        "author": "Always聪聪",
+        "sourceUrl": "https://www.bilibili.com/video/BV1YRdqBiERM",
+        "locked": false
+      },
+      {
+        "id": "v_1777019839616_91586",
+        "tier": "",
+        "price": "35万",
+        "buildType": "高续航中改版",
+        "code": "6JO8RS80B0GKDDOTE9T6Q",
+        "date": "2026-04-17",
+        "author": "Always聪聪",
+        "sourceUrl": "https://www.bilibili.com/video/BV1YRdqBiERM",
+        "locked": false
+      }
+    ]
+  },
+  {
+    "id": "g_4_38391",
+    "name": "AUG",
+    "category": "ar",
+    "variants": [
+      {
+        "id": "v_1777020320355_30679",
+        "tier": "",
+        "price": "31万",
+        "buildType": "30弹匣满改（多倍镜）",
+        "code": "6JO3RN406J0496PHE5FDQ",
+        "date": "2026-04-16",
+        "author": "初水改枪-三角洲行动",
+        "sourceUrl": "https://www.bilibili.com/video/BV1Nzd8BeEXV",
+        "locked": false
+      },
+      {
+        "id": "v_1777020320355_19404",
+        "tier": "",
+        "price": "29万",
+        "buildType": "45弹匣满改（单倍镜）",
+        "code": "6JO3UA806J0496PHE5FDQ",
+        "date": "2026-04-16",
+        "author": "初水改枪-三角洲行动",
+        "sourceUrl": "https://www.bilibili.com/video/BV1Nzd8BeEXV",
+        "locked": false
+      },
+      {
+        "id": "v_1777019830323_25863",
+        "tier": "",
+        "price": "23万",
+        "buildType": "尖兵性价比版",
+        "code": "6JOUJ440B0GKDDOTE9T6Q",
+        "date": "2026-04-19",
+        "author": "Always聪聪",
+        "sourceUrl": "https://www.bilibili.com/video/BV13EdxBaEKe",
+        "locked": false
+      },
+      {
+        "id": "v_1777019830323_74342",
+        "tier": "",
+        "price": "27万",
+        "buildType": "尖兵暗杀版",
+        "code": "6JOUJAC0B0GKDDOTE9T6Q",
+        "date": "2026-04-19",
+        "author": "Always聪聪",
+        "sourceUrl": "https://www.bilibili.com/video/BV13EdxBaEKe",
+        "locked": false
+      },
+      {
+        "id": "v_1777019830323_76833",
+        "tier": "",
+        "price": "30万",
+        "buildType": "尖兵强化版",
+        "code": "6JOUJFS0B0GKDDOTE9T6Q",
+        "date": "2026-04-19",
+        "author": "Always聪聪",
+        "sourceUrl": "https://www.bilibili.com/video/BV13EdxBaEKe",
+        "locked": false
+      }
+    ]
+  },
+  {
+    "id": "g_3_36510",
+    "name": "AR57",
+    "category": "ar",
+    "variants": [
+      {
+        "id": "v_1777019822688_33805",
+        "tier": "S",
+        "price": "",
+        "buildType": "满腰射双修顶配",
+        "code": "A-6JP8V18049H3TLFDHMKHO",
+        "date": "2026-04-20",
+        "author": "Always聪聪",
+        "sourceUrl": "https://www.bilibili.com/video/BV1hmoABTET6",
+        "locked": false
+      },
+      {
+        "id": "v_1777019822688_82576",
+        "tier": "S",
+        "price": "",
+        "buildType": "满腰射双修顶配",
+        "code": "B-6JP8V50049H3TLFDHMKHO",
+        "date": "2026-04-20",
+        "author": "Always聪聪",
+        "sourceUrl": "https://www.bilibili.com/video/BV1hmoABTET6",
+        "locked": false
+      },
+      {
+        "id": "v_1777019822688_76300",
+        "tier": "S",
+        "price": "",
+        "buildType": "双水平开镜走速版",
+        "code": "-6JP900S049H3TLFDHMKHO",
+        "date": "2026-04-20",
+        "author": "Always聪聪",
+        "sourceUrl": "https://www.bilibili.com/video/BV1hmoABTET6",
+        "locked": false
+      },
+      {
+        "id": "v_1777019822688_25234",
+        "tier": "S",
+        "price": "",
+        "buildType": "双水平开镜CT顶配版",
+        "code": "-6JP9088049H3TLFDHMKHO",
+        "date": "2026-04-20",
+        "author": "Always聪聪",
+        "sourceUrl": "https://www.bilibili.com/video/BV1hmoABTET6",
+        "locked": false
+      },
+      {
+        "id": "v_1777019822688_14054",
+        "tier": "S",
+        "price": "",
+        "buildType": "中高改开镜版",
+        "code": "-6JP90L4049H3TLFDHMKHO",
+        "date": "2026-04-20",
+        "author": "Always聪聪",
+        "sourceUrl": "https://www.bilibili.com/video/BV1hmoABTET6",
+        "locked": false
+      }
+    ]
+  },
+  {
+    "id": "g_2_52484",
+    "name": "M4A1",
+    "category": "ar",
+    "variants": [
+      {
+        "id": "v_1777020320355_34179",
+        "tier": "",
+        "price": "22万",
+        "buildType": "基础版",
+        "code": "6JO3V8S06J0496PHE5FDQ",
+        "date": "2026-04-16",
+        "author": "初水改枪-三角洲行动",
+        "sourceUrl": "https://www.bilibili.com/video/BV1Nzd8BeEXV",
+        "locked": false
+      },
+      {
+        "id": "v_1777020320355_5917",
+        "tier": "",
+        "price": "31万",
+        "buildType": "45弹匣高改版",
+        "code": "6JO3VC406J0496PHE5FDQ",
+        "date": "2026-04-16",
+        "author": "初水改枪-三角洲行动",
+        "sourceUrl": "https://www.bilibili.com/video/BV1Nzd8BeEXV",
+        "locked": false
+      },
+      {
+        "id": "v_1777020320355_34636",
+        "tier": "",
+        "price": "38万",
+        "buildType": "棱镜2倍满改版",
+        "code": "6JO3VFS06J0496PHE5FDQ",
+        "date": "2026-04-16",
+        "author": "初水改枪-三角洲行动",
+        "sourceUrl": "https://www.bilibili.com/video/BV1Nzd8BeEXV",
+        "locked": false
+      },
+      {
+        "id": "v_1777019815461_4439",
+        "tier": "S",
+        "price": "",
+        "buildType": "堑壕战高改暗杀版",
+        "code": "35-6JPJJF80B0GKDDOTE9T6Q",
+        "date": "2026-04-22",
+        "author": "Always聪聪",
+        "sourceUrl": "https://www.bilibili.com/video/BV1YEdDBBEvD",
+        "locked": false
+      },
+      {
+        "id": "v_1777019815461_55979",
+        "tier": "S",
+        "price": "",
+        "buildType": "加百列高改稳定版",
+        "code": "37-6JPJJLC0B0GKDDOTE9T6Q",
+        "date": "2026-04-22",
+        "author": "Always聪聪",
+        "sourceUrl": "https://www.bilibili.com/video/BV1YEdDBBEvD",
+        "locked": false
+      }
+    ]
+  },
+  {
+    "id": "g_1_76043",
+    "name": "链锯M249",
+    "category": "lmg",
+    "variants": [
+      {
+        "id": "v_1777019809198_43234",
+        "tier": "S",
+        "price": "",
+        "buildType": "链锯M249改法",
+        "code": "6JOJNNS0B0GKDDOTE9T6Q",
+        "date": "2026-04-23",
+        "author": "Always聪聪",
+        "sourceUrl": "https://www.bilibili.com/video/BV1LYoYBFEsY",
+        "locked": false
+      }
+    ]
+  }
+]

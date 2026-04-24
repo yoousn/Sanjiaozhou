@@ -60,7 +60,12 @@ export function AddGunModal({ isOpen, onClose, onConfirm }: { isOpen: boolean, o
               <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase tracking-widest">所属图鉴分类</label>
               <select className={cn(inputClasses, "py-3 bg-white border border-zinc-200 shadow-sm text-sm")} value={category} onChange={r => setCategory(r.target.value)}>
                 <option value="ar">突击步枪 (AR)</option>
+                <option value="br">战斗步枪 (BR)</option>
                 <option value="smg">冲锋枪 (SMG)</option>
+                <option value="lmg">轻机枪 (LMG)</option>
+                <option value="dmr">精准射手步枪 (DMR)</option>
+                <option value="sr">狙击步枪 (SR)</option>
+                <option value="pistol">手枪 (Pistol)</option>
               </select>
             </div>
           </div>

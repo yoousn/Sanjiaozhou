@@ -16,7 +16,7 @@ const DATA_FILE = path.join(__dirname, "src", "data.json");
 const COLLECT_SCRIPT = path.join(__dirname, "scripts", "collect_bilibili_test.py");
 const COLLECT_SETTINGS_FILE = path.join(__dirname, "scripts", "collect_settings.json");
 const AUTO_LOGS_FILE = path.join(__dirname, "scripts", "auto_logs.json");
-const MAX_VARIANTS_PER_GUN = 5;
+const MAX_VARIANTS_PER_GUN = 15;
 const DEFAULT_PRESET_GUNS = ["M4A1", "AKM", "SCAR-L", "AUG", "MP7", "AWM", "M14"];
 const DEFAULT_PROVIDER_ID = "builtin-default";
 const BUILTIN_PROVIDER = {
@@ -77,6 +77,9 @@ type CollectConcurrencySettings = {
 type AutoCollectSettings = {
   enabled: boolean;
   model: string;
+  intervalHours: number;
+  creatorIds: string[];
+  lastRunTime?: number;
 };
 
 type CollectSettings = {
@@ -350,6 +353,9 @@ function getDefaultCollectSettings(): CollectSettings {
     autoCollect: {
       enabled: false,
       model: DEFAULT_MODEL_VALUE,
+      intervalHours: 1,
+      creatorIds: [],
+      lastRunTime: 0,
     }
   };
 }
@@ -381,6 +387,9 @@ function readCollectSettings(): CollectSettings {
       autoCollect: {
         enabled: Boolean(parsed?.autoCollect?.enabled),
         model: String(parsed?.autoCollect?.model || defaultModel),
+        intervalHours: Number(parsed?.autoCollect?.intervalHours) || 1,
+        creatorIds: Array.isArray(parsed?.autoCollect?.creatorIds) ? parsed.autoCollect.creatorIds : [],
+        lastRunTime: Number(parsed?.autoCollect?.lastRunTime) || 0,
       }
     };
   } catch {
@@ -404,6 +413,9 @@ function writeCollectSettings(settings: CollectSettings) {
     autoCollect: {
       enabled: Boolean(settings.autoCollect?.enabled),
       model: String(settings.autoCollect?.model || settings.defaultModel),
+      intervalHours: Number(settings.autoCollect?.intervalHours) || 1,
+      creatorIds: Array.isArray(settings.autoCollect?.creatorIds) ? settings.autoCollect.creatorIds : [],
+      lastRunTime: Number(settings.autoCollect?.lastRunTime) || 0,
     }
   };
 
@@ -949,7 +961,13 @@ async function startServer() {
   app.get("/api/collect/auto", (req, res) => {
     const settings = readCollectSettings();
     const logs = readAutoLogs();
-    res.json({ enabled: settings.autoCollect.enabled, model: settings.autoCollect.model, logs });
+    res.json({ 
+      enabled: settings.autoCollect.enabled, 
+      model: settings.autoCollect.model, 
+      intervalHours: settings.autoCollect.intervalHours,
+      creatorIds: settings.autoCollect.creatorIds,
+      logs 
+    });
   });
 
   app.post("/api/collect/auto", (req, res) => {
@@ -958,6 +976,9 @@ async function startServer() {
       settings.autoCollect = {
         enabled: Boolean(req.body.enabled),
         model: String(req.body.model || settings.autoCollect.model),
+        intervalHours: Number(req.body.intervalHours) || 1,
+        creatorIds: Array.isArray(req.body.creatorIds) ? req.body.creatorIds : [],
+        lastRunTime: settings.autoCollect.lastRunTime || 0,
       };
       writeCollectSettings(settings);
       res.json({ success: true });
@@ -987,15 +1008,25 @@ async function startServer() {
   setInterval(async () => {
     const settings = readCollectSettings();
     if (!settings.autoCollect.enabled) return;
+    
+    const now = Date.now();
+    const lastRun = settings.autoCollect.lastRunTime || 0;
+    const intervalMs = (settings.autoCollect.intervalHours || 1) * 60 * 60 * 1000;
+    if (now - lastRun < intervalMs) return;
+
+    settings.autoCollect.lastRunTime = now;
+    writeCollectSettings(settings);
+
     try {
       const ensuredModel = ensureModel(settings.autoCollect.model);
       if (!ensuredModel.provider || !ensuredModel.model) {
         addAutoLog("自动采集失败：未配置有效模型", false);
         return;
       }
+      const targetCreators = settings.autoCollect.creatorIds.length > 0 ? settings.autoCollect.creatorIds : CREATOR_OPTIONS.map(c => c.id);
       const args = [
         "--mode", "auto",
-        "--creator-ids", "52717408",
+        "--creator-ids", targetCreators.join(","),
         "--model", ensuredModel.model,
         "--base-url", ensuredModel.provider.baseUrl,
         "--api-key", ensuredModel.provider.apiKey,
@@ -1015,7 +1046,7 @@ async function startServer() {
     } catch(e) {
       addAutoLog(`自动采集异常: ${e instanceof Error ? e.message : String(e)}`, false);
     }
-  }, 1000 * 60 * 60);
+  }, 60000);
 }
 
 startServer();

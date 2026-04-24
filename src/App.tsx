@@ -17,6 +17,7 @@ import { GunCard } from './components/GunCard';
 import { AddGunModal } from './components/AddGunModal';
 import { CollectModal } from './components/CollectModal';
 import { useToast } from './components/useToast';
+import { cn } from './utils';
 
 import { CSS } from '@dnd-kit/utilities';
 import {
@@ -225,7 +226,14 @@ export default function App() {
   const [presetGunInput, setPresetGunInput] = useState('');
   const [modelTestResult, setModelTestResult] = useState<ModelTestResult | null>(null);
   const searchPollRef = useRef<number | null>(null);
-  const [autoCollectConfig, setAutoConfig] = useState({ enabled: false, model: '', logs: [] as any[] });
+
+  const [autoCollectConfig, setAutoConfig] = useState({ 
+    enabled: false, 
+    model: '', 
+    intervalHours: 1,
+    creatorIds: [] as string[],
+    logs: [] as any[] 
+  });
   const [isSavingAuto, setIsSavingAuto] = useState(false);
   const { toast, showToast } = useToast();
 
@@ -279,6 +287,8 @@ export default function App() {
         .then(data => setAutoConfig({
            enabled: Boolean(data.enabled),
            model: data.model || '',
+           intervalHours: Number(data.intervalHours) || 1,
+           creatorIds: Array.isArray(data.creatorIds) ? data.creatorIds : [],
            logs: Array.isArray(data.logs) ? data.logs : []
         }));
     }
@@ -800,7 +810,7 @@ export default function App() {
       setCollectSearchResult(EMPTY_SEARCH);
       setSelectedVideoIds([]);
       setModelTestResult(null);
-      setIsCollectModalOpen(false);
+      setActiveModal('none');
       showToast('已自动加入网站');
     } catch (e) {
       console.error('写入失败:', e);
@@ -881,10 +891,10 @@ export default function App() {
 
           <div className="mb-6 pl-1 mt-2">
             <h1 className="text-3xl md:text-4xl font-black tracking-tighter text-zinc-900 mb-2">
-              <span className="bg-clip-text text-transparent bg-gradient-to-br from-zinc-800 to-zinc-500">修脚时代</span> <span className="text-zinc-300 font-bold tracking-normal opacity-50 text-2xl">/ Base</span>
+              <span className="bg-clip-text text-transparent bg-gradient-to-br from-zinc-800 to-zinc-500">马坤时代</span> <span className="text-zinc-300 font-bold tracking-normal opacity-50 text-2xl">/ Base</span>
             </h1>
             <p className="text-[13px] text-zinc-500 font-medium max-w-lg">
-              结构化管理中心。基于顶级网页架构运行。
+              专注修脚。基于顶级重回修脚时代架构运行。
             </p>
           </div>
 
@@ -1006,11 +1016,11 @@ export default function App() {
             <div className="flex justify-between items-center">
                <div>
                  <h3 className="text-xl font-black text-zinc-900">自动采集设置</h3>
-                 <p className="text-[12px] font-medium text-zinc-500 mt-1">每小时自动拉取 Always聪聪 最新视频并提取</p>
+                 <p className="text-[12px] font-medium text-zinc-500 mt-1">后台智能比对记录，自动过滤重复视频并加入新卡片</p>
                </div>
                <button onClick={() => setActiveModal('none')} className="p-2 bg-zinc-100 rounded-full hover:bg-zinc-200"><X size={16} strokeWidth={2.5}/></button>
             </div>
-            
+
             <div className="flex items-center justify-between p-4 bg-zinc-50 rounded-2xl border border-zinc-200 mt-2">
               <span className="font-bold text-[13px]">开启后台定时采集</span>
               <label className="relative inline-flex items-center cursor-pointer">
@@ -1020,6 +1030,39 @@ export default function App() {
                 }} />
                 <div className="w-11 h-6 bg-zinc-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
               </label>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-[12px] font-bold uppercase tracking-widest text-zinc-500">监听博主 (多选)</label>
+              <div className="flex flex-wrap gap-2">
+                {collectMeta.creators.map(creator => {
+                  const active = (autoCollectConfig.creatorIds || []).includes(creator.id);
+                  return (
+                    <button
+                      key={creator.id}
+                      onClick={() => setAutoConfig(p => ({
+                        ...p,
+                        creatorIds: active ? (p.creatorIds || []).filter(id => id !== creator.id) : [...(p.creatorIds || []), creator.id]
+                      }))}
+                      className={cn("px-3 py-1.5 rounded-xl border text-[12px] font-bold transition", active ? "bg-emerald-50 border-emerald-500 text-emerald-700" : "bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300")}
+                    >
+                      {creator.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-[12px] font-bold uppercase tracking-widest text-zinc-500">执行频率</label>
+              <select value={autoCollectConfig.intervalHours || 1} onChange={e => setAutoConfig(p => ({...p, intervalHours: Number(e.target.value)}))} className="w-full border border-zinc-200 bg-white py-2.5 px-3 rounded-xl text-[13px] font-bold shadow-sm focus:ring-4 focus:ring-zinc-900/10 outline-none">
+                <option value={1 / 60}>每 1 分钟检测一次 (测试专用)</option>
+                <option value={1}>每 1 小时检测一次</option>
+                <option value={2}>每 2 小时检测一次</option>
+                <option value={4}>每 4 小时检测一次</option>
+                <option value={12}>每 12 小时检测一次</option>
+                <option value={24}>每 24 小时检测一次</option>
+              </select>
             </div>
 
             <div className="flex flex-col gap-2">
@@ -1043,7 +1086,12 @@ export default function App() {
                   await fetch('/api/collect/auto', {
                      method: 'POST',
                      headers: { 'Content-Type': 'application/json' },
-                     body: JSON.stringify({ enabled: autoCollectConfig.enabled, model: autoCollectConfig.model })
+                     body: JSON.stringify({ 
+                       enabled: autoCollectConfig.enabled, 
+                       model: autoCollectConfig.model,
+                       intervalHours: autoCollectConfig.intervalHours || 1,
+                       creatorIds: autoCollectConfig.creatorIds || []
+                     })
                   });
                   showToast('自动采集配置已保存');
                 } catch(e) {
@@ -1061,12 +1109,12 @@ export default function App() {
             <div className="mt-2 flex flex-col gap-2">
               <h4 className="text-[12px] font-bold uppercase tracking-widest text-zinc-500">运行日志 (仅存最近100条)</h4>
               <div className="bg-zinc-900 text-zinc-300 font-mono text-[11px] p-4 rounded-2xl h-48 overflow-y-auto flex flex-col gap-2 shadow-inner">
-                {autoCollectConfig.logs.length === 0 ? (
+                {(autoCollectConfig.logs || []).length === 0 ? (
                    <span className="opacity-50">暂无日志...</span>
                 ) : (
-                   autoCollectConfig.logs.map((log, i) => (
-                     <div key={i} className={log.success ? "text-emerald-400" : "text-red-400"}>
-                       <span className="text-zinc-500">[{log.time}]</span> {log.message}
+                   (autoCollectConfig.logs || []).map((log, i) => (
+                     <div key={i} className={log?.success ? "text-emerald-400" : "text-red-400"}>
+                       <span className="text-zinc-500">[{log?.time}]</span> {log?.message}
                      </div>
                    ))
                 )}

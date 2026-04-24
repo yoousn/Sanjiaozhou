@@ -31,6 +31,19 @@ export function VariantItem({
   };
   const badgeColor = tierColors[variant.tier?.toUpperCase()] || 'bg-zinc-800 text-white border-zinc-900';
 
+  // 智能从卡片 ID (v_时间戳_随机数) 中反向提取出这把枪加入网站的日期
+  const getAddedDate = (id: string, fallback: string) => {
+    try {
+      const ts = parseInt(id.split('_')[1], 10);
+      if (!isNaN(ts) && ts > 1600000000000) {
+        const d = new Date(ts);
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      }
+    } catch (e) {}
+    return fallback;
+  };
+  const addedDate = getAddedDate(variant.id, variant.date);
+
   if (isEditing) {
     return (
       <div className="flex flex-col gap-2 p-2.5 rounded-xl bg-zinc-50 border-2 border-emerald-500/20 shadow-sm transition group/edit">
@@ -97,9 +110,9 @@ export function VariantItem({
               已锁定
             </div>
           )}
-          <div className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest bg-white border border-zinc-200 px-1.5 py-0.5 rounded-full whitespace-nowrap leading-none">
-            {variant.date}
-          </div>
+            <div className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest bg-white border border-zinc-200 px-1.5 py-0.5 rounded-full whitespace-nowrap leading-none">
+              {addedDate}
+            </div>
         </div>
       </div>
 
@@ -133,7 +146,7 @@ export function VariantItem({
         </div>
 
         <div className="text-[10px] text-zinc-400 font-medium px-1 flex items-center justify-between gap-2">
-          <span className="truncate">来源: {variant.author || '未知来源'}</span>
+          <span className="truncate">来源: {variant.author || '未知来源'} · 视频日期: {variant.date || '未知日期'}</span>
           {variant.sourceUrl && (
             <a href={variant.sourceUrl} target="_blank" rel="noreferrer" className="shrink-0 inline-flex items-center gap-1 text-zinc-500 hover:text-zinc-900 transition-colors">
               <ExternalLink size={11} strokeWidth={2.5} />

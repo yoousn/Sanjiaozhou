@@ -20,14 +20,15 @@ SCRIPTS_DIR = ROOT / "scripts"
 OUTPUT_FILE = SCRIPTS_DIR / "bilibili_latest_videos.json"
 AI_OUTPUT_FILE = SCRIPTS_DIR / "bilibili_ai_builds_test.json"
 COOKIES_FILE = SCRIPTS_DIR / "cookies.txt"
+AUTO_PROCESSED_VIDEOS_FILE = SCRIPTS_DIR / "auto_processed_videos.json"
 HEADER_STRING_FILES = sorted(SCRIPTS_DIR.glob("*header_string*.txt"))
 AI_BASE_URL = os.getenv("OPENAI_BASE_URL", "https://api.yousn.me/v1")
 AI_API_KEY = os.getenv("OPENAI_API_KEY", "sk-88AqJeSQhfrmVTDcSAOTZDb6NqEbG3X8C3na3WqolNdasdpb")
 DEFAULT_AI_MODEL = os.getenv("OPENAI_MODEL", "openai/gpt-oss-120b")
 WRITE_DEBUG_FILES = os.getenv("COLLECT_WRITE_DEBUG_FILES", "false").lower() == "true"
 DEFAULT_TARGET_GUNS = ["M14", "M250"]
-ALLOWED_MODES = ["search", "preview", "test-model", "auto"]
-CATEGORY_VALUES = {"ar", "smg", "sr", "dmr", "sg", "lmg", "pistol", "other"}
+ALLOWED_MODES = ["search", "preview", "test-model", "auto", "fetch-models"]
+CATEGORY_VALUES = {"ar", "br", "smg", "lmg", "dmr", "sr", "pistol", "other"}
 YT_DLP_SOCKET_TIMEOUT = "45"
 LOG_PREFIX = "__COLLECT_LOG__"
 
@@ -185,13 +186,19 @@ def build_prompt(video: dict) -> str:
 你是一个“三角洲行动改枪码提取器”。
 请只根据下面的视频标题和视频简介，提取所有明确出现的改枪配置。
 
+重要过滤规则：
+- 只提取真实的枪械（如步枪、冲锋枪、狙击枪等）。
+- 绝对不要提取近战武器/冷兵器（如“坠星者”、“露营军刀”等）。
+- 绝对不要提取大范围的泛指攻略（如“全系列改法攻略”、“全武器”）。
+- 如果该视频的主题是近战武器或泛指攻略，或者没有具体的枪械改法，请直接返回空数组 []。
+
 提取规则：
 1. 只提取文本里明确出现的枪名、改法名、价格、评级、改枪码。
 2. 改枪码通常是类似 `35-6JPJJF80B0GKDDOTE9T6Q`、`A-6JP8V18049H3TLFDHMKHO` 这样的可复制字符串。
 3. 同一把枪可以有多个配置，每个配置单独返回一条。
 4. 不要编造不存在的信息；没有就留空字符串。
-5. category 只能从这些值里选一个：ar, smg, sr, dmr, sg, lmg, pistol, other。
-6. “price”字段请精准提取金额数字（如“23万”、“35W”），“tier”字段请精准提取评级（如 SSS, SS, S, A, B, C, D 或是 T0, T1, T2, T3）。若无则留空。
+5. category 只能从这些值里选一个：ar, br, smg, lmg, dmr, sr, pistol, other。
+6. “price”字段请精准提取金额数字（如“23万”、“35W”），“tier”字段请精准提取评级（包含 SSS, SS, S+, S, A+, A, B+, B, C+, C, D 或是 T0, T1, T2, T3）。若无则留空。
 7. 返回内容必须是 JSON 数组，不要 markdown，不要解释。
 
 视频标题：
@@ -205,7 +212,7 @@ def build_prompt(video: dict) -> str:
   {{
     "gunName": "M4A1",
     "category": "ar",
-    "tier": "S",
+    "tier": "S+",
     "price": "35万",
     "buildType": "高改暗杀版",
     "code": "35-6JPJJF80B0GKDDOTE9T6Q"
@@ -214,22 +221,26 @@ def build_prompt(video: dict) -> str:
 """.strip()
 
 
-def call_ai(prompt: str, model: str, base_url: str, api_key: str, timeout: int = 120) -> str:
+def call_ai(prompt: str, model: str, base_url: str, api_key: str, timeout: int = 120, max_tokens: int = 0) -> str:
     url = f"{base_url.rstrip('/')}/chat/completions"
     max_retries = 3
     for attempt in range(max_retries):
         try:
+            payload = {
+                "model": model,
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.1,
+            }
+            if max_tokens > 0:
+                payload["max_tokens"] = max_tokens
+
             response = requests.post(
                 url,
                 headers={
                     "Authorization": f"Bearer {api_key}",
                     "Content-Type": "application/json",
                 },
-                json={
-                    "model": model,
-                    "messages": [{"role": "user", "content": prompt}],
-                    "temperature": 0.1,
-                },
+                json=payload,
                 timeout=timeout,
             )
         except Exception as exc:
@@ -242,7 +253,14 @@ def call_ai(prompt: str, model: str, base_url: str, api_key: str, timeout: int =
             if response.status_code in [502, 503, 504] and attempt < max_retries - 1:
                 time.sleep(3)
                 continue
-            raise RuntimeError(f"接口请求失败 (HTTP {response.status_code}): {response.text}")
+            
+            error_detail = response.text
+            if response.status_code == 401:
+                raise RuntimeError(f"认证失败 (401): 无效的 API Key 或 Token，请检查填写是否正确。详细信息: {error_detail}")
+            elif response.status_code == 504:
+                raise RuntimeError(f"网关超时 (504): 上游服务或模型响应过慢。详细信息: {error_detail}")
+            else:
+                raise RuntimeError(f"接口请求失败 (HTTP {response.status_code}): {error_detail}")
         
         break
 
@@ -346,7 +364,7 @@ def build_groups_from_videos(videos: list[dict], target_guns: list[str], model: 
 
     result_groups = []
     for group in groups_by_name.values():
-        group["variants"] = group["variants"][:5]
+        group["variants"] = group["variants"][:15]
         result_groups.append(group)
 
     return result_groups, extraction_logs, errors
@@ -490,21 +508,46 @@ def preview_mode(target_guns: list[str], creator_ids: list[str], video_ids: list
     return result
 
 
+def load_processed_videos() -> set[str]:
+    if AUTO_PROCESSED_VIDEOS_FILE.exists():
+        try:
+            return set(json.loads(AUTO_PROCESSED_VIDEOS_FILE.read_text(encoding="utf-8")))
+        except Exception:
+            pass
+    return set()
+
+
+def save_processed_videos(processed: set[str]) -> None:
+    AUTO_PROCESSED_VIDEOS_FILE.write_text(json.dumps(list(processed), ensure_ascii=False), encoding="utf-8")
+
+
 def auto_mode(creator_ids: list[str], model: str, base_url: str, api_key: str) -> dict:
-    sources, errors, cookie_source, logs = fetch_creator_videos(creator_ids, max_videos=1, concurrent=False)
+    processed_vids = load_processed_videos()
+    sources, errors, cookie_source, logs = fetch_creator_videos(creator_ids, max_videos=5, concurrent=False)
     videos = []
+    
     for source in sources:
-        videos.extend(source.get("videos", []))
+        for video in source.get("videos", []):
+            vid = video.get("bvid") or video.get("id")
+            if vid and vid not in processed_vids:
+                videos.append(video)
 
     if not videos:
         return {
             "success": False,
             "groups": [],
             "logs": logs,
-            "errors": [str(item.get("error") or "") for item in errors if item.get("error")] or ["未获取到博主视频"]
+            "errors": [str(item.get("error") or "") for item in errors if item.get("error")] or ["未发现新的待采集视频"]
         }
 
     groups, ai_logs, ai_errors = build_groups_from_videos(videos, [], model, base_url, api_key, False)
+    
+    for video in videos:
+        vid = video.get("bvid") or video.get("id")
+        if vid:
+            processed_vids.add(vid)
+    save_processed_videos(processed_vids)
+
     return {
         "success": len(groups) > 0,
         "groups": groups,
@@ -512,16 +555,39 @@ def auto_mode(creator_ids: list[str], model: str, base_url: str, api_key: str) -
         "errors": [str(item.get("error") or "") for item in errors if item.get("error")] + ai_errors
     }
 
+def fetch_models_mode(base_url: str, api_key: str) -> dict:
+    started_at = time.perf_counter()
+    url = f"{base_url.rstrip('/')}/models"
+    try:
+        response = requests.get(url, headers={"Authorization": f"Bearer {api_key}"}, timeout=10)
+        latency_ms = int((time.perf_counter() - started_at) * 1000)
+        
+        if not response.ok:
+            error_detail = response.text
+            if response.status_code == 401:
+                error_msg = f"认证失败 (401): 无效的 API Key 或 Token，请检查填写是否正确。"
+            else:
+                error_msg = f"获取模型列表失败 (HTTP {response.status_code}): {error_detail}"
+            return {"success": False, "latencyMs": latency_ms, "error": error_msg}
+            
+        data = response.json()
+        models = [m.get("id") for m in data.get("data", []) if m.get("id")]
+        return {"success": True, "latencyMs": latency_ms, "models": models, "error": None}
+    except Exception as exc:
+        latency_ms = int((time.perf_counter() - started_at) * 1000)
+        return {"success": False, "latencyMs": latency_ms, "error": f"网络请求错误: {exc}"}
+
 def test_model_mode(model: str, base_url: str, api_key: str) -> dict:
     started_at = time.perf_counter()
     try:
-        content = call_ai('请只返回{"ok":true}', model, base_url, api_key, timeout=15)
+        # 通过要求简短回复并限制 max_tokens=2，大幅提高测试模型的响应速度，避免 504
+        content = call_ai('回复"ok"', model, base_url, api_key, timeout=15, max_tokens=2)
         latency_ms = int((time.perf_counter() - started_at) * 1000)
         return {
             "model": model,
             "success": bool(content.strip()),
             "latencyMs": latency_ms,
-            "error": None if content.strip() else "模型返回为空",
+            "error": None if content.strip() else "模型返回为空 (可能是 API 异常)",
         }
     except Exception as exc:
         latency_ms = int((time.perf_counter() - started_at) * 1000)
@@ -547,6 +613,8 @@ def main():
         result = preview_mode(target_guns, creator_ids, video_ids, args.model, args.base_url, args.api_key, args.max_videos, selected_videos, concurrent)
     elif args.mode == "auto":
         result = auto_mode(creator_ids, args.model, args.base_url, args.api_key)
+    elif args.mode == "fetch-models":
+        result = fetch_models_mode(args.base_url, args.api_key)
     else:
         result = test_model_mode(args.model, args.base_url, args.api_key)
 

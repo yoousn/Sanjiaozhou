@@ -197,7 +197,12 @@ export function GunCard({
                   onBlur={e => { if(e.target.value !== group.category) onUpdateGroup(group.id, 'category', e.target.value) }}
                 >
                   <option value="ar">突击步枪 (AR)</option>
+                  <option value="br">战斗步枪 (BR)</option>
                   <option value="smg">冲锋枪 (SMG)</option>
+                  <option value="lmg">轻机枪 (LMG)</option>
+                  <option value="dmr">精准射手步枪 (DMR)</option>
+                  <option value="sr">狙击步枪 (SR)</option>
+                  <option value="pistol">手枪 (Pistol)</option>
                </select>
             </div>
           </div>
@@ -224,53 +229,53 @@ export function GunCard({
             items={displayedVariants.map(v => v.id)}
             strategy={verticalListSortingStrategy}
           >
-            {displayedVariants.map((v) => (
-              <SortableVariant
-                key={v.id}
-                variant={v}
-                isEditing={isEditing}
-                onUpdateVariant={(vid, field, val) => onUpdateVariant(group.id, vid, field, val)}
-                onDeleteVariant={(vid) => onDeleteVariant(group.id, vid)}
-                copiedId={copiedId}
-                handleCopy={handleCopy}
-              />
-            ))}
+            <div className="flex flex-col gap-2 h-[330px] overflow-y-auto pr-1">
+              {displayedVariants.map((v) => (
+                <SortableVariant
+                  key={v.id}
+                  variant={v}
+                  isEditing={isEditing}
+                  onUpdateVariant={(vid, field, val) => onUpdateVariant(group.id, vid, field, val)}
+                  onDeleteVariant={(vid) => onDeleteVariant(group.id, vid)}
+                  copiedId={copiedId}
+                  handleCopy={handleCopy}
+                />
+              ))}
+            </div>
           </SortableContext>
         </DndContext>
 
-        {totalPages > 1 && (
-          <div className="flex items-center justify-center gap-3 mt-1 py-1">
-            <button
-              type="button"
-              onClick={() => setPage(p => Math.max(0, p - 1))}
-              disabled={page === 0}
-              className="text-[12px] font-bold text-zinc-500 hover:text-zinc-900 disabled:opacity-30 disabled:cursor-not-allowed transition"
-            >
-              上一页
-            </button>
-            <div className="flex items-center gap-1">
-              {Array.from({ length: totalPages }).map((_, i) => (
-                <div key={i} className={cn("w-1.5 h-1.5 rounded-full transition-colors", page === i ? "bg-zinc-800" : "bg-zinc-200")} />
-              ))}
-            </div>
-            <button
-              type="button"
-              onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
-              disabled={page === totalPages - 1}
-              className="text-[12px] font-bold text-zinc-500 hover:text-zinc-900 disabled:opacity-30 disabled:cursor-not-allowed transition"
-            >
-              下一页
-            </button>
+        <div className={cn("flex items-center justify-center gap-3 mt-1 py-1 h-6", totalPages <= 1 && "invisible")}>
+          <button
+            type="button"
+            onClick={() => setPage(p => Math.max(0, p - 1))}
+            disabled={page === 0}
+            className="text-[12px] font-bold text-zinc-500 hover:text-zinc-900 disabled:opacity-30 disabled:cursor-not-allowed transition"
+          >
+            上一页
+          </button>
+          <div className="flex items-center gap-1">
+            {Array.from({ length: totalPages }).map((_, i) => (
+              <div key={i} className={cn("w-1.5 h-1.5 rounded-full transition-colors", page === i ? "bg-zinc-800" : "bg-zinc-200")} />
+            ))}
           </div>
-        )}
+          <button
+            type="button"
+            onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+            disabled={page === totalPages - 1}
+            className="text-[12px] font-bold text-zinc-500 hover:text-zinc-900 disabled:opacity-30 disabled:cursor-not-allowed transition"
+          >
+            下一页
+          </button>
+        </div>
 
-        {isEditing && group.variants.length < 5 && (
+        {isEditing && group.variants.length < 15 && (
           <button
             onClick={() => onAddVariant(group.id)}
             className="mt-1 w-full flex items-center justify-center gap-1.5 p-2 rounded-xl border-2 border-dashed border-emerald-500/30 text-emerald-600 bg-emerald-50/50 hover:bg-emerald-100/80 hover:border-emerald-500/60 transition duration-200 active:scale-95 font-bold text-[13px] outline-none focus:ring-4 focus:ring-emerald-500/10"
           >
             <Plus size={14} strokeWidth={2.5}/>
-            追加配置 ({group.variants.length}/5)
+            追加配置 ({group.variants.length}/15)
           </button>
         )}
       </div>

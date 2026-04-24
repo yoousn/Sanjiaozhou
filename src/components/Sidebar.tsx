@@ -6,7 +6,12 @@ export function Sidebar({ activeTab, setActiveTab }: { activeTab: string, setAct
   const navItems = [
     { id: 'home', icon: Home, label: '全部体系' },
     { id: 'ar', icon: Crosshair, label: '突击步枪' },
-    { id: 'smg', icon: Target, label: '冲锋枪' }
+    { id: 'br', icon: Crosshair, label: '战斗步枪' },
+    { id: 'smg', icon: Target, label: '冲锋枪' },
+    { id: 'lmg', icon: Target, label: '轻机枪' },
+    { id: 'dmr', icon: Crosshair, label: '精准射手步枪' },
+    { id: 'sr', icon: Target, label: '狙击步枪' },
+    { id: 'pistol', icon: Target, label: '手枪' }
   ];
 
   return (
@@ -14,7 +19,7 @@ export function Sidebar({ activeTab, setActiveTab }: { activeTab: string, setAct
       <nav className="hidden md:flex flex-col w-20 lg:w-56 h-screen fixed left-0 top-0 border-r border-zinc-200/50 bg-[#F8F9FA] z-40 p-4 pt-8 shadow-[1px_0_20px_rgba(0,0,0,0.02)]">
         <div className="flex items-center gap-3 px-2 mb-8 w-full hover:opacity-80 transition-opacity cursor-pointer">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-zinc-900 to-zinc-700 flex items-center justify-center text-white shrink-0 shadow-sm">
-            <span className="font-extrabold text-sm tracking-tighter">修</span>
+            <span className="font-extrabold text-sm tracking-tighter">🐴</span>
           </div>
           <div className="hidden lg:flex flex-col">
             <span className="font-black text-[14px] tracking-tight text-zinc-900 leading-tight">Arsenal</span>

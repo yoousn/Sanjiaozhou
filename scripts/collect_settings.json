@@ -26,7 +26,13 @@
     "applyEnabled": true
   },
   "autoCollect": {
-    "enabled": false,
-    "model": "builtin-default::openai/gpt-oss-120b"
+    "enabled": true,
+    "model": "builtin-default::openai/gpt-oss-20b",
+    "intervalHours": 0.016666666666666666,
+    "creatorIds": [
+      "5995562",
+      "2025603"
+    ],
+    "lastRunTime": 1777021815745
   }
 }

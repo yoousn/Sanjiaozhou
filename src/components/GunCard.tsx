@@ -189,7 +189,8 @@ export function GunCard({
                 </div>
               )}
               <input
-                className={cn(inputClasses, "text-[15px] py-1.5 font-black text-zinc-900 w-full bg-white border border-zinc-200 shadow-sm")}
+                className={cn(inputClasses, "text-[15px] py-1.5 font-black w-full bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-700 shadow-sm")}
+                style={{ color: 'var(--user-gun-color, currentColor)' }}
                 defaultValue={group.name}
                 onBlur={e => { if(e.target.value !== group.name) onUpdateGroup(group.id, 'name', e.target.value) }}
                 placeholder="枪械名称..."
@@ -242,8 +243,11 @@ export function GunCard({
           </div>
         ) : (
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-black text-zinc-900 tracking-tight flex items-center gap-2">
-          <span className="w-1.5 h-4 bg-zinc-900 dark:bg-zinc-100 rounded-full" />
+            <h3 
+              className="text-lg font-black tracking-tight flex items-center gap-2"
+              style={{ color: 'var(--user-gun-color, currentColor)' }}
+            >
+              <span className="w-1.5 h-4 rounded-full" style={{ backgroundColor: 'var(--user-gun-color, currentColor)' }} />
               {group.name}
             </h3>
             <div className="flex items-center gap-1.5">

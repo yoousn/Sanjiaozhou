@@ -4,7 +4,8 @@
     "AKM",
     "SCAR-L",
     "AUG",
-    "MP7"
+    "MP7",
+    "M14"
   ],
   "providers": [
     {
@@ -28,11 +29,10 @@
   "autoCollect": {
     "enabled": true,
     "model": "builtin-default::openai/gpt-oss-20b",
-    "intervalHours": 0.016666666666666666,
+    "intervalHours": 1,
     "creatorIds": [
-      "5995562",
-      "2025603"
+      "52717408"
     ],
-    "lastRunTime": 1777023793770
+    "lastRunTime": 1777032984572
   }
 }

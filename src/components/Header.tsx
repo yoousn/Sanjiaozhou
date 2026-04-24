@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Search, Edit3, Plus, X, Save, ArrowUpDown, Radio, Moon, Sun } from 'lucide-react';
 import { cn, inputClasses } from '../utils';
 
@@ -12,7 +12,10 @@ export function Header({
   sortBy,
   onSortChange,
   isDarkMode,
-  onToggleDarkMode
+  onToggleDarkMode,
+  searchQuery,
+  onSearchChange,
+  searchSuggestions
 }: {
   isEditing: boolean,
   onEditStart: () => void,
@@ -23,19 +26,55 @@ export function Header({
   sortBy: string,
   onSortChange: (sort: string) => void,
   isDarkMode: boolean,
-  onToggleDarkMode: () => void
+  onToggleDarkMode: () => void,
+  searchQuery: string,
+  onSearchChange: (q: string) => void,
+  searchSuggestions: string[]
 }) {
+  const [isFocused, setIsFocused] = useState(false);
+
+  const filteredSuggestions = searchSuggestions
+    .filter(s => s.toLowerCase().includes(searchQuery.toLowerCase()) && s.toLowerCase() !== searchQuery.toLowerCase())
+    .slice(0, 6);
+
   return (
     <header className="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 relative z-30">
-      <div className="relative w-full max-w-sm group">
+      <div className="relative w-full max-w-sm group" onBlur={() => setTimeout(() => setIsFocused(false), 200)}>
         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-zinc-400 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors">
           <Search size={18} strokeWidth={2.5}/>
         </div>
         <input
           type="text"
+          value={searchQuery}
+          onChange={e => onSearchChange(e.target.value)}
+          onFocus={() => setIsFocused(true)}
           placeholder="搜索枪械配置..."
           className="w-full pl-11 pr-12 py-3 rounded-2xl bg-white dark:bg-[#121214] border border-zinc-200/80 dark:border-zinc-800 shadow-[0_2px_8px_rgba(0,0,0,0.04)] text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-4 focus:ring-zinc-900/10 dark:focus:ring-white/10 focus:border-zinc-300 dark:focus:border-zinc-600 transition duration-200 text-sm font-bold"
         />
+        {searchQuery && (
+          <button
+            onClick={() => onSearchChange('')}
+            className="absolute inset-y-0 right-0 pr-4 flex items-center text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 outline-none"
+            title="清除搜索"
+          >
+            <X size={16} strokeWidth={2.5} />
+          </button>
+        )}
+
+        {isFocused && searchQuery && filteredSuggestions.length > 0 && (
+          <div className="absolute top-full left-0 w-full mt-2 py-2 bg-white dark:bg-[#1c1c1f] border border-zinc-200/80 dark:border-zinc-800 rounded-xl shadow-xl overflow-hidden z-50 animate-fade-in">
+            {filteredSuggestions.map(s => (
+              <button
+                key={s}
+                onClick={() => onSearchChange(s)}
+                className="w-full flex items-center gap-2.5 px-4 py-2.5 hover:bg-zinc-50 dark:hover:bg-white/5 text-sm font-bold text-zinc-700 dark:text-zinc-300 transition-colors outline-none"
+              >
+                <Search size={14} className="text-zinc-400 shrink-0" strokeWidth={3} />
+                <span className="truncate">{s}</span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="flex items-center gap-2 self-end sm:self-auto flex-wrap justify-end">

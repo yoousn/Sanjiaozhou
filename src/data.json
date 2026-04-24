@@ -1,35 +1,5 @@
 [
   {
-    "id": "g_9_509",
-    "name": "AKM",
-    "category": "ar",
-    "variants": [
-      {
-        "id": "v_1777020324420_87916",
-        "tier": "",
-        "price": "23万",
-        "buildType": "性价比版",
-        "code": "6JJ97MC06J0496PHE5FDQ",
-        "date": "2026-04-12",
-        "author": "初水改枪-三角洲行动",
-        "sourceUrl": "https://www.bilibili.com/video/BV1JTDQBTE5C",
-        "locked": false
-      },
-      {
-        "id": "v_1777020324420_85942",
-        "tier": "",
-        "price": "38万",
-        "buildType": "满改3倍",
-        "code": "6JMQ5MC06J0496PHE5FDQ",
-        "date": "2026-04-12",
-        "author": "初水改枪-三角洲行动",
-        "sourceUrl": "https://www.bilibili.com/video/BV1JTDQBTE5C",
-        "locked": false
-      }
-    ],
-    "pinned": false
-  },
-  {
     "id": "g_8_64724",
     "name": "SG552",
     "category": "sg",
@@ -76,6 +46,36 @@
         "date": "2026-04-16",
         "author": "初水改枪-三角洲行动",
         "sourceUrl": "https://www.bilibili.com/video/BV1Nzd8BeEXV",
+        "locked": false
+      }
+    ],
+    "pinned": false
+  },
+  {
+    "id": "g_9_509",
+    "name": "AKM",
+    "category": "ar",
+    "variants": [
+      {
+        "id": "v_1777020324420_87916",
+        "tier": "",
+        "price": "23万",
+        "buildType": "性价比版",
+        "code": "6JJ97MC06J0496PHE5FDQ",
+        "date": "2026-04-12",
+        "author": "初水改枪-三角洲行动",
+        "sourceUrl": "https://www.bilibili.com/video/BV1JTDQBTE5C",
+        "locked": false
+      },
+      {
+        "id": "v_1777020324420_85942",
+        "tier": "",
+        "price": "38万",
+        "buildType": "满改3倍",
+        "code": "6JMQ5MC06J0496PHE5FDQ",
+        "date": "2026-04-12",
+        "author": "初水改枪-三角洲行动",
+        "sourceUrl": "https://www.bilibili.com/video/BV1JTDQBTE5C",
         "locked": false
       }
     ],

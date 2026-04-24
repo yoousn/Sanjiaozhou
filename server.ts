@@ -746,6 +746,12 @@ async function startServer() {
   const app = express();
   app.use(express.json());
 
+  // 微信申诉域名所有权验证专用路由
+  app.get("/23366171d0bc95587ccd61d43e8d880b.txt", (req, res) => {
+    res.type("text/plain");
+    res.send("adec247f353c1fdff27340b8416b164e8e7ac8c9");
+  });
+
   app.get("/api/builds", (req, res) => {
     try {
       res.json(readBuilds());

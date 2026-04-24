@@ -205,7 +205,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('home');
   const [isEditing, setIsEditing] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [activeModal, setActiveModal] = useState<'none' | 'mode-select' | 'collect' | 'auto-collect'>('none');
+  const [activeModal, setActiveModal] = useState<'none' | 'mode-select' | 'collect' | 'auto-collect' | 'settings'>('none');
   const [isSearchingCollect, setIsSearchingCollect] = useState(false);
   const [isPreviewingCollect, setIsPreviewingCollect] = useState(false);
   const [isTestingModel, setIsTestingModel] = useState(false);
@@ -225,7 +225,35 @@ export default function App() {
   const [isSavingPresetGuns, setIsSavingPresetGuns] = useState(false);
   const [presetGunInput, setPresetGunInput] = useState('');
   const [modelTestResult, setModelTestResult] = useState<ModelTestResult | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const searchPollRef = useRef<number | null>(null);
+
+  type CustomTheme = {
+    themeColor: string;
+    textColorLight: string;
+    textColorDark: string;
+    gunNameColorLight: string;
+    gunNameColorDark: string;
+  };
+  const DEFAULT_THEME: CustomTheme = {
+    themeColor: '#10b981',
+    textColorLight: '#18181b',
+    textColorDark: '#f4f4f5',
+    gunNameColorLight: '#18181b',
+    gunNameColorDark: '#f4f4f5',
+  };
+  const [customTheme, setCustomTheme] = useState<CustomTheme>(() => {
+    try {
+      const saved = localStorage.getItem('customTheme');
+      return saved ? JSON.parse(saved) : DEFAULT_THEME;
+    } catch {
+      return DEFAULT_THEME;
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem('customTheme', JSON.stringify(customTheme));
+  }, [customTheme]);
 
   const [autoCollectConfig, setAutoConfig] = useState({ 
     enabled: false, 
@@ -504,6 +532,11 @@ export default function App() {
 
   const sourceData = isEditing ? draftData : savedData;
   const viewData = sourceData.filter(g => {
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      return g.name.toLowerCase().includes(q) || 
+             g.variants.some(v => (v.buildType || '').toLowerCase().includes(q) || (v.code || '').toLowerCase().includes(q));
+    }
     if (activeTab === 'home') return true;
     return g.category === activeTab;
   }).sort((a, b) => {
@@ -912,8 +945,22 @@ export default function App() {
   };
 
   return (
-    <div className="flex min-h-screen bg-[#F8F9FA] dark:bg-[#0b0b0c] text-zinc-900 dark:text-zinc-100 selection:bg-zinc-200 dark:selection:bg-zinc-800 transition-colors duration-300">
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+    <>
+      <style>{`
+        :root {
+          --color-emerald-500: ${customTheme.themeColor};
+          --color-emerald-600: ${customTheme.themeColor};
+          --color-emerald-50: ${customTheme.themeColor}1A;
+        }
+      `}</style>
+      <div 
+        className="flex min-h-screen bg-[#F8F9FA] dark:bg-[#0b0b0c] selection:bg-zinc-200 dark:selection:bg-zinc-800 transition-colors duration-300"
+        style={{ 
+          color: isDarkMode ? customTheme.textColorDark : customTheme.textColorLight,
+          '--user-gun-color': isDarkMode ? customTheme.gunNameColorDark : customTheme.gunNameColorLight,
+        } as React.CSSProperties}
+      >
+        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} onOpenSettings={() => setActiveModal('settings')} />
 
       <main className="flex-1 md:ml-20 lg:ml-56 p-4 md:p-6 lg:p-8 pb-32">
         <div className="max-w-[1600px] mx-auto">
@@ -928,13 +975,16 @@ export default function App() {
             onSortChange={setSortBy}
             isDarkMode={isDarkMode}
             onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            searchSuggestions={Array.from(new Set(sourceData.map(g => g.name)))}
           />
 
           <div className="mb-6 pl-1 mt-2">
-            <h1 className="text-3xl md:text-4xl font-black tracking-tighter text-zinc-900 mb-2">
+            <h1 className="text-3xl md:text-4xl font-black tracking-tighter mb-2" style={{ color: 'inherit' }}>
               <span className="bg-clip-text text-transparent bg-gradient-to-br from-zinc-800 to-zinc-500">马坤时代</span> <span className="text-zinc-300 font-bold tracking-normal opacity-50 text-2xl">/ Base</span>
             </h1>
-            <p className="text-[13px] text-zinc-500 font-medium max-w-lg">
+            <p className="text-[13px] opacity-70 font-medium max-w-lg" style={{ color: 'inherit' }}>
               专注修脚。基于顶级重回修脚时代架构运行。
             </p>
           </div>
@@ -1022,6 +1072,63 @@ export default function App() {
           onClose={() => setIsModalOpen(false)}
           onConfirm={handleConfirmNewGun}
         />
+      )}
+
+      {activeModal === 'settings' && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-zinc-900/60" onClick={() => setActiveModal('none')} />
+          <div className="bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 md:p-8 relative z-10 w-full max-w-md flex flex-col gap-6 shadow-2xl animate-fade-in">
+            <div className="flex justify-between items-center">
+               <h3 className="text-xl font-black text-zinc-900 dark:text-white">外观设置</h3>
+               <button onClick={() => setActiveModal('none')} className="p-2 bg-zinc-100 dark:bg-zinc-800 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-500 dark:text-zinc-400"><X size={16} strokeWidth={2.5}/></button>
+            </div>
+
+            <div className="flex flex-col gap-5">
+              <div>
+                <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">主题强调色</label>
+                <div className="flex items-center gap-3">
+                  <input type="color" value={customTheme.themeColor} onChange={e => setCustomTheme(p => ({...p, themeColor: e.target.value}))} className="w-10 h-10 rounded cursor-pointer border-0 p-0" />
+                  <span className="text-sm font-bold font-mono text-zinc-700 dark:text-zinc-300 uppercase">{customTheme.themeColor}</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">日间文字颜色</label>
+                  <div className="flex items-center gap-3">
+                    <input type="color" value={customTheme.textColorLight} onChange={e => setCustomTheme(p => ({...p, textColorLight: e.target.value}))} className="w-8 h-8 rounded cursor-pointer border-0 p-0" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">暗黑文字颜色</label>
+                  <div className="flex items-center gap-3">
+                    <input type="color" value={customTheme.textColorDark} onChange={e => setCustomTheme(p => ({...p, textColorDark: e.target.value}))} className="w-8 h-8 rounded cursor-pointer border-0 p-0" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">日间枪械名颜色</label>
+                  <div className="flex items-center gap-3">
+                    <input type="color" value={customTheme.gunNameColorLight} onChange={e => setCustomTheme(p => ({...p, gunNameColorLight: e.target.value}))} className="w-8 h-8 rounded cursor-pointer border-0 p-0" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">暗黑枪械名颜色</label>
+                  <div className="flex items-center gap-3">
+                    <input type="color" value={customTheme.gunNameColorDark} onChange={e => setCustomTheme(p => ({...p, gunNameColorDark: e.target.value}))} className="w-8 h-8 rounded cursor-pointer border-0 p-0" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-2 flex items-center justify-between pt-5 border-t border-zinc-100 dark:border-zinc-800">
+              <button onClick={() => setCustomTheme(DEFAULT_THEME)} className="text-[13px] font-bold text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition">恢复默认配置</button>
+              <button onClick={() => setActiveModal('none')} className="px-6 py-2.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[13px] font-black rounded-xl hover:opacity-80 transition active:scale-95">完成</button>
+            </div>
+          </div>
+        </div>
       )}
 
       {activeModal === 'mode-select' && (
@@ -1222,5 +1329,6 @@ export default function App() {
         </div>
       )}
     </div>
+    </>
   );
 }

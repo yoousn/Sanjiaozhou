@@ -1,8 +1,8 @@
 import React from 'react';
-import { Home, Crosshair, Target } from 'lucide-react';
+import { Home, Crosshair, Target, Settings } from 'lucide-react';
 import { cn } from '../utils';
 
-export function Sidebar({ activeTab, setActiveTab }: { activeTab: string, setActiveTab: (tab: string) => void }) {
+export function Sidebar({ activeTab, setActiveTab, onOpenSettings }: { activeTab: string, setActiveTab: (tab: string) => void, onOpenSettings: () => void }) {
   const navItems = [
     { id: 'home', icon: Home, label: '全部体系' },
     { id: 'ar', icon: Crosshair, label: '突击步枪' },
@@ -53,6 +53,16 @@ export function Sidebar({ activeTab, setActiveTab }: { activeTab: string, setAct
             )
           })}
         </div>
+
+        <div className="mt-auto mb-6 w-full px-2">
+          <button
+            onClick={onOpenSettings}
+            className="flex items-center lg:justify-start justify-center gap-3 px-3 py-2.5 rounded-xl transition duration-200 outline-none hover:bg-black/5 dark:hover:bg-white/5 text-zinc-500 hover:text-zinc-900 dark:hover:text-white w-full group"
+          >
+            <Settings size={16} strokeWidth={2} className="group-hover:rotate-45 transition-transform duration-300" />
+            <span className="hidden lg:block text-[13px] font-bold">外观设置</span>
+          </button>
+        </div>
       </nav>
 
       {/* Mobile nav rounded pill style */}
@@ -76,6 +86,13 @@ export function Sidebar({ activeTab, setActiveTab }: { activeTab: string, setAct
             </button>
           )
         })}
+        <div className="w-[1px] h-6 bg-zinc-200 dark:bg-zinc-700 mx-1" />
+        <button
+          onClick={onOpenSettings}
+          className="flex items-center justify-center px-3 py-2 rounded-full outline-none transition duration-200 active:scale-95 text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
+        >
+          <Settings size={16} strokeWidth={2} />
+        </button>
       </nav>
     </>
   );

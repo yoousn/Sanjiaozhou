@@ -152,6 +152,7 @@ export function CollectModal({
   const hasSearchVideos = searchResult.videos.length > 0;
   const searchLogs = searchResult.logs || [];
   const visibleSearchLogs: CollectSearchLog[] = searchLogs.slice(-10).reverse();
+  const visibleSearchLogs: CollectSearchLog[] = [...searchLogs].reverse();
 
   const toggleCreator = (creatorId: string) => {
     setSelectedCreatorIds((prev) => prev.includes(creatorId) ? prev.filter((item) => item !== creatorId) : [...prev, creatorId]);
@@ -213,7 +214,7 @@ export function CollectModal({
               <div className="space-y-5">
                 <div>
                   <div className="mb-2 flex items-center justify-between gap-3">
-                    <label className="block text-xs font-bold uppercase tracking-widest text-zinc-500">预设枪械</label>
+                    <label className="block text-xs font-bold uppercase tracking-widest text-zinc-500">目标枪械过滤 (可选)</label>
                     <div className="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-[11px] font-bold text-zinc-600">
                       已选择 {mergedGuns.length} 个
                     </div>
@@ -339,7 +340,7 @@ export function CollectModal({
                   <button
                     type="button"
                     onClick={handleSearch}
-                    disabled={isPreviewing || isApplying || mergedGuns.length === 0 || selectedCreatorIds.length === 0}
+                    disabled={isPreviewing || isApplying || selectedCreatorIds.length === 0}
                     className="flex w-full items-center justify-center gap-2 rounded-2xl border border-emerald-600 bg-emerald-500 px-4 py-3 text-[13px] font-black text-white shadow-[0_8px_24px_rgba(16,185,129,0.18)] transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <Search size={16} strokeWidth={2.5} />
@@ -372,7 +373,7 @@ export function CollectModal({
                     <div className="flex min-h-[220px] flex-col items-center justify-center rounded-3xl border border-dashed border-zinc-200 bg-zinc-50 text-center">
                       <Sparkles size={22} className="mb-3 text-zinc-300" />
                       <p className="text-sm font-bold text-zinc-700">这里会显示搜索命中的视频</p>
-                      <p className="mt-1 text-[12px] font-medium text-zinc-400">命中规则 = 标题或简介包含目标枪械</p>
+                      <p className="mt-1 text-[12px] font-medium text-zinc-400">将展示博主最新视频，无论是否匹配皆可手动勾选</p>
                     </div>
 
                     <div className="min-h-[220px] rounded-3xl border border-zinc-100 bg-zinc-50 p-4">
@@ -387,6 +388,7 @@ export function CollectModal({
                       </div>
 
                       <div className="mt-4 space-y-2">
+                      <div className="mt-4 space-y-2 max-h-[240px] overflow-y-auto pr-2">
                         {visibleSearchLogs.length > 0 ? visibleSearchLogs.map((log) => (
                           <div key={`${log.timestamp}-${log.stage}-${log.videoId || ''}`} className="rounded-2xl border border-zinc-200 bg-white px-3 py-2 text-[12px] font-medium text-zinc-600">
                             {log.message}
@@ -406,7 +408,7 @@ export function CollectModal({
                     <div className="flex min-h-[220px] flex-col items-center justify-center rounded-3xl border border-zinc-100 bg-zinc-50 text-center">
                       <Loader2 size={22} className="mb-3 animate-spin text-emerald-500" />
                       <p className="text-sm font-bold text-zinc-700">正在搜索视频</p>
-                      <p className="mt-1 text-[12px] font-medium text-zinc-400">只筛出标题或简介命中的视频</p>
+                      <p className="mt-1 text-[12px] font-medium text-zinc-400">正在抓取并分析博主最新视频...</p>
                     </div>
 
                     <div className="min-h-[220px] rounded-3xl border border-zinc-100 bg-zinc-50 p-4">
@@ -421,6 +423,7 @@ export function CollectModal({
                       </div>
 
                       <div className="mt-4 space-y-2">
+                      <div className="mt-4 space-y-2 max-h-[240px] overflow-y-auto pr-2">
                         {visibleSearchLogs.length > 0 ? visibleSearchLogs.map((log) => (
                           <div key={`${log.timestamp}-${log.stage}-${log.videoId || ''}`} className="rounded-2xl border border-zinc-200 bg-white px-3 py-2 text-[12px] font-medium text-zinc-600">
                             {log.message}
@@ -453,11 +456,17 @@ export function CollectModal({
                           <div className="line-clamp-2 text-[13px] font-black text-zinc-900">{video.title}</div>
                           <div className="mt-2 text-[11px] font-medium text-zinc-500">{video.author} · {video.uploadDate || '未知日期'}</div>
                           <div className="mt-2 flex flex-wrap gap-2">
-                            {(video.matchedIn || []).map((item) => (
-                              <span key={item} className="rounded-full border border-zinc-200 bg-white px-2 py-0.5 text-[10px] font-bold text-zinc-600">
-                                {item === 'title' ? '标题命中' : '简介命中'}
+                            {(video.matchedIn || []).length > 0 ? (
+                              (video.matchedIn || []).map((item) => (
+                                <span key={item} className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-600">
+                                  {item === 'title' ? '标题命中预设' : '简介命中预设'}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="rounded-full border border-zinc-200 bg-zinc-100 px-2 py-0.5 text-[10px] font-bold text-zinc-500">
+                                常规候选 (可手动勾选)
                               </span>
-                            ))}
+                            )}
                           </div>
                         </div>
                         <div className={cn('mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded border', checked ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-zinc-300 bg-white text-transparent')}>
@@ -551,7 +560,7 @@ export function CollectModal({
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <div className="text-sm font-black text-zinc-900">确认加入网站</div>
-                      <div className="mt-1 text-[12px] font-medium text-zinc-400">已选视频 {selectedVideos.length} 个；确认后自动合并到现有卡片，没有则新增</div>
+                      <div className="mt-1 text-[12px] font-medium text-zinc-400">已选 {selectedVideos.length} 个；若未选目标枪械，AI将自动提取视频内全部枪械</div>
                     </div>
                     <button
                       type="button"

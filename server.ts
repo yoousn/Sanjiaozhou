@@ -77,11 +77,8 @@ type CollectConcurrencySettings = {
 type AutoCollectSettings = {
   enabled: boolean;
   model: string;
-<<<<<<< HEAD
   creatorIds: string[];
   intervalHours: number;
-=======
->>>>>>> f3c0a0eab67e3a601e06e5bf23369e1f171e7d7f
 };
 
 type CollectSettings = {
@@ -356,11 +353,8 @@ function getDefaultCollectSettings(): CollectSettings {
     autoCollect: {
       enabled: false,
       model: DEFAULT_MODEL_VALUE,
-<<<<<<< HEAD
       creatorIds: [],
       intervalHours: 1,
-=======
->>>>>>> f3c0a0eab67e3a601e06e5bf23369e1f171e7d7f
     }
   };
 }
@@ -392,11 +386,8 @@ function readCollectSettings(): CollectSettings {
       autoCollect: {
         enabled: Boolean(parsed?.autoCollect?.enabled),
         model: String(parsed?.autoCollect?.model || defaultModel),
-<<<<<<< HEAD
         creatorIds: Array.isArray(parsed?.autoCollect?.creatorIds) ? parsed.autoCollect.creatorIds : [],
         intervalHours: Number(parsed?.autoCollect?.intervalHours) || 1,
-=======
->>>>>>> f3c0a0eab67e3a601e06e5bf23369e1f171e7d7f
       }
     };
   } catch {
@@ -420,11 +411,8 @@ function writeCollectSettings(settings: CollectSettings) {
     autoCollect: {
       enabled: Boolean(settings.autoCollect?.enabled),
       model: String(settings.autoCollect?.model || settings.defaultModel),
-<<<<<<< HEAD
       creatorIds: Array.isArray(settings.autoCollect?.creatorIds) ? settings.autoCollect.creatorIds : [],
       intervalHours: Number(settings.autoCollect?.intervalHours) || 1,
-=======
->>>>>>> f3c0a0eab67e3a601e06e5bf23369e1f171e7d7f
     }
   };
 
@@ -970,7 +958,6 @@ async function startServer() {
   app.get("/api/collect/auto", (req, res) => {
     const settings = readCollectSettings();
     const logs = readAutoLogs();
-<<<<<<< HEAD
     res.json({ 
       enabled: settings.autoCollect.enabled, 
       model: settings.autoCollect.model, 
@@ -978,9 +965,6 @@ async function startServer() {
       intervalHours: settings.autoCollect.intervalHours,
       logs 
     });
-=======
-    res.json({ enabled: settings.autoCollect.enabled, model: settings.autoCollect.model, logs });
->>>>>>> f3c0a0eab67e3a601e06e5bf23369e1f171e7d7f
   });
 
   app.post("/api/collect/auto", (req, res) => {
@@ -989,11 +973,8 @@ async function startServer() {
       settings.autoCollect = {
         enabled: Boolean(req.body.enabled),
         model: String(req.body.model || settings.autoCollect.model),
-<<<<<<< HEAD
         creatorIds: Array.isArray(req.body.creatorIds) ? req.body.creatorIds : [],
         intervalHours: Number(req.body.intervalHours) || 1,
-=======
->>>>>>> f3c0a0eab67e3a601e06e5bf23369e1f171e7d7f
       };
       writeCollectSettings(settings);
       res.json({ success: true });
@@ -1070,7 +1051,6 @@ async function startServer() {
   setInterval(async () => {
     const settings = readCollectSettings();
     if (!settings.autoCollect.enabled) return;
-<<<<<<< HEAD
     
     const intervalMs = (settings.autoCollect.intervalHours || 1) * 60 * 60 * 1000;
     // 防止定时器漂移，增加 5 秒的宽容度
@@ -1083,8 +1063,6 @@ async function startServer() {
       return;
     }
 
-=======
->>>>>>> f3c0a0eab67e3a601e06e5bf23369e1f171e7d7f
     try {
       const ensuredModel = ensureModel(settings.autoCollect.model);
       if (!ensuredModel.provider || !ensuredModel.model) {
@@ -1092,17 +1070,11 @@ async function startServer() {
         addAutoLog("自动采集失败：未配置有效模型", false);
         return;
       }
-<<<<<<< HEAD
       
       lastAutoCollectTime = Date.now();
       const args = [
         "--mode", "auto",
         "--creator-ids", creatorIds.join(","),
-=======
-      const args = [
-        "--mode", "auto",
-        "--creator-ids", "52717408",
->>>>>>> f3c0a0eab67e3a601e06e5bf23369e1f171e7d7f
         "--model", ensuredModel.model,
         "--base-url", ensuredModel.provider.baseUrl,
         "--api-key", ensuredModel.provider.apiKey,
@@ -1122,11 +1094,7 @@ async function startServer() {
     } catch(e) {
       addAutoLog(`自动采集异常: ${e instanceof Error ? e.message : String(e)}`, false);
     }
-<<<<<<< HEAD
   }, 1000 * 30); // 每 30 秒轮询一次心跳
-=======
-  }, 1000 * 60 * 60);
->>>>>>> f3c0a0eab67e3a601e06e5bf23369e1f171e7d7f
 }
 
 startServer();

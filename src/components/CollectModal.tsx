@@ -151,7 +151,6 @@ export function CollectModal({
   const hasSearchErrors = Boolean(searchResult?.errors && searchResult.errors.length > 0);
   const hasSearchVideos = searchResult.videos.length > 0;
   const searchLogs = searchResult.logs || [];
-  const visibleSearchLogs: CollectSearchLog[] = searchLogs.slice(-10).reverse();
   const visibleSearchLogs: CollectSearchLog[] = [...searchLogs].reverse();
 
   const toggleCreator = (creatorId: string) => {
@@ -387,7 +386,6 @@ export function CollectModal({
                         </div>
                       </div>
 
-                      <div className="mt-4 space-y-2">
                       <div className="mt-4 space-y-2 max-h-[240px] overflow-y-auto pr-2">
                         {visibleSearchLogs.length > 0 ? visibleSearchLogs.map((log) => (
                           <div key={`${log.timestamp}-${log.stage}-${log.videoId || ''}`} className="rounded-2xl border border-zinc-200 bg-white px-3 py-2 text-[12px] font-medium text-zinc-600">
@@ -422,7 +420,6 @@ export function CollectModal({
                         </div>
                       </div>
 
-                      <div className="mt-4 space-y-2">
                       <div className="mt-4 space-y-2 max-h-[240px] overflow-y-auto pr-2">
                         {visibleSearchLogs.length > 0 ? visibleSearchLogs.map((log) => (
                           <div key={`${log.timestamp}-${log.stage}-${log.videoId || ''}`} className="rounded-2xl border border-zinc-200 bg-white px-3 py-2 text-[12px] font-medium text-zinc-600">

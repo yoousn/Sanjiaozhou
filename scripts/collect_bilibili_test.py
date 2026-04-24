@@ -422,14 +422,14 @@ def search_mode(target_guns: list[str], creator_ids: list[str], max_videos: int,
         for video in source.get("videos", []):
             matched_in = video_matches_guns(video, target_guns)
             video_id = video.get("bvid") or video.get("id") or ""
-                    if not video_id or video_id in seen_video_ids:
+            if not video_id or video_id in seen_video_ids:
                 continue
             seen_video_ids.add(video_id)
             videos.append(build_search_video(video, matched_in))
-                    if matched_in:
-                        append_search_log(logs, f"命中预设枪械：{video.get('title') or video_id}", "video-match", creator_id=str(source.get('uid') or ""), creator_name=str(source.get('author') or ""), video_id=video_id)
-                    else:
-                        append_search_log(logs, f"抓取到候选视频：{video.get('title') or video_id}", "video-candidate", creator_id=str(source.get('uid') or ""), creator_name=str(source.get('author') or ""), video_id=video_id)
+            if matched_in:
+                append_search_log(logs, f"命中预设枪械：{video.get('title') or video_id}", "video-match", creator_id=str(source.get('uid') or ""), creator_name=str(source.get('author') or ""), video_id=video_id)
+            else:
+                append_search_log(logs, f"抓取到候选视频：{video.get('title') or video_id}", "video-candidate", creator_id=str(source.get('uid') or ""), creator_name=str(source.get('author') or ""), video_id=video_id)
 
     result = {
         "success": len(videos) > 0 and len(errors) == 0,

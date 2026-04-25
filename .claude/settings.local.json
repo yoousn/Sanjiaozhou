@@ -1,7 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(python \"d:/Desktop/网站2/scripts/collect_bilibili_test.py\" --mode search --guns M14 --creator-ids 52717408 --max-videos 1)"
-    ]
-  }
-}

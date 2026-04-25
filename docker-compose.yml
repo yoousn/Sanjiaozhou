@@ -8,8 +8,13 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./src:/app/src
-      - ./scripts:/app/scripts
+      - ${RUNTIME_DIR:-./runtime}/data.json:/app/src/data.json
+      - ${RUNTIME_DIR:-./runtime}/daily_pwd.json:/app/src/daily_pwd.json
+      - ${RUNTIME_DIR:-./runtime}/collect_settings.json:/app/scripts/collect_settings.json
+      - ${RUNTIME_DIR:-./runtime}/auto_logs.json:/app/scripts/auto_logs.json
+      - ${RUNTIME_DIR:-./runtime}/daily_pwd_logs.json:/app/scripts/daily_pwd_logs.json
+      - ${RUNTIME_DIR:-./runtime}/auto_processed_videos.json:/app/scripts/auto_processed_videos.json
+      - ${RUNTIME_DIR:-./runtime}/cookies.txt:/app/scripts/cookies.txt
     environment:
       - NODE_ENV=production
       - PORT=3000

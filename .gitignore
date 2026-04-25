@@ -9,3 +9,4 @@ coverage/
 *.zip
 *.rar
 *.7z
+.claude/

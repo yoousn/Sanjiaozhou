@@ -228,6 +228,10 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const searchPollRef = useRef<number | null>(null);
 
+  const [dailyPwd, setDailyPwd] = useState<{date: string, data: Record<string, string>} | null>(null);
+  const [dailyPwdLogs, setDailyPwdLogs] = useState<Array<{ time: string; message: string; success: boolean }>>([]);
+  const [copiedDailyPwdKey, setCopiedDailyPwdKey] = useState<string | null>(null);
+  const dailyPwdCopyTimerRef = useRef<number | null>(null);
   const [isUploadingCookie, setIsUploadingCookie] = useState(false);
   const [cookieTestResult, setCookieTestResult] = useState<{success: boolean; message: string} | null>(null);
   const [cookieStatus, setCookieStatus] = useState<{ exists: boolean; mtime?: string } | null>(null);
@@ -249,12 +253,50 @@ export default function App() {
       .catch(console.error);
   };
 
+  const fetchDailyPwdLogs = () => {
+    fetch('/api/daily-password/logs')
+      .then(safeJson)
+      .then(data => setDailyPwdLogs(Array.isArray(data?.logs) ? data.logs : []))
+      .catch(console.error);
+  };
+
   useEffect(() => {
     if (activeTab === 'settings') {
       fetchCookieStatus();
       fetchSettingsFileStatus();
+      fetchDailyPwdLogs();
     }
   }, [activeTab]);
+
+  useEffect(() => {
+    const loadDailyPwd = async () => {
+      try {
+        const res = await fetch('/api/daily-password');
+        const data = await safeJson(res);
+        if (res.ok && applyDailyPwd(data) && !shouldRefreshDailyPwd(data)) {
+          return;
+        }
+
+        const refreshRes = await fetch('/api/daily-password/refresh', { method: 'POST' });
+        const refreshData = await safeJson(refreshRes);
+        if (refreshRes.ok) {
+          applyDailyPwd(refreshData.data ?? refreshData);
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    loadDailyPwd();
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (dailyPwdCopyTimerRef.current !== null) {
+        window.clearTimeout(dailyPwdCopyTimerRef.current);
+      }
+    };
+  }, []);
 
   type CustomTheme = {
     themeColor: string;
@@ -292,6 +334,49 @@ export default function App() {
   });
   const [isSavingAuto, setIsSavingAuto] = useState(false);
   const { toast, showToast } = useToast();
+
+  const hasGarbledDailyPwd = (data: Record<string, string>) => Object.keys(data).some(key => key.includes('�'));
+
+  const applyDailyPwd = (data: any) => {
+    if (data && data.date && data.data) {
+      setDailyPwd(data);
+      return true;
+    }
+    if (data && !data.error && typeof data === 'object' && !Array.isArray(data) && Object.keys(data).length > 0) {
+      const today = new Date().toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai' });
+      setDailyPwd({ date: today, data });
+      return true;
+    }
+    return false;
+  };
+
+  const shouldRefreshDailyPwd = (data: any) => {
+    if (data?.date && data?.data && typeof data.data === 'object' && !Array.isArray(data.data)) {
+      return hasGarbledDailyPwd(data.data);
+    }
+    if (data && !data.error && typeof data === 'object' && !Array.isArray(data)) {
+      return hasGarbledDailyPwd(data);
+    }
+    return true;
+  };
+
+  const handleCopyDailyPwd = async (mapName: string, pwd: string) => {
+    try {
+      await navigator.clipboard.writeText(pwd);
+      if (dailyPwdCopyTimerRef.current !== null) {
+        window.clearTimeout(dailyPwdCopyTimerRef.current);
+      }
+      setCopiedDailyPwdKey(mapName);
+      dailyPwdCopyTimerRef.current = window.setTimeout(() => {
+        setCopiedDailyPwdKey((prev) => (prev === mapName ? null : prev));
+        dailyPwdCopyTimerRef.current = null;
+      }, 500);
+      showToast(`${mapName} 密码已复制`);
+    } catch (error) {
+      console.error('复制密码失败:', error);
+      showToast('复制失败，请手动复制', 'warn');
+    }
+  };
 
   const [isDarkMode, setIsDarkMode] = useState(() => {
     return localStorage.getItem('darkMode') === 'true' ||
@@ -1134,6 +1219,22 @@ export default function App() {
                   </div>
                 </div>
 
+                <div className="bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 md:p-8 shadow-sm mb-6">
+                  <h3 className="text-lg font-black mb-2 text-zinc-900 dark:text-white">每日密码日志</h3>
+                  <p className="text-[13px] text-zinc-500 mb-4">记录每日密码缓存读取、手动刷新和后台自动抓取状态，仅保留最近 100 条。</p>
+                  <div className="bg-zinc-900 text-zinc-300 font-mono text-[11px] p-4 rounded-2xl h-36 overflow-y-auto flex flex-col gap-2 shadow-inner">
+                    {dailyPwdLogs.length === 0 ? (
+                      <span className="opacity-50">暂无日志...</span>
+                    ) : (
+                      dailyPwdLogs.map((log, i) => (
+                        <div key={i} className={log.success ? 'text-emerald-400' : 'text-red-400'}>
+                          <span className="text-zinc-500">[{log.time}]</span> {log.message}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
                 <div className="bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 md:p-8 shadow-sm">
                   <h3 className="text-lg font-black mb-6 text-zinc-900 dark:text-white">个性化设置</h3>
                   <div className="flex flex-col gap-6">
@@ -1200,12 +1301,56 @@ export default function App() {
                 />
 
                 <div className="mb-6 pl-1 mt-2">
-                  <h1 className="text-3xl md:text-4xl font-black tracking-tighter mb-2" style={{ color: 'inherit' }}>
-                    <span className="bg-clip-text text-transparent bg-gradient-to-br from-zinc-800 to-zinc-500">马坤时代</span> <span className="text-zinc-300 font-bold tracking-normal opacity-50 text-2xl">/ Base</span>
-                  </h1>
-                  <p className="text-[13px] opacity-70 font-medium max-w-lg" style={{ color: 'inherit' }}>
-                    专注修脚。基于顶级重回修脚时代架构运行。
-                  </p>
+                  <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-4">
+                    <div>
+                      <h1 className="text-3xl md:text-4xl font-black tracking-tighter mb-2" style={{ color: 'inherit' }}>
+                        <span className="bg-clip-text text-transparent bg-gradient-to-br from-zinc-800 to-zinc-500">马坤时代</span> <span className="text-zinc-300 font-bold tracking-normal opacity-50 text-2xl">/ Base</span>
+                      </h1>
+                      <p className="text-[13px] opacity-70 font-medium max-w-lg" style={{ color: 'inherit' }}>
+                        专注修脚。基于顶级重回修脚时代架构运行。
+                      </p>
+                    </div>
+                    
+                    {dailyPwd && (
+                      <div className="w-full flex justify-center">
+                        <div className="bg-white dark:bg-[#121214] border border-emerald-500/20 shadow-sm rounded-2xl px-3 py-3 md:px-4 md:py-3.5 animate-fade-in relative overflow-hidden max-w-4xl w-full xl:w-auto">
+                          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 via-emerald-500 to-emerald-600"></div>
+                          <div className="flex flex-col items-center text-center gap-2.5">
+                            <div className="flex flex-col items-center justify-center">
+                              <div className="flex items-center gap-1.5 mb-0.5">
+                                <Sparkles size={12} className="text-emerald-500" />
+                                <span className="text-[11px] font-black text-emerald-600 dark:text-emerald-400 tracking-[0.22em]">今日密码</span>
+                              </div>
+                              <span className="text-[11px] font-semibold text-zinc-400">{dailyPwd.date}</span>
+                            </div>
+                            <div className="flex flex-wrap items-center justify-center gap-2 md:gap-2.5">
+                              {Object.entries(dailyPwd.data).map(([mapName, pwd]) => {
+                                const password = String(pwd);
+                                const isCopied = copiedDailyPwdKey === mapName;
+                                return (
+                                  <button
+                                    key={mapName}
+                                    type="button"
+                                    onClick={() => void handleCopyDailyPwd(mapName, password)}
+                                    className={`group relative min-w-[84px] overflow-hidden rounded-[18px] border px-2.5 py-2 transition-all duration-500 ease-out ${isCopied ? 'border-emerald-500/80 bg-emerald-50 dark:bg-emerald-500/10 shadow-[0_0_0_1px_rgba(16,185,129,0.08)]' : 'border-zinc-200/80 dark:border-zinc-800 hover:border-emerald-300 hover:bg-emerald-50/70 dark:hover:bg-emerald-500/10'}`}
+                                    title={`点击复制 ${mapName} 密码`}
+                                  >
+                                    <span
+                                      className={`pointer-events-none absolute inset-0 bg-emerald-600 transition-all duration-500 ease-out ${isCopied ? 'opacity-100 scale-100' : 'opacity-0 scale-[0.92]'}`}
+                                    />
+                                    <div className="relative z-10 flex flex-col items-center text-center transition-colors duration-200">
+                                      <span className={`text-[10px] font-bold leading-none ${isCopied ? 'text-white/85' : 'text-zinc-500 dark:text-zinc-400'}`}>{mapName}</span>
+                                      <span className={`mt-1.5 text-[16px] font-black font-mono tracking-[0.1em] leading-none ${isCopied ? 'text-white' : 'text-zinc-800 dark:text-zinc-100'}`}>{password}</span>
+                                    </div>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {isEditing && sortBy === 'default' ? (

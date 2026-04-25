@@ -16,6 +16,9 @@ const DATA_FILE = path.join(__dirname, "src", "data.json");
 const COLLECT_SCRIPT = path.join(__dirname, "scripts", "collect_bilibili_test.py");
 const COLLECT_SETTINGS_FILE = path.join(__dirname, "scripts", "collect_settings.json");
 const AUTO_LOGS_FILE = path.join(__dirname, "scripts", "auto_logs.json");
+const DAILY_PWD_LOGS_FILE = path.join(__dirname, "scripts", "daily_pwd_logs.json");
+const DAILY_PWD_SCRIPT = path.join(__dirname, "爬取每日密码.py");
+const DAILY_PWD_FILE = path.join(__dirname, "src", "daily_pwd.json");
 const MAX_VARIANTS_PER_GUN = 5;
 const DEFAULT_PRESET_GUNS = ["M4A1", "AKM", "SCAR-L", "AUG", "MP7", "AWM", "M14"];
 const DEFAULT_PROVIDER_ID = "builtin-default";
@@ -213,22 +216,40 @@ type AutoLog = {
   success: boolean;
 };
 
-function readAutoLogs(): AutoLog[] {
-  if (!fs.existsSync(AUTO_LOGS_FILE)) return [];
+function getBeijingTimeString() {
+  return new Date().toLocaleString('sv', { timeZone: 'Asia/Shanghai' }).slice(0, 19);
+}
+
+function readLogs(filePath: string): AutoLog[] {
+  if (!fs.existsSync(filePath)) return [];
   try {
-    return JSON.parse(fs.readFileSync(AUTO_LOGS_FILE, "utf-8") || "[]");
+    return JSON.parse(fs.readFileSync(filePath, "utf-8") || "[]");
   } catch {
     return [];
   }
 }
 
-function addAutoLog(message: string, success: boolean) {
-  const logs = readAutoLogs();
-  // 使用 'sv' locale 来获得 YYYY-MM-DD HH:MM:SS 格式，并指定北京时区
-  const beijingTime = new Date().toLocaleString('sv', { timeZone: 'Asia/Shanghai' }).slice(0, 19);
-  logs.unshift({ time: beijingTime, message, success });
+function addLog(filePath: string, message: string, success: boolean) {
+  const logs = readLogs(filePath);
+  logs.unshift({ time: getBeijingTimeString(), message, success });
   if (logs.length > 100) logs.length = 100;
-  fs.writeFileSync(AUTO_LOGS_FILE, JSON.stringify(logs, null, 2), "utf-8");
+  fs.writeFileSync(filePath, JSON.stringify(logs, null, 2), "utf-8");
+}
+
+function readAutoLogs(): AutoLog[] {
+  return readLogs(AUTO_LOGS_FILE);
+}
+
+function addAutoLog(message: string, success: boolean) {
+  addLog(AUTO_LOGS_FILE, message, success);
+}
+
+function readDailyPwdLogs(): AutoLog[] {
+  return readLogs(DAILY_PWD_LOGS_FILE);
+}
+
+function addDailyPwdLog(message: string, success: boolean) {
+  addLog(DAILY_PWD_LOGS_FILE, message, success);
 }
 
 const searchStreams = new Map<string, SearchStreamState>();
@@ -533,7 +554,7 @@ function ensureModel(value?: string) {
 }
 
 async function runCollector(args: string[]) {
-  const { stdout } = await execFileAsync("python", [COLLECT_SCRIPT, ...args], {
+  const { stdout } = await execFileAsync("python", ["-u", COLLECT_SCRIPT, ...args], {
     cwd: __dirname,
     maxBuffer: 1024 * 1024 * 20,
     encoding: "utf8",
@@ -572,7 +593,7 @@ async function runSearchCollectorStream(requestId: string, guns: string[], creat
   const state: SearchStreamState = { logs: [], done: false };
   searchStreams.set(requestId, state);
 
-  const child = spawn("python", [COLLECT_SCRIPT, "--mode", "search", "--guns", guns.join(","), "--creator-ids", creatorIds.join(","), "--max-videos", String(maxVideos), "--concurrent", concurrent ? "true" : "false"], {
+  const child = spawn("python", ["-u", COLLECT_SCRIPT, "--mode", "search", "--guns", guns.join(","), "--creator-ids", creatorIds.join(","), "--max-videos", String(maxVideos), "--concurrent", concurrent ? "true" : "false"], {
     cwd: __dirname,
     stdio: ["ignore", "pipe", "pipe"],
     env: {
@@ -1029,6 +1050,49 @@ async function startServer() {
     }
   });
 
+  app.get("/api/daily-password/logs", (_req, res) => {
+    res.json({ logs: readDailyPwdLogs() });
+  });
+
+  app.get("/api/daily-password", (req, res) => {
+    if (fs.existsSync(DAILY_PWD_FILE)) {
+      try {
+        const data = JSON.parse(fs.readFileSync(DAILY_PWD_FILE, "utf-8"));
+        res.json(data);
+      } catch (e) {
+        addDailyPwdLog("读取缓存失败：密码解析失败", false);
+        res.status(500).json({ error: "密码解析失败" });
+      }
+    } else {
+      addDailyPwdLog("读取缓存失败：今日密码暂未缓存", false);
+      res.status(404).json({ error: "今日密码暂未缓存" });
+    }
+  });
+
+  app.post("/api/daily-password/refresh", async (req, res) => {
+    try {
+      const { stdout } = await execFileAsync("python", ["-u", DAILY_PWD_SCRIPT], {
+        cwd: __dirname,
+        encoding: "utf8",
+        env: { ...process.env, PYTHONIOENCODING: "utf-8" },
+      });
+      const parsed = JSON.parse(stdout.trim());
+      if (parsed.error) {
+        throw new Error(parsed.error);
+      }
+      const beijingDate = new Date().toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai' });
+      const payload = { date: beijingDate, data: parsed };
+      fs.writeFileSync(DAILY_PWD_FILE, JSON.stringify(payload, null, 2), "utf-8");
+      addDailyPwdLog(`手动刷新成功：已获取 ${beijingDate} 的每日密码`, true);
+      res.json({ success: true, data: payload });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "获取密码失败，请检查脚本";
+      addDailyPwdLog(`手动刷新失败：${message}`, false);
+      console.error("API PASSWORD REFRESH Error:", e);
+      res.status(500).json({ error: message });
+    }
+  });
+
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -1046,6 +1110,49 @@ async function startServer() {
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on http://localhost:${PORT}`);
   });
+
+  // 每日密码自动抓取轮询 (每10分钟)
+  let lastSuccessfulPwdDate = "";
+  if (fs.existsSync(DAILY_PWD_FILE)) {
+    try {
+      const cache = JSON.parse(fs.readFileSync(DAILY_PWD_FILE, "utf-8"));
+      if (cache.date) lastSuccessfulPwdDate = cache.date;
+    } catch (e) {
+      addDailyPwdLog("启动检查失败：历史缓存解析失败", false);
+    }
+  }
+
+  setInterval(async () => {
+    const currentDay = new Date().toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai' });
+    if (currentDay !== lastSuccessfulPwdDate) {
+      try {
+        const { stdout } = await execFileAsync("python", ["-u", DAILY_PWD_SCRIPT], {
+          cwd: __dirname,
+          encoding: "utf8",
+          env: { ...process.env, PYTHONIOENCODING: "utf-8" },
+        });
+        const parsed = JSON.parse(stdout.trim());
+        if (!parsed.error) {
+          const hasData = Object.values(parsed).some(v => v !== "未发现数据");
+          if (hasData) {
+            const payload = { date: currentDay, data: parsed };
+            fs.writeFileSync(DAILY_PWD_FILE, JSON.stringify(payload, null, 2), "utf-8");
+            lastSuccessfulPwdDate = currentDay;
+            addDailyPwdLog(`自动抓取成功：已获取 ${currentDay} 的每日密码`, true);
+            console.log(`[每日密码] 成功获取 ${currentDay} 的密码`);
+          } else {
+            addDailyPwdLog(`自动抓取未命中：${currentDay} 暂无有效密码`, false);
+          }
+        } else {
+          addDailyPwdLog(`自动抓取失败：${parsed.error}`, false);
+        }
+      } catch (e) {
+        const message = e instanceof Error ? e.message : String(e);
+        addDailyPwdLog(`自动抓取异常：${message}`, false);
+        console.error("[每日密码] 自动获取失败:", e);
+      }
+    }
+  }, 1000 * 60 * 10); // 每 10 分钟检查一次
 
   let lastAutoCollectTime = 0;
   setInterval(async () => {

@@ -32,8 +32,38 @@
 生产环境固定部署在：
 - `/opt/xiujiao-era`
 
+目录职责：
+- `/opt/xiujiao-era`：代码仓库、`Dockerfile`、`docker-compose.yml`、部署脚本
+- `/opt/xiujiao-era/runtime`：真实运行态数据，换服务器时重点迁移这里
+
 运行态文件目录：
 - `/opt/xiujiao-era/runtime`
+
+### 需要长期保留和迁移的文件
+以后如果你要换服务器，核心不是搬整个 `src/` 或 `scripts/`，而是至少把下面这些文件迁走：
+
+- `/opt/xiujiao-era/runtime/data.json`
+- `/opt/xiujiao-era/runtime/daily_pwd.json`
+- `/opt/xiujiao-era/runtime/collect_settings.json`
+- `/opt/xiujiao-era/runtime/auto_logs.json`
+- `/opt/xiujiao-era/runtime/daily_pwd_logs.json`
+- `/opt/xiujiao-era/runtime/auto_processed_videos.json`
+- `/opt/xiujiao-era/runtime/cookies.txt`
+
+其中最关键的是：
+- `data.json`：网站主数据
+- `collect_settings.json`：采集与模型配置
+- `cookies.txt`：B 站登录态
+- `daily_pwd.json` / `daily_pwd_logs.json`：每日密码缓存与日志
+
+### 换服务器时的最小迁移方式
+新服务器准备好代码后，把旧服务器 `runtime/` 整个目录复制过去即可：
+
+```bash
+scp -r /opt/xiujiao-era/runtime root@新服务器IP:/opt/xiujiao-era/
+```
+
+如果新服务器上还没有项目目录，就先把代码部署到 `/opt/xiujiao-era`，再覆盖 `runtime/`。
 
 ### 首次迁移运行态文件
 启用自动部署前，先在服务器执行一次迁移：

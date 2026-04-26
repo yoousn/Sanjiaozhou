@@ -1,11 +1,15 @@
 from playwright.sync_api import sync_playwright
 import json
 
+CHROMIUM_EXECUTABLE_PATH = "/usr/bin/chromium"
+
+
 def get_passwords_low_mem():
     try:
         with sync_playwright() as p:
             # 【内存优化核心1】添加极简启动参数，关闭所有不必要的显卡和沙盒进程
             browser = p.chromium.launch(
+                executable_path=CHROMIUM_EXECUTABLE_PATH,
                 headless=True,
                 args=[
                     '--disable-gpu',              # 禁用GPU硬件加速

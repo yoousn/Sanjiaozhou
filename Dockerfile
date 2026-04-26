@@ -6,7 +6,6 @@ WORKDIR /app
 RUN set -eux; \
     printf 'Types: deb\nURIs: https://mirrors.tuna.tsinghua.edu.cn/debian\nSuites: bookworm bookworm-updates\nComponents: main\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n\nTypes: deb\nURIs: https://mirrors.tuna.tsinghua.edu.cn/debian-security\nSuites: bookworm-security\nComponents: main\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n' > /etc/apt/sources.list.d/debian.sources; \
     npm config set registry https://registry.npmmirror.com; \
-    pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
         python3 \
@@ -26,7 +25,8 @@ COPY . .
 RUN npm run build
 
 # 安装 Python 爬虫依赖
-RUN pip3 install --no-cache-dir requests yt-dlp playwright --break-system-packages
+RUN pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple && \
+    pip3 install --no-cache-dir requests yt-dlp playwright --break-system-packages
 
 # 确保所有需要持久化保存的 JSON 文件存在且可写
 RUN mkdir -p src scripts && \

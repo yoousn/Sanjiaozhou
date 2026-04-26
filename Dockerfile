@@ -1,9 +1,13 @@
-FROM node:20-alpine
+FROM node:20-bookworm-slim
 
 WORKDIR /app
 
-# 安装 Python 3 和 pip
-RUN apk add --no-cache python3 py3-pip
+# 安装 Python 3、pip 与 Playwright 运行 Chromium 所需环境
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 \
+    python3-pip \
+    python-is-python3 \
+    && rm -rf /var/lib/apt/lists/*
 
 # 安装依赖
 COPY package*.json ./
@@ -15,8 +19,9 @@ COPY . .
 # 构建生产版本
 RUN npm run build
 
-# 安装 Python 爬虫所需的依赖 (Alpine 3.19+ 需要加 break-system-packages)
-RUN pip3 install --no-cache-dir requests yt-dlp --break-system-packages
+# 安装 Python 爬虫依赖，并预装 Playwright Chromium
+RUN pip3 install --no-cache-dir requests yt-dlp playwright --break-system-packages && \
+    python -m playwright install --with-deps chromium
 
 # 确保所有需要持久化保存的 JSON 文件存在且可写
 RUN mkdir -p src scripts && \

@@ -230,6 +230,7 @@ export default function App() {
 
   const [dailyPwd, setDailyPwd] = useState<{date: string, data: Record<string, string>} | null>(null);
   const [dailyPwdLogs, setDailyPwdLogs] = useState<Array<{ time: string; message: string; success: boolean }>>([]);
+  const [isRefreshingDailyPwd, setIsRefreshingDailyPwd] = useState(false);
   const [copiedDailyPwdKey, setCopiedDailyPwdKey] = useState<string | null>(null);
   const dailyPwdCopyTimerRef = useRef<number | null>(null);
   const [isUploadingCookie, setIsUploadingCookie] = useState(false);
@@ -258,6 +259,27 @@ export default function App() {
       .then(safeJson)
       .then(data => setDailyPwdLogs(Array.isArray(data?.logs) ? data.logs : []))
       .catch(console.error);
+  };
+
+  const handleRefreshDailyPwd = async () => {
+    if (isRefreshingDailyPwd) return;
+    setIsRefreshingDailyPwd(true);
+    try {
+      const res = await fetch('/api/daily-password/refresh', { method: 'POST' });
+      const data = await safeJson(res);
+      if (!res.ok) {
+        throw new Error(data?.error || '获取每日密码失败');
+      }
+      applyDailyPwd(data?.data ?? data);
+      fetchDailyPwdLogs();
+      showToast('每日密码已更新');
+    } catch (error) {
+      console.error('手动获取每日密码失败:', error);
+      fetchDailyPwdLogs();
+      showToast(error instanceof Error ? error.message : '获取每日密码失败', 'warn');
+    } finally {
+      setIsRefreshingDailyPwd(false);
+    }
   };
 
   useEffect(() => {
@@ -1220,8 +1242,21 @@ export default function App() {
                 </div>
 
                 <div className="bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 md:p-8 shadow-sm mb-6">
-                  <h3 className="text-lg font-black mb-2 text-zinc-900 dark:text-white">每日密码日志</h3>
-                  <p className="text-[13px] text-zinc-500 mb-4">记录每日密码缓存读取、手动刷新和后台自动抓取状态，仅保留最近 100 条。</p>
+                  <div className="mb-4 flex items-start justify-between gap-4">
+                    <div>
+                      <h3 className="text-lg font-black mb-2 text-zinc-900 dark:text-white">每日密码日志</h3>
+                      <p className="text-[13px] text-zinc-500">记录每日密码缓存读取、手动刷新和后台自动抓取状态，仅保留最近 100 条。</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => void handleRefreshDailyPwd()}
+                      disabled={isRefreshingDailyPwd}
+                      className="shrink-0 px-4 py-2 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[12px] font-black rounded-xl hover:opacity-80 transition flex items-center gap-2 disabled:opacity-60"
+                    >
+                      {isRefreshingDailyPwd && <Loader2 size={12} className="animate-spin" />}
+                      {isRefreshingDailyPwd ? '获取中...' : '获取'}
+                    </button>
+                  </div>
                   <div className="bg-zinc-900 text-zinc-300 font-mono text-[11px] p-4 rounded-2xl h-36 overflow-y-auto flex flex-col gap-2 shadow-inner">
                     {dailyPwdLogs.length === 0 ? (
                       <span className="opacity-50">暂无日志...</span>

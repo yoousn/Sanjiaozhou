@@ -147,7 +147,7 @@ export function VariantItem({
 
         <div className="text-[10px] text-zinc-400 font-medium px-1 flex items-center justify-between gap-2">
           <span className="truncate">来源: {variant.author || '未知来源'} · 视频日期: {variant.date || '未知日期'}</span>
-          {variant.sourceUrl && (
+          {variant.sourceUrl && /^https?:\/\//i.test(variant.sourceUrl) && (
             <a href={variant.sourceUrl} target="_blank" rel="noreferrer" className="shrink-0 inline-flex items-center gap-1 text-zinc-500 hover:text-zinc-900 transition-colors">
               <ExternalLink size={11} strokeWidth={2.5} />
               原视频

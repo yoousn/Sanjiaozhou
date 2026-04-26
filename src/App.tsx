@@ -17,7 +17,7 @@ import { GunCard } from './components/GunCard';
 import { AddGunModal } from './components/AddGunModal';
 import { CollectModal } from './components/CollectModal';
 import { useToast } from './components/useToast';
-import { cn } from './utils';
+import { cn, buildModelOptionValue, parseModelOptionValue } from './utils';
 
 import { CSS } from '@dnd-kit/utilities';
 import {
@@ -128,18 +128,6 @@ function normalizeCollectSearchResult(
     errors: Array.isArray(data?.errors) ? data.errors : [],
     requestId: typeof data?.requestId === 'string' ? data.requestId : (fallback.requestId || ''),
     isPending: typeof data?.isPending === 'boolean' ? data.isPending : Boolean(fallback.isPending),
-  };
-}
-
-function buildModelOptionValue(providerId: string, model: string) {
-  return `${providerId}::${model}`;
-}
-
-function parseModelOptionValue(value: string) {
-  const [providerId = '', ...modelParts] = (value || '').split('::');
-  return {
-    providerId,
-    model: modelParts.join('::'),
   };
 }
 
@@ -347,37 +335,37 @@ export default function App() {
     localStorage.setItem('customTheme', JSON.stringify(customTheme));
   }, [customTheme]);
 
-  const [autoCollectConfig, setAutoConfig] = useState({ 
-    enabled: false, 
-    model: '', 
+  const [autoCollectConfig, setAutoConfig] = useState({
+    enabled: false,
+    model: '',
     intervalHours: 1,
     creatorIds: [] as string[],
-    logs: [] as any[] 
+    logs: [] as Array<{ time: string; message: string; success: boolean }>
   });
   const [isSavingAuto, setIsSavingAuto] = useState(false);
   const { toast, showToast } = useToast();
 
   const hasGarbledDailyPwd = (data: Record<string, string>) => Object.keys(data).some(key => key.includes('�'));
 
-  const applyDailyPwd = (data: any) => {
-    if (data && data.date && data.data) {
-      setDailyPwd(data);
+  const applyDailyPwd = (data: Record<string, string> | { date: string; data: Record<string, string> } | null | undefined) => {
+    if (data && 'date' in data && 'data' in data && data.data && typeof data.data === 'object') {
+      setDailyPwd(data as { date: string; data: Record<string, string> });
       return true;
     }
-    if (data && !data.error && typeof data === 'object' && !Array.isArray(data) && Object.keys(data).length > 0) {
+    if (data && typeof data === 'object' && !Array.isArray(data) && Object.keys(data as Record<string, string>).length > 0 && !('error' in data)) {
       const today = new Date().toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai' });
-      setDailyPwd({ date: today, data });
+      setDailyPwd({ date: today, data: data as Record<string, string> });
       return true;
     }
     return false;
   };
 
-  const shouldRefreshDailyPwd = (data: any) => {
-    if (data?.date && data?.data && typeof data.data === 'object' && !Array.isArray(data.data)) {
-      return hasGarbledDailyPwd(data.data);
+  const shouldRefreshDailyPwd = (data: Record<string, string> | { date: string; data: Record<string, string> } | null | undefined) => {
+    if (data && 'date' in data && 'data' in data && typeof (data as { data: Record<string, string> }).data === 'object' && !Array.isArray((data as { data: Record<string, string> }).data)) {
+      return hasGarbledDailyPwd((data as { data: Record<string, string> }).data);
     }
-    if (data && !data.error && typeof data === 'object' && !Array.isArray(data)) {
-      return hasGarbledDailyPwd(data);
+    if (data && typeof data === 'object' && !Array.isArray(data) && !('error' in data)) {
+      return hasGarbledDailyPwd(data as Record<string, string>);
     }
     return true;
   };
@@ -411,6 +399,10 @@ export default function App() {
     localStorage.setItem('darkMode', String(isDarkMode));
   }, [isDarkMode]);
 
+  useEffect(() => {
+    return () => { stopSearchPolling(); };
+  }, []);
+
   const stopSearchPolling = () => {
     if (searchPollRef.current !== null) {
       window.clearInterval(searchPollRef.current);
@@ -422,6 +414,8 @@ export default function App() {
   const [draftData, setDraftData] = useState<GunGroup[]>([]);
   const [isRefreshingData, setIsRefreshingData] = useState(false);
 
+  const [savedDataLoadError, setSavedDataLoadError] = useState<string | null>(null);
+
   useEffect(() => {
     const fetchData = (silent = false) => {
       if (!silent) {
@@ -432,9 +426,11 @@ export default function App() {
         .then(safeJson)
         .then(data => {
           setSavedData(data);
+          setSavedDataLoadError(null);
         })
         .catch(err => {
           console.error('加载失败:', err);
+          setSavedDataLoadError(err instanceof Error ? err.message : '加载失败');
         })
         .finally(() => {
           if (!silent) {
@@ -443,7 +439,7 @@ export default function App() {
         });
     };
 
-    fetchData(true);
+    fetchData(false);
 
     const interval = setInterval(() => {
       if (!isEditing && activeModal === 'none' && !isSearchingCollect && !isPreviewingCollect && !isApplyingCollect) {
@@ -652,6 +648,7 @@ export default function App() {
 
   const requestDeleteGroup = (groupId: string) => {
     const group = draftData.find(g => g.id === groupId);
+    if (!window.confirm(`确定删除枪系「${group?.name || ''}」？此操作不可撤销。`)) return;
     handleDeleteGroup(groupId);
     showToast(`已删除枪系 ${group?.name || ''}`, 'warn');
   };
@@ -659,6 +656,7 @@ export default function App() {
   const requestDeleteVariant = (groupId: string, variantId: string) => {
     const group = draftData.find(g => g.id === groupId);
     const variant = group?.variants.find(v => v.id === variantId);
+    if (!window.confirm(`确定删除配置「${variant?.buildType || '该配置'}」？此操作不可撤销。`)) return;
     handleDeleteVariant(groupId, variantId);
     showToast(`已删除配置 ${variant?.buildType || '该配置'}`, 'warn');
   };
@@ -751,8 +749,8 @@ export default function App() {
     if (activeTab === 'home') return true;
     return g.category === activeTab;
   }).sort((a, b) => {
-      const pinA = (a as any).pinned ? 1 : 0;
-      const pinB = (b as any).pinned ? 1 : 0;
+      const pinA = a.pinned ? 1 : 0;
+      const pinB = b.pinned ? 1 : 0;
       if (pinA !== pinB) {
         return pinB - pinA;
       }
@@ -791,7 +789,8 @@ export default function App() {
         body: JSON.stringify(draftData)
       });
       if (!res.ok) throw new Error('网络请求异常');
-      setSavedData(draftData);
+      const serverData = await safeJson(res);
+      setSavedData(Array.isArray(serverData) ? serverData : draftData);
       setIsEditing(false);
       showToast('已保存！');
     } catch (e) {
@@ -815,11 +814,11 @@ export default function App() {
 
   const handleTogglePin = async (groupId: string) => {
     if (isEditing) {
-      setDraftData(prev => prev.map(g => g.id === groupId ? { ...g, pinned: !(g as any).pinned } : g));
+      setDraftData(prev => prev.map(g => g.id === groupId ? { ...g, pinned: !g.pinned } : g));
       return;
     }
 
-    const updateFn = (prev: GunGroup[]) => prev.map(g => g.id === groupId ? { ...g, pinned: !(g as any).pinned } : g);
+    const updateFn = (prev: GunGroup[]) => prev.map(g => g.id === groupId ? { ...g, pinned: !g.pinned } : g);
     const newSavedData = updateFn(savedData);
     setSavedData(newSavedData);
     
@@ -1335,7 +1334,20 @@ export default function App() {
                   searchSuggestions={Array.from(new Set(sourceData.map(g => g.name)))}
                 />
 
-                <div className="mb-6 pl-1 mt-2">
+                {isRefreshingData && savedData.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-24 animate-fade-in">
+                    <Loader2 size={24} className="animate-spin text-zinc-400 mb-4" />
+                    <p className="text-[13px] font-bold text-zinc-500">正在加载...</p>
+                  </div>
+                ) : savedDataLoadError && savedData.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-24 animate-fade-in">
+                    <AlertCircle size={24} className="text-zinc-400 mb-4" />
+                    <p className="text-[13px] font-bold text-zinc-500 mb-4">{savedDataLoadError}</p>
+                    <button onClick={() => { setSavedDataLoadError(null); setIsRefreshingData(true); fetch('/api/builds').then(safeJson).then(data => { setSavedData(data); setSavedDataLoadError(null); }).catch(err => setSavedDataLoadError('加载失败')).finally(() => setIsRefreshingData(false)); }} className="px-4 py-2 bg-zinc-900 text-white text-[12px] font-bold rounded-xl hover:bg-zinc-800 transition">重试</button>
+                  </div>
+                ) : (
+                  <>
+                  <div className="mb-6 pl-1 mt-2">
                   <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-4">
                     <div>
                       <h1 className="text-3xl md:text-4xl font-black tracking-tighter mb-2" style={{ color: 'inherit' }}>
@@ -1455,10 +1467,12 @@ export default function App() {
                     )}
                   </div>
                 )}
-              </>
-            )}
-          </div>
-        </main>
+                </>
+              )}
+            </>
+          )}
+        </div>
+      </main>
 
       <div className="fixed inset-0 pointer-events-none z-[-1]"
         style={{
@@ -1484,14 +1498,14 @@ export default function App() {
                <button onClick={() => setActiveModal('none')} className="p-2 bg-zinc-100 rounded-full hover:bg-zinc-200"><X size={16} strokeWidth={2.5}/></button>
             </div>
             <div className="grid gap-3">
-              <button onClick={() => setActiveModal('collect')} className="py-4 px-4 border border-zinc-200 rounded-2xl hover:border-emerald-500 hover:bg-emerald-50 font-bold text-zinc-700 hover:text-emerald-700 transition flex items-center justify-between text-left">
+              <button onClick={() => setActiveModal('collect')} className="py-4 px-4 border border-zinc-200 dark:border-zinc-700 rounded-2xl hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 font-bold text-zinc-700 dark:text-zinc-300 hover:text-emerald-700 dark:hover:text-emerald-400 transition flex items-center justify-between text-left">
                 <div className="flex flex-col items-start gap-1">
                   <span className="text-[14px]">手动采集</span>
                   <span className="text-[11px] font-medium text-zinc-500">自己搜索并勾选视频加入网站</span>
                 </div>
                 <Radio size={18} strokeWidth={2.5}/>
               </button>
-              <button onClick={() => setActiveModal('auto-collect')} className="py-4 px-4 border border-zinc-200 rounded-2xl hover:border-blue-500 hover:bg-blue-50 font-bold text-zinc-700 hover:text-blue-700 transition flex items-center justify-between text-left">
+              <button onClick={() => setActiveModal('auto-collect')} className="py-4 px-4 border border-zinc-200 dark:border-zinc-700 rounded-2xl hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 font-bold text-zinc-700 dark:text-zinc-300 hover:text-blue-700 dark:hover:text-blue-400 transition flex items-center justify-between text-left">
                 <div className="flex flex-col items-start gap-1">
                   <span className="text-[14px]">自动采集配置</span>
                   <span className="text-[11px] font-medium text-zinc-500">每小时自动获取聪聪最新视频</span>
@@ -1506,17 +1520,17 @@ export default function App() {
       {activeModal === 'auto-collect' && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-zinc-900/60" onClick={() => setActiveModal('none')} />
-          <div className="bg-white rounded-3xl p-6 md:p-8 relative z-10 w-full max-w-2xl flex flex-col gap-5 shadow-2xl animate-fade-in">
+          <div className="bg-white dark:bg-[#121214] rounded-3xl p-6 md:p-8 relative z-10 w-full max-w-2xl flex flex-col gap-5 shadow-2xl animate-fade-in">
             <div className="flex justify-between items-center">
                <div>
-                 <h3 className="text-xl font-black text-zinc-900">自动采集设置</h3>
-                 <p className="text-[12px] font-medium text-zinc-500 mt-1">后台智能比对记录，自动过滤重复视频并加入新卡片</p>
+                 <h3 className="text-xl font-black text-zinc-900 dark:text-white">自动采集设置</h3>
+                 <p className="text-[12px] font-medium text-zinc-500 dark:text-zinc-400 mt-1">后台智能比对记录，自动过滤重复视频并加入新卡片</p>
                </div>
                <button onClick={() => setActiveModal('none')} className="p-2 bg-zinc-100 rounded-full hover:bg-zinc-200"><X size={16} strokeWidth={2.5}/></button>
             </div>
 
-            <div className="flex items-center justify-between p-4 bg-zinc-50 rounded-2xl border border-zinc-200 mt-2">
-              <span className="font-bold text-[13px]">开启后台定时采集</span>
+            <div className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-[#18181b] rounded-2xl border border-zinc-200 dark:border-zinc-800 mt-2">
+              <span className="font-bold text-[13px] dark:text-zinc-300">开启后台定时采集</span>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input type="checkbox" className="sr-only peer" checked={autoCollectConfig.enabled} onChange={e => {
                   const checked = e.target.checked;
@@ -1666,7 +1680,7 @@ export default function App() {
       {toast && (
         <div
           className="fixed bottom-24 md:bottom-10 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-2 px-5 py-3 rounded-xl shadow-[0_12px_44px_rgba(0,0,0,0.12)] pointer-events-none animate-fade-in"
-          style={{ backgroundColor: toast.type === 'success' ? '#18181B' : '#DC2626' }}
+          style={{ backgroundColor: toast.type === 'success' ? '#18181B' : toast.type === 'error' ? '#B91C1C' : '#DC2626' }}
         >
           {toast.type === 'success' ? <CheckCircle2 size={16} className="text-emerald-400" strokeWidth={2.5} /> : <AlertCircle size={16} className="text-white" strokeWidth={2.5} />}
           <span className="text-white font-bold text-[13px] tracking-wide">{toast.msg}</span>

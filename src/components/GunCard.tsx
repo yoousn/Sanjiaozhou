@@ -111,12 +111,18 @@ export function GunCard({
   onAddVariant: (groupId: string) => void,
   onReorderVariants?: (groupId: string, activeId: string, overId: string) => void,
   onTogglePin?: (groupId: string) => void,
-  cardDragHandleProps?: any
+  cardDragHandleProps?: React.HTMLAttributes<HTMLElement>
 }) {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [page, setPage] = useState(0);
   const [pinMessage, setPinMessage] = useState<{ text: string, type: 'pin' | 'unpin' } | null>(null);
   const pinTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  React.useEffect(() => {
+    return () => {
+      if (pinTimeoutRef.current) clearTimeout(pinTimeoutRef.current);
+    };
+  }, []);
 
   const pageSize = 3;
   const totalPages = Math.ceil(group.variants.length / pageSize);
@@ -140,15 +146,35 @@ export function GunCard({
     })
   );
 
-  const handleCopy = (code: string, id: string) => {
-    navigator.clipboard.writeText(code);
-    setCopiedId(id);
-    setTimeout(() => { setCopiedId(null); }, 2000);
+  const handleCopy = async (code: string, id: string) => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopiedId(id);
+      setTimeout(() => { setCopiedId(null); }, 2000);
+    } catch {
+      // Fallback for non-HTTPS environments
+      try {
+        const textarea = document.createElement('textarea');
+        textarea.value = code;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        const succeeded = document.execCommand('copy');
+        document.body.removeChild(textarea);
+        if (succeeded) {
+          setCopiedId(id);
+          setTimeout(() => { setCopiedId(null); }, 2000);
+        }
+      } catch {
+        // Both clipboard methods failed — silently ignore
+      }
+    }
   };
 
   const handlePinClick = () => {
     if (onTogglePin) {
-      const isCurrentlyPinned = !!(group as any).pinned;
+      const isCurrentlyPinned = !!group.pinned;
       onTogglePin(group.id);
       setPinMessage({ text: !isCurrentlyPinned ? '已置顶！' : '取消！', type: !isCurrentlyPinned ? 'pin' : 'unpin' });
       if (pinTimeoutRef.current) clearTimeout(pinTimeoutRef.current);
@@ -225,10 +251,10 @@ export function GunCard({
                 <button
                   type="button"
                   onClick={handlePinClick}
-                  className={cn("p-1 rounded-md transition-colors outline-none", (group as any).pinned ? "text-yellow-600 bg-yellow-50 hover:bg-yellow-100" : "text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100")}
-                  title={(group as any).pinned ? "取消置顶" : "置顶卡片"}
+                  className={cn("p-1 rounded-md transition-colors outline-none", group.pinned ? "text-yellow-600 bg-yellow-50 hover:bg-yellow-100" : "text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100")}
+                  title={group.pinned ? "取消置顶" : "置顶卡片"}
                 >
-                  <Pin size={14} className={cn((group as any).pinned && "fill-yellow-500")} />
+                  <Pin size={14} className={cn(group.pinned && "fill-yellow-500")} />
                 </button>
                 {pinMessage && (
                   <div className={cn(
@@ -255,10 +281,10 @@ export function GunCard({
                 <button
                   type="button"
                   onClick={handlePinClick}
-                  className={cn("p-1 rounded-md transition-colors outline-none", (group as any).pinned ? "text-yellow-600 bg-yellow-50 hover:bg-yellow-100" : "text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100")}
-                  title={(group as any).pinned ? "取消置顶" : "置顶卡片"}
+                  className={cn("p-1 rounded-md transition-colors outline-none", group.pinned ? "text-yellow-600 bg-yellow-50 hover:bg-yellow-100" : "text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100")}
+                  title={group.pinned ? "取消置顶" : "置顶卡片"}
                 >
-                  <Pin size={14} className={cn((group as any).pinned && "fill-yellow-500")} />
+                  <Pin size={14} className={cn(group.pinned && "fill-yellow-500")} />
                 </button>
                 {pinMessage && (
                   <div className={cn(

@@ -44,6 +44,7 @@ export type GunGroup = {
   id: string;
   name: string;
   category: string;
+  pinned?: boolean;
   variants: GunVariant[];
 };
 

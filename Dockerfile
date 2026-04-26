@@ -2,17 +2,22 @@ FROM node:20-bookworm-slim
 
 WORKDIR /app
 
-# 安装 Python 3、pip 与系统 Chromium
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 \
-    python3-pip \
-    python-is-python3 \
-    chromium \
-    && rm -rf /var/lib/apt/lists/*
+# 切换 Debian / pip / npm 到国内镜像源并安装 Python 3、pip 与系统 Chromium
+RUN set -eux; \
+    printf 'Types: deb\nURIs: https://mirrors.tuna.tsinghua.edu.cn/debian\nSuites: bookworm bookworm-updates\nComponents: main\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n\nTypes: deb\nURIs: https://mirrors.tuna.tsinghua.edu.cn/debian-security\nSuites: bookworm-security\nComponents: main\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n' > /etc/apt/sources.list.d/debian.sources; \
+    npm config set registry https://registry.npmmirror.com; \
+    pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+        python3 \
+        python3-pip \
+        python-is-python3 \
+        chromium; \
+    rm -rf /var/lib/apt/lists/*
 
 # 安装依赖
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 
 # 复制源代码
 COPY . .

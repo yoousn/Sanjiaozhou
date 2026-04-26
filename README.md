@@ -121,3 +121,5 @@ bash scripts/deploy_remote.sh
 ```
 
 这个脚本同样遵守平滑更新规则，不会主动执行 `docker-compose down`。
+...
+

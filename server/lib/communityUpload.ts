@@ -84,14 +84,15 @@ export async function uploadToCF(buffer: Buffer, filename: string): Promise<Uplo
   try {
     const res = await fetch(CF_UPLOAD_URL, {
       method: "POST",
-      headers: { Authorization: `Bearer ${CF_AUTH_TOKEN}` },
+      headers: { "X-Auth-Token": CF_AUTH_TOKEN },
       body: formData,
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      return { success: false, error: data?.error || `上传失败 (${res.status})` };
+      const detail = data?.error || data?.message || JSON.stringify(data).slice(0, 100);
+      return { success: false, error: `上传失败 (${res.status}): ${detail}` };
     }
-    const url = typeof data?.url === "string" ? data.url : (typeof data?.imageUrl === "string" ? data.imageUrl : "");
+    const url = typeof data?.url === "string" ? data.url : (typeof data?.imageUrl === "string" ? data.imageUrl : (typeof data?.[0]?.url === "string" ? data[0].url : ""));
     if (!url) {
       return { success: false, error: "图床未返回图片地址" };
     }

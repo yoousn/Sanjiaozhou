@@ -31,7 +31,7 @@ export const cardSizeClassMap: Record<UiCardSize, string> = {
   roomy: 'p-5 md:p-6',
 };
 
-export const gridGapClassMap: Record<UiPreferences['gridGap'], string> = {
+export const gridGapClassMap: Record<number, string> = {
   12: 'gap-3',
   16: 'gap-4',
   20: 'gap-5',

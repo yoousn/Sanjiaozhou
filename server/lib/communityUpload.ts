@@ -76,25 +76,22 @@ export async function uploadToCF(buffer: Buffer, filename: string): Promise<Uplo
     return { success: false, error: "图床服务未配置" };
   }
 
-  const formData = new FormData();
   const ext = filename.split(".").pop() || "png";
-  const blob = new Blob([buffer], { type: "application/octet-stream" });
-  formData.append("file", blob, `community_${Date.now()}.${ext}`);
+  const key = `community_${Date.now()}.${ext}`;
+  const url = `${CF_UPLOAD_URL.replace(/\/+$/, "")}/${key}`;
 
   try {
-    const res = await fetch(CF_UPLOAD_URL, {
-      method: "POST",
-      headers: { "X-Auth-Token": CF_AUTH_TOKEN },
-      body: formData,
+    const res = await fetch(url, {
+      method: "PUT",
+      headers: {
+        Authorization: CF_AUTH_TOKEN,
+        "Content-Type": "application/octet-stream",
+      },
+      body: new Uint8Array(buffer),
     });
-    const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      const detail = data?.error || data?.message || JSON.stringify(data).slice(0, 100);
-      return { success: false, error: `上传失败 (${res.status}): ${detail}` };
-    }
-    const url = typeof data?.url === "string" ? data.url : (typeof data?.imageUrl === "string" ? data.imageUrl : (typeof data?.[0]?.url === "string" ? data[0].url : ""));
-    if (!url) {
-      return { success: false, error: "图床未返回图片地址" };
+      const text = await res.text().catch(() => "");
+      return { success: false, error: `上传失败 (${res.status}): ${text.slice(0, 200)}` };
     }
     return { success: true, url };
   } catch (e) {

@@ -5,7 +5,6 @@ WORKDIR /app
 # 切换 Debian / pip / npm 到国内镜像源并安装 Python 3、pip 与系统 Chromium
 RUN set -eux; \
     printf 'Types: deb\nURIs: http://mirrors.tuna.tsinghua.edu.cn/debian\nSuites: bookworm bookworm-updates\nComponents: main\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n\nTypes: deb\nURIs: http://mirrors.tuna.tsinghua.edu.cn/debian-security\nSuites: bookworm-security\nComponents: main\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n' > /etc/apt/sources.list.d/debian.sources; \
-    npm config set registry https://registry.npmmirror.com; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
         python3 \

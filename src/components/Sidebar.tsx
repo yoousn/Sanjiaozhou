@@ -3,6 +3,8 @@ import { Home, Crosshair, Target, Settings } from 'lucide-react';
 import { cn, getButtonClassName, radiusClassMap, sidebarWidthClassMap } from '../utils';
 import type { UiButtonStyle, UiRadius, UiSidebarWidth } from '../types';
 
+const APP_VERSION = `v${__APP_VERSION__}`;
+
 export function Sidebar({
   activeTab,
   setActiveTab,
@@ -83,6 +85,11 @@ export function Sidebar({
             <Settings size={16} strokeWidth={2} className="group-hover:rotate-45 transition-transform duration-300" />
             <span className="hidden lg:block text-[13px] font-bold">系统设置</span>
           </button>
+          <div className="mt-3 px-3 hidden lg:block">
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400 dark:text-zinc-500">
+              {APP_VERSION}
+            </span>
+          </div>
         </div>
       </nav>
 

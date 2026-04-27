@@ -200,6 +200,7 @@ async function safeJson(res: Response) {
 }
 
 export default function App() {
+  const mobileVersionLabel = `v${__APP_VERSION__}`;
   const [activeTab, setActiveTab] = useState('home');
   const [isEditing, setIsEditing] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -1332,6 +1333,11 @@ export default function App() {
         />
 
         <main className={cn('flex-1 p-4 md:p-6 lg:p-8 pb-32', sidebarWidthClasses.main)}>
+          <div className="md:hidden fixed left-4 bottom-24 z-40 pointer-events-none">
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400/90 dark:text-zinc-500/90">
+              {mobileVersionLabel}
+            </span>
+          </div>
           <div className="max-w-[1600px] mx-auto">
             {activeTab === 'settings' ? (
               <div className="max-w-3xl mx-auto animate-fade-in mt-4">

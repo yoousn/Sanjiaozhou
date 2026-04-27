@@ -2,6 +2,16 @@
 
 > 本文档记录详细施工过程与历史节点，不等同于正式版本说明。正式版本摘要请看 [release-notes.md](release-notes.md)。
 
+## [当前节点] v1.0.1 构建修复与页面版本显示补充
+**时间：** 2026年04月28日 01:38
+**状态：**
+1. 已移除 `Dockerfile` 中对 `npmmirror` 的强制 npm registry 覆盖，改为让 `npm ci` 直接使用锁文件当前的 `registry.npmjs.org` 来源，降低远端 Docker 构建阶段的 TLS / 镜像不一致风险。
+2. 已通过 `vite.config.ts` 将 `package.json` 版本号注入前端构建产物，避免页面版本显示手写死值。
+3. 桌面端已在左侧边栏底部增加持续可见的版本号显示，移动端也补充了左下角轻量版本标签，并避开底部导航区域。
+4. 本次改动将继续通过 lint/build/docker build 验证，再根据新的部署日志判断是否仍存在纯网络环境问题。
+
+---
+
 ## [当前节点] v1.0.1 置顶持久化修复、界面自定义与每日密码自动刷新
 **时间：** 2026年04月28日 00:50
 **状态：**
@@ -91,4 +101,4 @@
 4. 新增 `docs/project-rules.md`、`docs/collaboration.md`、`docs/deployment.md`、`docs/versioning.md`、`docs/release-notes.md`。
 5. 将当前稳定基线正式定义为 `v1.0.0`。
 
-更新时间：2026年04月28日 00:50
+更新时间：2026年04月28日 01:38

@@ -84,6 +84,7 @@ docker-compose down
    - `docker-compose build`
    - `docker-compose up -d`
    - 默认执行 `docker image prune -f`
+5. 若本次 push 对应的是正式版本号更新，工作流会在部署成功后自动创建并推送 `v版本号` tag；同名 tag 已存在时会自动跳过
 
 ## GitHub Secrets
 仓库 Actions Secrets 需要配置：

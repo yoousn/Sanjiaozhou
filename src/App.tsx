@@ -10,13 +10,18 @@ import {
   CollectSearchResult,
   CollectVideoCandidate,
   ModelTestResult,
+  UiButtonStyle,
+  UiCardSize,
   UiPreferences,
+  UiRadius,
 } from './types';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { GunCard } from './components/GunCard';
 import { AddGunModal } from './components/AddGunModal';
 import { CollectModal } from './components/CollectModal';
+import { SortableGunCard } from './components/SortableGunCard';
+import { CommunityPage } from './pages/CommunityPage';
 import { useToast } from './components/useToast';
 import {
   cn,
@@ -28,8 +33,28 @@ import {
   radiusClassMap,
   sidebarWidthClassMap,
 } from './utils';
+import {
+  EMPTY_META,
+  EMPTY_PROVIDER_FORM,
+  EMPTY_SEARCH,
+  CARD_SIZE_OPTIONS,
+  CARD_MIN_HEIGHT_OPTIONS,
+  GRID_GAP_OPTIONS,
+  GRID_COLUMNS_OPTIONS,
+  VARIANTS_PER_PAGE_OPTIONS,
+  RADIUS_OPTIONS,
+  SIDEBAR_WIDTH_OPTIONS,
+  BUTTON_STYLE_OPTIONS,
+  getOptionIndex,
+} from './constants';
+import {
+  normalizeCollectSearchResult,
+  normalizeCollectMeta,
+  normalizePresetGunsInput,
+  buildProviderFormFromMeta,
+  safeJson,
+} from './utils/collect';
 
-import { CSS } from '@dnd-kit/utilities';
 import {
   DndContext,
   closestCenter,
@@ -43,160 +68,35 @@ import {
   SortableContext,
   sortableKeyboardCoordinates,
   rectSortingStrategy,
-  useSortable
 } from '@dnd-kit/sortable';
 
-type SortableGunCardProps = React.ComponentProps<typeof GunCard> & {
-  idx: number;
-  activeTab: string;
+type SliderFieldProps = {
+  label: string;
+  valueLabel: string;
+  min: number;
+  max: number;
+  value: number;
+  onChange: (nextIndex: number) => void;
 };
 
-function SortableGunCard({ group, idx, isEditing, activeTab, ...props }: SortableGunCardProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging
-  } = useSortable({ id: group.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    zIndex: isDragging ? 50 : 1,
-    opacity: isDragging ? 0.9 : 1,
-    position: 'relative' as const,
-  };
-
-  if (!isEditing) {
-    return (
-      <div
-        className="self-start animate-fade-in w-full shadow-sm hover:shadow-md transition-shadow rounded-2xl"
-        style={{ animationDelay: `${idx * 0.04}s` }}
-      >
-        <GunCard group={group} isEditing={false} {...props} />
-      </div>
-    );
-  }
-
+function SliderField({ label, valueLabel, min, max, value, onChange }: SliderFieldProps) {
   return (
-    <div ref={setNodeRef} style={style} className="self-start w-full shadow-sm hover:shadow-md transition-shadow rounded-2xl">
-      <GunCard
-        group={group}
-        isEditing={true}
-        cardDragHandleProps={{ ...attributes, ...listeners }}
-        {...props}
+    <div>
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">{label}</label>
+        <span className="text-[12px] font-black text-zinc-900 dark:text-white">{valueLabel}</span>
+      </div>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={1}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="w-full accent-zinc-900 dark:accent-white"
       />
     </div>
   );
-}
-
-const EMPTY_META: CollectMeta = {
-  creators: [],
-  models: [],
-  defaultModel: '',
-  defaultGuns: [],
-  providers: [],
-  modelOptions: [],
-  concurrency: {
-    searchEnabled: false,
-    applyEnabled: false,
-  },
-};
-
-const EMPTY_PROVIDER_FORM: CollectModelProviderInput = {
-  id: '',
-  name: '',
-  baseUrl: '',
-  apiKey: '',
-  models: [],
-  selectedModel: '',
-};
-
-const EMPTY_SEARCH: CollectSearchResult = {
-  creators: [],
-  guns: [],
-  creatorIds: [],
-  videos: [],
-  logs: [],
-  errors: [],
-  requestId: '',
-  isPending: false,
-};
-
-function normalizeCollectSearchResult(
-  data: Partial<CollectSearchResult> | null | undefined,
-  fallback: { guns?: string[]; creatorIds?: string[]; requestId?: string; isPending?: boolean } = {}
-): CollectSearchResult {
-  return {
-    creators: Array.isArray(data?.creators) ? data.creators : [],
-    guns: Array.isArray(data?.guns) ? data.guns : (fallback.guns || []),
-    creatorIds: Array.isArray(data?.creatorIds) ? data.creatorIds : (fallback.creatorIds || []),
-    videos: Array.isArray(data?.videos) ? data.videos : [],
-    logs: Array.isArray(data?.logs) ? data.logs : [],
-    errors: Array.isArray(data?.errors) ? data.errors : [],
-    requestId: typeof data?.requestId === 'string' ? data.requestId : (fallback.requestId || ''),
-    isPending: typeof data?.isPending === 'boolean' ? data.isPending : Boolean(fallback.isPending),
-  };
-}
-
-function normalizeCollectMeta(data: Partial<CollectMeta> | null | undefined): CollectMeta {
-  const providers = Array.isArray(data?.providers) ? data.providers.map((provider) => ({
-    id: String(provider.id || ''),
-    name: String(provider.name || ''),
-    baseUrl: String(provider.baseUrl || ''),
-    models: Array.isArray(provider.models) ? provider.models.map(String) : [],
-    hasApiKey: Boolean(provider.hasApiKey),
-  })) : [];
-
-  const modelOptions = Array.isArray(data?.modelOptions) ? data.modelOptions.map((option) => ({
-    value: String(option.value || ''),
-    providerId: String(option.providerId || ''),
-    providerName: String(option.providerName || ''),
-    model: String(option.model || ''),
-    label: String(option.label || ''),
-  })) : [];
-
-  return {
-    creators: Array.isArray(data?.creators) ? data.creators : [],
-    models: Array.isArray(data?.models) ? data.models.map(String) : [],
-    defaultModel: String(data?.defaultModel || ''),
-    defaultGuns: Array.isArray(data?.defaultGuns) ? data.defaultGuns.map(String) : [],
-    providers,
-    modelOptions,
-    concurrency: {
-      searchEnabled: Boolean(data?.concurrency?.searchEnabled),
-      applyEnabled: Boolean(data?.concurrency?.applyEnabled),
-    },
-  };
-}
-
-function normalizePresetGunsInput(value: string) {
-  return [...new Set(value.split(/[，,\s]+/).map((item) => item.trim()).filter(Boolean))];
-}
-
-function buildProviderFormFromMeta(meta: CollectMeta, providerId: string): CollectModelProviderInput {
-  const provider = meta.providers.find((item) => item.id === providerId);
-  const selectedOption = meta.modelOptions.find((option) => option.providerId === providerId);
-  return {
-    id: provider?.id || '',
-    name: provider?.name || '',
-    baseUrl: provider?.baseUrl || '',
-    apiKey: '',
-    models: provider?.models || [],
-    selectedModel: selectedOption?.model || provider?.models[0] || '',
-  };
-}
-
-async function safeJson(res: Response) {
-  const text = await res.text();
-  try {
-    return text ? JSON.parse(text) : {};
-  } catch (e) {
-    console.warn('API returned invalid JSON:', text);
-    return {};
-  }
 }
 
 export default function App() {
@@ -541,6 +441,10 @@ export default function App() {
     'w-full border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#18181b] py-2.5 px-3 text-[13px] font-bold shadow-sm outline-none focus:ring-4 focus:ring-zinc-900/10 dark:focus:ring-white/10',
     radiusClass
   );
+  const cardSizeIndex = getOptionIndex(CARD_SIZE_OPTIONS.map((option) => option.value), uiPreferences.cardSize);
+  const cardMinHeightIndex = getOptionIndex(CARD_MIN_HEIGHT_OPTIONS, uiPreferences.cardMinHeight);
+  const gridGapIndex = getOptionIndex(GRID_GAP_OPTIONS, uiPreferences.gridGap);
+  const radiusIndex = getOptionIndex(RADIUS_OPTIONS.map((option) => option.value), uiPreferences.controlRadius);
   const updateUiPreference = <K extends keyof UiPreferences>(key: K, value: UiPreferences[K]) => {
     setUiPreferences((prev: UiPreferences) => ({ ...prev, [key]: value }));
   };
@@ -1339,7 +1243,9 @@ export default function App() {
             </span>
           </div>
           <div className="max-w-[1600px] mx-auto">
-            {activeTab === 'settings' ? (
+            {activeTab === 'community' ? (
+              <CommunityPage />
+            ) : activeTab === 'settings' ? (
               <div className="max-w-3xl mx-auto animate-fade-in mt-4">
                 <h2 className="text-3xl font-black tracking-tighter mb-8 flex items-center gap-3">
                   系统设置
@@ -1475,82 +1381,8 @@ export default function App() {
                       </div>
                     </div>
 
-                    <div className="border-t border-zinc-100 dark:border-zinc-800 pt-6">
-                      <div className="mb-4">
-                        <h4 className="text-[14px] font-black text-zinc-900 dark:text-white">界面自定义</h4>
-                        <p className="mt-1 text-[13px] text-zinc-500">调整卡片尺寸、列表密度、布局列数与按钮外观，刷新后会自动保留。</p>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">卡片尺寸</label>
-                          <select value={uiPreferences.cardSize} onChange={(e) => updateUiPreference('cardSize', e.target.value as UiPreferences['cardSize'])} className={settingsSelectClass}>
-                            <option value="compact">紧凑</option>
-                            <option value="default">默认</option>
-                            <option value="roomy">宽松</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">卡片最小高度</label>
-                          <select value={uiPreferences.cardMinHeight} onChange={(e) => updateUiPreference('cardMinHeight', Number(e.target.value) as UiPreferences['cardMinHeight'])} className={settingsSelectClass}>
-                            <option value={300}>300</option>
-                            <option value={330}>330</option>
-                            <option value={360}>360</option>
-                            <option value={400}>400</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">每张卡片显示配置数</label>
-                          <select value={uiPreferences.variantsPerPage} onChange={(e) => updateUiPreference('variantsPerPage', Number(e.target.value) as UiPreferences['variantsPerPage'])} className={settingsSelectClass}>
-                            <option value={2}>2</option>
-                            <option value={3}>3</option>
-                            <option value={4}>4</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">桌面列数</label>
-                          <select value={uiPreferences.gridColumns} onChange={(e) => updateUiPreference('gridColumns', Number(e.target.value) as UiPreferences['gridColumns'])} className={settingsSelectClass}>
-                            <option value={3}>3 列</option>
-                            <option value={4}>4 列</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">卡片间距</label>
-                          <select value={uiPreferences.gridGap} onChange={(e) => updateUiPreference('gridGap', Number(e.target.value) as UiPreferences['gridGap'])} className={settingsSelectClass}>
-                            <option value={12}>12</option>
-                            <option value={16}>16</option>
-                            <option value={20}>20</option>
-                            <option value={24}>24</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">侧栏宽度</label>
-                          <select value={uiPreferences.sidebarWidth} onChange={(e) => updateUiPreference('sidebarWidth', e.target.value as UiPreferences['sidebarWidth'])} className={settingsSelectClass}>
-                            <option value="compact">紧凑</option>
-                            <option value="default">默认</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">控件圆角</label>
-                          <select value={uiPreferences.controlRadius} onChange={(e) => updateUiPreference('controlRadius', e.target.value as UiPreferences['controlRadius'])} className={settingsSelectClass}>
-                            <option value="lg">LG</option>
-                            <option value="xl">XL</option>
-                            <option value="full">FULL</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">按钮样式</label>
-                          <select value={uiPreferences.buttonStyle} onChange={(e) => updateUiPreference('buttonStyle', e.target.value as UiPreferences['buttonStyle'])} className={settingsSelectClass}>
-                            <option value="soft">柔和</option>
-                            <option value="solid">实心</option>
-                            <option value="outline">描边</option>
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-
                     <div className="mt-2 flex items-center justify-between gap-3 pt-6 border-t border-zinc-100 dark:border-zinc-800 flex-wrap">
                       <button onClick={() => setCustomTheme(DEFAULT_THEME)} className={textButtonClass}>恢复默认主题</button>
-                      <button onClick={() => setUiPreferences(DEFAULT_UI_PREFERENCES)} className={textButtonClass}>恢复默认 UI 设置</button>
                     </div>
                   </div>
                 </div>
@@ -1640,6 +1472,85 @@ export default function App() {
                     )}
                   </div>
                 </div>
+
+                {isEditing && (
+                  <div className={settingsPanelClass}>
+                    <div className="mb-5 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+                      <div>
+                        <h3 className="text-[15px] font-black text-zinc-900 dark:text-white">界面自定义</h3>
+                        <p className="text-[13px] text-zinc-500">编辑模式下直接调整卡片大小、列数、间距、圆角和按钮样式，刷新后会自动保留。</p>
+                      </div>
+                      <button onClick={() => setUiPreferences(DEFAULT_UI_PREFERENCES)} className={textButtonClass}>恢复默认 UI 设置</button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                      <SliderField
+                        label="卡片尺寸"
+                        valueLabel={CARD_SIZE_OPTIONS[cardSizeIndex].label}
+                        min={0}
+                        max={CARD_SIZE_OPTIONS.length - 1}
+                        value={cardSizeIndex}
+                        onChange={(nextIndex) => updateUiPreference('cardSize', CARD_SIZE_OPTIONS[nextIndex].value)}
+                      />
+                      <SliderField
+                        label="卡片最小高度"
+                        valueLabel={`${CARD_MIN_HEIGHT_OPTIONS[cardMinHeightIndex]} px`}
+                        min={0}
+                        max={CARD_MIN_HEIGHT_OPTIONS.length - 1}
+                        value={cardMinHeightIndex}
+                        onChange={(nextIndex) => updateUiPreference('cardMinHeight', CARD_MIN_HEIGHT_OPTIONS[nextIndex])}
+                      />
+                      <div>
+                        <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">每张卡片显示配置数</label>
+                        <select value={uiPreferences.variantsPerPage} onChange={(e) => updateUiPreference('variantsPerPage', Number(e.target.value) as UiPreferences['variantsPerPage'])} className={settingsSelectClass}>
+                          {VARIANTS_PER_PAGE_OPTIONS.map((option) => (
+                            <option key={option} value={option}>{option}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">桌面列数</label>
+                        <select value={uiPreferences.gridColumns} onChange={(e) => updateUiPreference('gridColumns', Number(e.target.value) as UiPreferences['gridColumns'])} className={settingsSelectClass}>
+                          {GRID_COLUMNS_OPTIONS.map((option) => (
+                            <option key={option} value={option}>{option} 列</option>
+                          ))}
+                        </select>
+                      </div>
+                      <SliderField
+                        label="卡片间距"
+                        valueLabel={`${GRID_GAP_OPTIONS[gridGapIndex]} px`}
+                        min={0}
+                        max={GRID_GAP_OPTIONS.length - 1}
+                        value={gridGapIndex}
+                        onChange={(nextIndex) => updateUiPreference('gridGap', GRID_GAP_OPTIONS[nextIndex])}
+                      />
+                      <div>
+                        <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">侧栏宽度</label>
+                        <select value={uiPreferences.sidebarWidth} onChange={(e) => updateUiPreference('sidebarWidth', e.target.value as UiPreferences['sidebarWidth'])} className={settingsSelectClass}>
+                          {SIDEBAR_WIDTH_OPTIONS.map((option) => (
+                            <option key={option.value} value={option.value}>{option.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <SliderField
+                        label="控件圆角"
+                        valueLabel={RADIUS_OPTIONS[radiusIndex].label}
+                        min={0}
+                        max={RADIUS_OPTIONS.length - 1}
+                        value={radiusIndex}
+                        onChange={(nextIndex) => updateUiPreference('controlRadius', RADIUS_OPTIONS[nextIndex].value)}
+                      />
+                      <div>
+                        <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">按钮样式</label>
+                        <select value={uiPreferences.buttonStyle} onChange={(e) => updateUiPreference('buttonStyle', e.target.value as UiPreferences['buttonStyle'])} className={settingsSelectClass}>
+                          {BUTTON_STYLE_OPTIONS.map((option) => (
+                            <option key={option.value} value={option.value}>{option.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {isEditing && sortBy === 'default' ? (
                   <DndContext

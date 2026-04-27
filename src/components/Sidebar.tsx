@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Crosshair, Target, Settings } from 'lucide-react';
+import { Home, Crosshair, Target, Settings, Users } from 'lucide-react';
 import { cn, getButtonClassName, radiusClassMap, sidebarWidthClassMap } from '../utils';
 import type { UiButtonStyle, UiRadius, UiSidebarWidth } from '../types';
 
@@ -76,6 +76,19 @@ export function Sidebar({
 
         <div className="mt-auto mb-6 w-full px-2">
           <button
+            onClick={() => setActiveTab('community')}
+            className={cn(
+              "flex items-center lg:justify-start justify-center gap-3 px-3 py-2.5 transition duration-200 outline-none hover:bg-black/5 dark:hover:bg-white/5 w-full group mb-1",
+              activeTab === 'community'
+                ? cn(getButtonClassName(buttonStyle === 'outline' ? 'solid' : buttonStyle, 'default'), 'dark:bg-zinc-100 dark:text-zinc-900 text-zinc-900')
+                : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white",
+              radiusClass
+            )}
+          >
+            <Users size={16} strokeWidth={activeTab === 'community' ? 2.5 : 2} className={cn("transition-transform duration-300", activeTab === 'community' && "scale-110")} />
+            <span className={cn("hidden lg:block text-[13px]", activeTab === 'community' ? "font-bold" : "font-semibold")}>社区</span>
+          </button>
+          <button
             onClick={onOpenSettings}
             className={cn(
               "flex items-center lg:justify-start justify-center gap-3 px-3 py-2.5 transition duration-200 outline-none hover:bg-black/5 dark:hover:bg-white/5 text-zinc-500 hover:text-zinc-900 dark:hover:text-white w-full group",
@@ -115,6 +128,20 @@ export function Sidebar({
             </button>
           )
         })}
+        <div className="w-[1px] h-6 bg-zinc-200 dark:bg-zinc-700 mx-1" />
+        <button
+          onClick={() => setActiveTab('community')}
+          className={cn(
+            "flex items-center justify-center px-3 py-2 outline-none transition duration-200 active:scale-95",
+            activeTab === 'community' ? cn(getButtonClassName(buttonStyle === 'outline' ? 'solid' : buttonStyle, 'default'), 'shadow-sm') : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white",
+            radiusClass
+          )}
+        >
+          <Users size={16} strokeWidth={activeTab === 'community' ? 2.5 : 2} />
+          {activeTab === 'community' && (
+            <span className="text-[11px] font-bold whitespace-nowrap">社区</span>
+          )}
+        </button>
         <div className="w-[1px] h-6 bg-zinc-200 dark:bg-zinc-700 mx-1" />
         <button
           onClick={onOpenSettings}

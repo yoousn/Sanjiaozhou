@@ -5,6 +5,7 @@ import path from "path";
 import { execFile, spawn, ChildProcess } from "child_process";
 import { promisify } from "util";
 import { fileURLToPath } from "url";
+import communityRouter from "./server/routes/community.js";
 
 const execFileAsync = promisify(execFile);
 const __filename = fileURLToPath(import.meta.url);
@@ -789,6 +790,8 @@ async function testModel(modelValue: string) {
 async function startServer() {
   const app = express();
   app.use(express.json());
+
+  app.use("/api/community", communityRouter);
 
   app.get("/api/builds", (req, res) => {
     try {

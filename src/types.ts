@@ -131,3 +131,28 @@ export type CollectSearchResult = {
   requestId?: string;
   isPending?: boolean;
 };
+
+export type CommunityReactions = {
+  fire: number;
+  money: number;
+  skull: number;
+};
+
+export type CommunityPost = {
+  id: string;
+  imageUrl: string;
+  description: string;
+  tags: string[];
+  createdAt: string;
+  uploader: string;
+  reactions: CommunityReactions;
+  reactionTotal: number;
+};
+
+export type CommunityActivity = {
+  id: string;
+  postId: string;
+  uploader: string;
+  action: string;
+  time: string;
+};

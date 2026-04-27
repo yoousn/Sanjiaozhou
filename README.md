@@ -1,155 +1,64 @@
 # 项目说明
 
-## 本地运行
+这是一个围绕枪械配置整理、手动采集与每日密码展示的全栈站点。当前项目由 [server.ts](server.ts) 统一启动 Express 服务与 Vite 前端，数据以 JSON 文件形式持久化，部分采集能力依赖 Python 脚本。
 
+## 技术栈
+- 前端：React 19 + Vite 6 + Tailwind CSS 4
+- 后端：Express + TypeScript
+- 数据存储：本地 JSON 文件 / 服务器 `runtime/` 持久化文件
+- 辅助脚本：Python（B 站采集、每日密码抓取）
+- 部署：GitHub Actions + SSH + Docker Compose
+
+## 项目结构
+- [server.ts](server.ts)：服务端入口，统一处理 API、静态资源与运行态文件读写
+- [src/](src/)：前端页面与组件
+- [scripts/](scripts/)：部署脚本、采集配置、运行日志模板
+- `爬取每日密码.py`：每日密码抓取脚本
+- `runtime/`：仅服务器保留的真实运行态数据目录（不应被代码发布覆盖）
+- [docs/](docs/)：项目规则、协作、部署、版本与进度文档
+- [AGENTS.md](AGENTS.md)：提供给 AI / CLI 工具的协作入口
+
+## 本地开发
 ### 前置要求
 - Node.js 20+
 - npm
-- Python 3（用于采集脚本）
-- Docker / Docker Compose（用于部署）
+- Python 3
+- Docker / Docker Compose（仅部署需要）
 
-### 启动步骤
-1. 安装依赖：`npm install`
-2. 本地启动：`npm run dev`
-3. 默认访问地址：`http://127.0.0.1:3000`
+### 常用命令
+- 安装依赖：`npm install`
+- 本地开发：`npm run dev`
+- 类型检查：`npm run lint`
+- 前端构建：`npm run build`
+- 端口冲突时重启：`npm run restart`
 
-当前项目由 Express + Vite 共同启动，服务端入口为 [server.ts](server.ts)，前端与运行时数据都由该进程统一管理。
+默认本地地址：`http://127.0.0.1:3000`
 
 ## 运行态数据
-本项目会在运行时直接读写以下文件：
-- `src/data.json`
-- `src/daily_pwd.json`
-- `scripts/collect_settings.json`
-- `scripts/auto_logs.json`
-- `scripts/daily_pwd_logs.json`
-- `scripts/auto_processed_videos.json`
-- `scripts/cookies.txt`
+项目运行时会直接读写以下文件对应的数据：
+- `data.json`
+- `daily_pwd.json`
+- `collect_settings.json`
+- `auto_logs.json`
+- `daily_pwd_logs.json`
+- `auto_processed_videos.json`
+- `cookies.txt`
 
-这些文件不能再跟代码一起整目录挂载或随仓库更新覆盖。部署时应统一保存在服务器的 `runtime/` 目录，再以单文件挂载到容器中。
+生产环境中，这些文件必须统一放在服务器 `/opt/xiujiao-era/runtime/` 下，并通过 Docker Compose 单文件挂载给容器；不要再把整目录随代码仓库一起覆盖。
 
-## Docker 部署
-### 服务器目录
-生产环境固定部署在：
-- `/opt/xiujiao-era`
+## 部署概览
+当前生产环境通过 GitHub Actions 在 `main` 分支 push 后自动部署到服务器 `/opt/xiujiao-era`，远程执行 [scripts/deploy_remote.sh](scripts/deploy_remote.sh) 完成：
+- `docker-compose build`
+- `docker-compose up -d`
+- `docker image prune -f`
 
-目录职责：
-- `/opt/xiujiao-era`：代码仓库、`Dockerfile`、`docker-compose.yml`、部署脚本
-- `/opt/xiujiao-era/runtime`：真实运行态数据，换服务器时重点迁移这里
+严禁在替换前执行 `docker-compose down`。
 
-运行态文件目录：
-- `/opt/xiujiao-era/runtime`
-
-### 需要长期保留和迁移的文件
-以后如果你要换服务器，核心不是搬整个 `src/` 或 `scripts/`，而是至少把下面这些文件迁走：
-
-- `/opt/xiujiao-era/runtime/data.json`
-- `/opt/xiujiao-era/runtime/daily_pwd.json`
-- `/opt/xiujiao-era/runtime/collect_settings.json`
-- `/opt/xiujiao-era/runtime/auto_logs.json`
-- `/opt/xiujiao-era/runtime/daily_pwd_logs.json`
-- `/opt/xiujiao-era/runtime/auto_processed_videos.json`
-- `/opt/xiujiao-era/runtime/cookies.txt`
-
-其中最关键的是：
-- `data.json`：网站主数据
-- `collect_settings.json`：采集与模型配置
-- `cookies.txt`：B 站登录态
-- `daily_pwd.json` / `daily_pwd_logs.json`：每日密码缓存与日志
-
-### 换服务器时的最小迁移方式
-新服务器准备好代码后，把旧服务器 `runtime/` 整个目录复制过去即可：
-
-```bash
-scp -r /opt/xiujiao-era/runtime root@新服务器IP:/opt/xiujiao-era/
-```
-
-如果新服务器上还没有项目目录，就先把代码部署到 `/opt/xiujiao-era`，再覆盖 `runtime/`。
-
-### 首次迁移运行态文件
-启用自动部署前，先在服务器执行一次迁移：
-
-```bash
-cd /opt/xiujiao-era
-mkdir -p runtime
-cp src/data.json runtime/data.json
-cp src/daily_pwd.json runtime/daily_pwd.json
-cp scripts/collect_settings.json runtime/collect_settings.json
-cp scripts/auto_logs.json runtime/auto_logs.json
-cp scripts/daily_pwd_logs.json runtime/daily_pwd_logs.json
-cp scripts/auto_processed_videos.json runtime/auto_processed_videos.json
-cp scripts/cookies.txt runtime/cookies.txt
-```
-
-如果个别文件还不存在，请按当前线上真实状态补齐，避免首次切换后容器读取到空文件。
-
-### 平滑更新规则
-部署时必须始终遵守这个顺序：
-
-```bash
-docker-compose build
-docker-compose up -d
-docker image prune -f
-```
-
-绝对不要先执行：
-
-```bash
-docker-compose down
-```
-
-原因：`build` 期间旧站要继续对外服务，只有在 `up -d` 瞬间替换时才允许极短抖动。
-
-## GitHub Actions 自动部署
-### 触发方式
-已新增工作流：
-- [deploy.yml](.github/workflows/deploy.yml)
-
-触发条件：
-- push 到 `main`
-- GitHub Actions 页面手动触发 `workflow_dispatch`
-
-### 工作流行为
-1. GitHub Runner 执行：
-   - `npm ci`
-   - `npm run build`
-2. 通过 SSH 登录服务器
-3. 在 `/opt/xiujiao-era` 执行：
-   - `git fetch origin main`
-   - `git checkout main`
-   - `git pull --ff-only origin main`
-   - `bash scripts/deploy_remote.sh`
-4. 远程脚本再执行：
-   - 初始化 `runtime/` 缺失文件
-   - `docker-compose build`
-   - `docker-compose up -d`
-   - 默认执行 `docker image prune -f`
-
-### 需要配置的 GitHub Secrets
-仓库 Settings → Secrets and variables → Actions 中新增：
-
-- `DEPLOY_HOST`：服务器 IP 或域名
-- `DEPLOY_PORT`：SSH 端口
-- `DEPLOY_USER`：SSH 用户名
-- `DEPLOY_SSH_KEY`：部署私钥
-- `DEPLOY_PATH`：固定填写 `/opt/xiujiao-era`
-- `DEPLOY_KNOWN_HOSTS`：可选，服务器 host key
-- `PRUNE_IMAGES`：可选，默认建议填 `true`
-
-### 服务器准备
-服务器需要满足：
-1. `/opt/xiujiao-era` 已是当前项目的 git 工作目录
-2. 服务器本机有权限拉取你的私有 GitHub 仓库
-3. 已安装 Docker 和 Docker Compose
-4. 已完成 `runtime/` 迁移
-
-## 手动兜底部署
-即使 GitHub Actions 异常，也可以在服务器手动执行：
-
-```bash
-cd /opt/xiujiao-era
-bash scripts/deploy_remote.sh
-```
-
-这个脚本同样遵守平滑更新规则，不会主动执行 `docker-compose down`。
-...
-
+## 文档索引
+- [AGENTS.md](AGENTS.md)：AI / CLI 工具协作入口
+- [docs/project-rules.md](docs/project-rules.md)：项目硬规则与产品约束
+- [docs/collaboration.md](docs/collaboration.md)：双电脑 / 多 AI 协作规则
+- [docs/deployment.md](docs/deployment.md)：部署、运行态与 GitHub Actions 说明
+- [docs/versioning.md](docs/versioning.md)：版本号规则
+- [docs/release-notes.md](docs/release-notes.md)：正式版本更新说明
+- [docs/progress.md](docs/progress.md)：详细施工日志与历史进度

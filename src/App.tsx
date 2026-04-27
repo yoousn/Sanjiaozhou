@@ -10,6 +10,7 @@ import {
   CollectSearchResult,
   CollectVideoCandidate,
   ModelTestResult,
+  UiPreferences,
 } from './types';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
@@ -17,7 +18,16 @@ import { GunCard } from './components/GunCard';
 import { AddGunModal } from './components/AddGunModal';
 import { CollectModal } from './components/CollectModal';
 import { useToast } from './components/useToast';
-import { cn, buildModelOptionValue, parseModelOptionValue } from './utils';
+import {
+  cn,
+  buildModelOptionValue,
+  parseModelOptionValue,
+  DEFAULT_UI_PREFERENCES,
+  getButtonClassName,
+  gridGapClassMap,
+  radiusClassMap,
+  sidebarWidthClassMap,
+} from './utils';
 
 import { CSS } from '@dnd-kit/utilities';
 import {
@@ -221,6 +231,11 @@ export default function App() {
   const [isRefreshingDailyPwd, setIsRefreshingDailyPwd] = useState(false);
   const [copiedDailyPwdKey, setCopiedDailyPwdKey] = useState<string | null>(null);
   const dailyPwdCopyTimerRef = useRef<number | null>(null);
+  const dailyPwdPollTimerRef = useRef<number | null>(null);
+  const dailyPwdDateWatcherRef = useRef<number | null>(null);
+  const dailyPwdRequestInFlightRef = useRef(false);
+  const dailyPwdLatestRef = useRef<{ date: string; data: Record<string, string> } | null>(null);
+  const currentBeijingDayRef = useRef(new Date().toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai' }));
   const [isUploadingCookie, setIsUploadingCookie] = useState(false);
   const [cookieTestResult, setCookieTestResult] = useState<{success: boolean; message: string} | null>(null);
   const [cookieStatus, setCookieStatus] = useState<{ exists: boolean; mtime?: string } | null>(null);
@@ -249,6 +264,61 @@ export default function App() {
       .catch(console.error);
   };
 
+  const stopDailyPwdPolling = () => {
+    if (dailyPwdPollTimerRef.current !== null) {
+      window.clearTimeout(dailyPwdPollTimerRef.current);
+      dailyPwdPollTimerRef.current = null;
+    }
+  };
+
+  const scheduleDailyPwdPolling = (delay = 2 * 60 * 1000) => {
+    stopDailyPwdPolling();
+    dailyPwdPollTimerRef.current = window.setTimeout(() => {
+      dailyPwdPollTimerRef.current = null;
+      void syncDailyPwd({ forceRefreshToday: true });
+    }, delay);
+  };
+
+  const syncDailyPwd = async ({ forceRefreshToday = false }: { forceRefreshToday?: boolean } = {}) => {
+    if (dailyPwdRequestInFlightRef.current) {
+      return;
+    }
+
+    dailyPwdRequestInFlightRef.current = true;
+
+    try {
+      const res = await fetch('/api/daily-password');
+      const data = await safeJson(res);
+      const applied = res.ok && applyDailyPwd(data);
+      const needsRefresh = forceRefreshToday || !applied || shouldRefreshDailyPwd(data);
+
+      if (!needsRefresh) {
+        stopDailyPwdPolling();
+        return;
+      }
+
+      const refreshRes = await fetch('/api/daily-password/refresh', { method: 'POST' });
+      const refreshData = await safeJson(refreshRes);
+      if (refreshRes.ok) {
+        const payload = refreshData.data ?? refreshData;
+        const refreshApplied = applyDailyPwd(payload);
+        if (refreshApplied && isDailyPwdForToday(dailyPwdLatestRef.current)) {
+          stopDailyPwdPolling();
+          fetchDailyPwdLogs();
+          return;
+        }
+      }
+
+      scheduleDailyPwdPolling();
+      fetchDailyPwdLogs();
+    } catch (error) {
+      console.error(error);
+      scheduleDailyPwdPolling();
+    } finally {
+      dailyPwdRequestInFlightRef.current = false;
+    }
+  };
+
   const handleRefreshDailyPwd = async () => {
     if (isRefreshingDailyPwd) return;
     setIsRefreshingDailyPwd(true);
@@ -259,6 +329,7 @@ export default function App() {
         throw new Error(data?.error || '获取每日密码失败');
       }
       applyDailyPwd(data?.data ?? data);
+      stopDailyPwdPolling();
       fetchDailyPwdLogs();
       showToast('每日密码已更新');
     } catch (error) {
@@ -271,6 +342,10 @@ export default function App() {
   };
 
   useEffect(() => {
+    dailyPwdLatestRef.current = dailyPwd;
+  }, [dailyPwd]);
+
+  useEffect(() => {
     if (activeTab === 'settings') {
       fetchCookieStatus();
       fetchSettingsFileStatus();
@@ -279,25 +354,42 @@ export default function App() {
   }, [activeTab]);
 
   useEffect(() => {
-    const loadDailyPwd = async () => {
-      try {
-        const res = await fetch('/api/daily-password');
-        const data = await safeJson(res);
-        if (res.ok && applyDailyPwd(data) && !shouldRefreshDailyPwd(data)) {
-          return;
-        }
+    void syncDailyPwd();
+  }, []);
 
-        const refreshRes = await fetch('/api/daily-password/refresh', { method: 'POST' });
-        const refreshData = await safeJson(refreshRes);
-        if (refreshRes.ok) {
-          applyDailyPwd(refreshData.data ?? refreshData);
+  useEffect(() => {
+    const checkDailyPwdDateChange = () => {
+      const today = getBeijingToday();
+      if (today === currentBeijingDayRef.current) {
+        return;
+      }
+      currentBeijingDayRef.current = today;
+      void syncDailyPwd({ forceRefreshToday: true });
+    };
+
+    dailyPwdDateWatcherRef.current = window.setInterval(checkDailyPwdDateChange, 60 * 1000);
+
+    const handleVisibilityRefresh = () => {
+      if (document.visibilityState === 'visible') {
+        checkDailyPwdDateChange();
+        if (!isDailyPwdForToday(dailyPwdLatestRef.current) || shouldRefreshDailyPwd(dailyPwdLatestRef.current)) {
+          void syncDailyPwd({ forceRefreshToday: true });
         }
-      } catch (error) {
-        console.error(error);
       }
     };
 
-    loadDailyPwd();
+    window.addEventListener('focus', handleVisibilityRefresh);
+    document.addEventListener('visibilitychange', handleVisibilityRefresh);
+
+    return () => {
+      window.removeEventListener('focus', handleVisibilityRefresh);
+      document.removeEventListener('visibilitychange', handleVisibilityRefresh);
+      if (dailyPwdDateWatcherRef.current !== null) {
+        window.clearInterval(dailyPwdDateWatcherRef.current);
+        dailyPwdDateWatcherRef.current = null;
+      }
+      stopDailyPwdPolling();
+    };
   }, []);
 
   useEffect(() => {
@@ -330,10 +422,26 @@ export default function App() {
       return DEFAULT_THEME;
     }
   });
+  const [uiPreferences, setUiPreferences] = useState<UiPreferences>(() => {
+    try {
+      const saved = localStorage.getItem('uiPreferences');
+      if (!saved) {
+        return DEFAULT_UI_PREFERENCES;
+      }
+      const parsed = JSON.parse(saved) as Partial<UiPreferences>;
+      return { ...DEFAULT_UI_PREFERENCES, ...parsed };
+    } catch {
+      return DEFAULT_UI_PREFERENCES;
+    }
+  });
 
   useEffect(() => {
     localStorage.setItem('customTheme', JSON.stringify(customTheme));
   }, [customTheme]);
+
+  useEffect(() => {
+    localStorage.setItem('uiPreferences', JSON.stringify(uiPreferences));
+  }, [uiPreferences]);
 
   const [autoCollectConfig, setAutoConfig] = useState({
     enabled: false,
@@ -346,15 +454,26 @@ export default function App() {
   const { toast, showToast } = useToast();
 
   const hasGarbledDailyPwd = (data: Record<string, string>) => Object.keys(data).some(key => key.includes('�'));
+  const getBeijingToday = () => new Date().toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai' });
+  const isDailyPwdForToday = (payload: { date: string; data: Record<string, string> } | null | undefined) => {
+    if (!payload?.date) {
+      return false;
+    }
+    return payload.date === getBeijingToday();
+  };
 
   const applyDailyPwd = (data: Record<string, string> | { date: string; data: Record<string, string> } | null | undefined) => {
     if (data && 'date' in data && 'data' in data && data.data && typeof data.data === 'object') {
-      setDailyPwd(data as { date: string; data: Record<string, string> });
+      const nextDailyPwd = data as { date: string; data: Record<string, string> };
+      dailyPwdLatestRef.current = nextDailyPwd;
+      setDailyPwd(nextDailyPwd);
       return true;
     }
     if (data && typeof data === 'object' && !Array.isArray(data) && Object.keys(data as Record<string, string>).length > 0 && !('error' in data)) {
-      const today = new Date().toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai' });
-      setDailyPwd({ date: today, data: data as Record<string, string> });
+      const today = getBeijingToday();
+      const nextDailyPwd = { date: today, data: data as Record<string, string> };
+      dailyPwdLatestRef.current = nextDailyPwd;
+      setDailyPwd(nextDailyPwd);
       return true;
     }
     return false;
@@ -362,7 +481,8 @@ export default function App() {
 
   const shouldRefreshDailyPwd = (data: Record<string, string> | { date: string; data: Record<string, string> } | null | undefined) => {
     if (data && 'date' in data && 'data' in data && typeof (data as { data: Record<string, string> }).data === 'object' && !Array.isArray((data as { data: Record<string, string> }).data)) {
-      return hasGarbledDailyPwd((data as { data: Record<string, string> }).data);
+      const typed = data as { date: string; data: Record<string, string> };
+      return typed.date !== getBeijingToday() || hasGarbledDailyPwd(typed.data);
     }
     if (data && typeof data === 'object' && !Array.isArray(data) && !('error' in data)) {
       return hasGarbledDailyPwd(data as Record<string, string>);
@@ -398,6 +518,31 @@ export default function App() {
     else document.documentElement.classList.remove('dark');
     localStorage.setItem('darkMode', String(isDarkMode));
   }, [isDarkMode]);
+
+  const radiusClass = radiusClassMap[uiPreferences.controlRadius];
+  const gridClassName = cn(
+    'grid grid-cols-1 md:grid-cols-2 relative',
+    uiPreferences.gridColumns === 3 ? 'xl:grid-cols-3 2xl:grid-cols-3' : 'xl:grid-cols-3 2xl:grid-cols-4',
+    gridGapClassMap[uiPreferences.gridGap]
+  );
+  const sidebarWidthClasses = sidebarWidthClassMap[uiPreferences.sidebarWidth];
+  const settingsActionButtonClass = cn(
+    'px-6 py-2.5 text-[13px] font-black transition flex items-center gap-2 disabled:opacity-60',
+    radiusClass,
+    getButtonClassName(uiPreferences.buttonStyle === 'soft' ? 'solid' : uiPreferences.buttonStyle, 'default')
+  );
+  const textButtonClass = 'text-[13px] font-bold text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition';
+  const settingsPanelClass = cn(
+    'bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 p-6 md:p-8 shadow-sm mb-6',
+    uiPreferences.controlRadius === 'full' ? 'rounded-[2rem]' : 'rounded-3xl'
+  );
+  const settingsSelectClass = cn(
+    'w-full border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#18181b] py-2.5 px-3 text-[13px] font-bold shadow-sm outline-none focus:ring-4 focus:ring-zinc-900/10 dark:focus:ring-white/10',
+    radiusClass
+  );
+  const updateUiPreference = <K extends keyof UiPreferences>(key: K, value: UiPreferences[K]) => {
+    setUiPreferences((prev: UiPreferences) => ({ ...prev, [key]: value }));
+  };
 
   useEffect(() => {
     return () => { stopSearchPolling(); };
@@ -819,16 +964,23 @@ export default function App() {
     }
 
     const updateFn = (prev: GunGroup[]) => prev.map(g => g.id === groupId ? { ...g, pinned: !g.pinned } : g);
+    const previousSavedData = savedData;
     const newSavedData = updateFn(savedData);
     setSavedData(newSavedData);
-    
+
     try {
-      await fetch('/api/builds', {
+      const res = await fetch('/api/builds', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newSavedData)
       });
-    } catch(e) {
+      if (!res.ok) {
+        throw new Error('网络请求异常');
+      }
+      const serverData = await safeJson(res);
+      setSavedData(Array.isArray(serverData) ? serverData : newSavedData);
+    } catch (e) {
+      setSavedData(previousSavedData);
       console.error('置顶保存失败:', e);
       showToast('置顶失败，请检查网络', 'warn');
     }
@@ -1170,9 +1322,16 @@ export default function App() {
           '--user-gun-color': isDarkMode ? customTheme.gunNameColorDark : customTheme.gunNameColorLight,
         } as React.CSSProperties}
       >
-        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} onOpenSettings={() => setActiveTab('settings')} />
+        <Sidebar
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          onOpenSettings={() => setActiveTab('settings')}
+          sidebarWidth={uiPreferences.sidebarWidth}
+          controlRadius={uiPreferences.controlRadius}
+          buttonStyle={uiPreferences.buttonStyle}
+        />
 
-        <main className="flex-1 md:ml-20 lg:ml-56 p-4 md:p-6 lg:p-8 pb-32">
+        <main className={cn('flex-1 p-4 md:p-6 lg:p-8 pb-32', sidebarWidthClasses.main)}>
           <div className="max-w-[1600px] mx-auto">
             {activeTab === 'settings' ? (
               <div className="max-w-3xl mx-auto animate-fade-in mt-4">
@@ -1180,14 +1339,14 @@ export default function App() {
                   系统设置
                 </h2>
 
-                <div className="bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 md:p-8 shadow-sm mb-6">
+                <div className={settingsPanelClass}>
                   <h3 className="text-lg font-black mb-2 text-zinc-900 dark:text-white">数据管理</h3>
                   <p className="text-[13px] text-zinc-500 mb-6">为方便多端同步，部署代码前可先下载线上最新的数据和配置文件进行备份与替换。</p>
                   <div className="flex flex-wrap items-center gap-4">
                     <button
                       onClick={handleDownloadData}
                       disabled={isDownloadingData}
-                      className="px-6 py-2.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[13px] font-black rounded-xl hover:opacity-80 transition cursor-pointer flex items-center gap-2 disabled:opacity-60"
+                      className={settingsActionButtonClass}
                     >
                       {isDownloadingData ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
                       {isDownloadingData ? '正在准备...' : '下载 data.json'}
@@ -1195,7 +1354,7 @@ export default function App() {
                     <button
                       onClick={handleDownloadSettingsFile}
                       disabled={isDownloadingSettings}
-                      className="px-6 py-2.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[13px] font-black rounded-xl hover:opacity-80 transition cursor-pointer flex items-center gap-2 disabled:opacity-60"
+                      className={settingsActionButtonClass}
                     >
                       {isDownloadingSettings ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
                       {isDownloadingSettings ? '正在准备...' : '下载 collect_settings.json'}
@@ -1203,10 +1362,10 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 md:p-8 shadow-sm mb-6">
+                <div className={settingsPanelClass}>
                   <h3 className="text-lg font-black mb-2 text-zinc-900 dark:text-white">Bilibili 采集 Cookie</h3>
                   <p className="text-[13px] text-zinc-500 mb-6">上传 Netscape 格式的 cookies.txt 文件以更新采集凭证。上传后会自动进行一次抓取测试以验证有效性。</p>
-                  
+
                   {cookieStatus && (
                     <div className="mb-6 p-4 bg-zinc-50 dark:bg-[#18181b] rounded-2xl border border-zinc-200 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-4">
                       {cookieStatus.exists ? (
@@ -1225,10 +1384,10 @@ export default function App() {
                       )}
                     </div>
                   )}
-                  
+
                   <div className="flex flex-wrap items-center gap-4">
                     <input type="file" accept=".txt" id="cookie-upload" className="hidden" onChange={handleCookieUpload} />
-                    <label htmlFor="cookie-upload" className="px-6 py-2.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[13px] font-black rounded-xl hover:opacity-80 transition cursor-pointer flex items-center gap-2">
+                    <label htmlFor="cookie-upload" className={cn(settingsActionButtonClass, 'cursor-pointer')}>
                       {isUploadingCookie && <Loader2 size={14} className="animate-spin" />}
                       {isUploadingCookie ? '正在测试...' : '上传 cookies.txt'}
                     </label>
@@ -1240,7 +1399,7 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 md:p-8 shadow-sm mb-6">
+                <div className={settingsPanelClass}>
                   <div className="mb-4 flex items-start justify-between gap-4">
                     <div>
                       <h3 className="text-lg font-black mb-2 text-zinc-900 dark:text-white">每日密码日志</h3>
@@ -1250,7 +1409,7 @@ export default function App() {
                       type="button"
                       onClick={() => void handleRefreshDailyPwd()}
                       disabled={isRefreshingDailyPwd}
-                      className="shrink-0 px-4 py-2 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[12px] font-black rounded-xl hover:opacity-80 transition flex items-center gap-2 disabled:opacity-60"
+                      className={cn(settingsActionButtonClass, 'shrink-0 px-4')}
                     >
                       {isRefreshingDailyPwd && <Loader2 size={12} className="animate-spin" />}
                       {isRefreshingDailyPwd ? '获取中...' : '获取'}
@@ -1269,7 +1428,7 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 md:p-8 shadow-sm">
+                <div className={settingsPanelClass}>
                   <h3 className="text-lg font-black mb-6 text-zinc-900 dark:text-white">个性化设置</h3>
                   <div className="flex flex-col gap-6">
                     <div>
@@ -1310,8 +1469,82 @@ export default function App() {
                       </div>
                     </div>
 
-                    <div className="mt-2 flex items-center justify-between pt-6 border-t border-zinc-100 dark:border-zinc-800">
-                      <button onClick={() => setCustomTheme(DEFAULT_THEME)} className="text-[13px] font-bold text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition">恢复默认配置</button>
+                    <div className="border-t border-zinc-100 dark:border-zinc-800 pt-6">
+                      <div className="mb-4">
+                        <h4 className="text-[14px] font-black text-zinc-900 dark:text-white">界面自定义</h4>
+                        <p className="mt-1 text-[13px] text-zinc-500">调整卡片尺寸、列表密度、布局列数与按钮外观，刷新后会自动保留。</p>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">卡片尺寸</label>
+                          <select value={uiPreferences.cardSize} onChange={(e) => updateUiPreference('cardSize', e.target.value as UiPreferences['cardSize'])} className={settingsSelectClass}>
+                            <option value="compact">紧凑</option>
+                            <option value="default">默认</option>
+                            <option value="roomy">宽松</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">卡片最小高度</label>
+                          <select value={uiPreferences.cardMinHeight} onChange={(e) => updateUiPreference('cardMinHeight', Number(e.target.value) as UiPreferences['cardMinHeight'])} className={settingsSelectClass}>
+                            <option value={300}>300</option>
+                            <option value={330}>330</option>
+                            <option value={360}>360</option>
+                            <option value={400}>400</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">每张卡片显示配置数</label>
+                          <select value={uiPreferences.variantsPerPage} onChange={(e) => updateUiPreference('variantsPerPage', Number(e.target.value) as UiPreferences['variantsPerPage'])} className={settingsSelectClass}>
+                            <option value={2}>2</option>
+                            <option value={3}>3</option>
+                            <option value={4}>4</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">桌面列数</label>
+                          <select value={uiPreferences.gridColumns} onChange={(e) => updateUiPreference('gridColumns', Number(e.target.value) as UiPreferences['gridColumns'])} className={settingsSelectClass}>
+                            <option value={3}>3 列</option>
+                            <option value={4}>4 列</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">卡片间距</label>
+                          <select value={uiPreferences.gridGap} onChange={(e) => updateUiPreference('gridGap', Number(e.target.value) as UiPreferences['gridGap'])} className={settingsSelectClass}>
+                            <option value={12}>12</option>
+                            <option value={16}>16</option>
+                            <option value={20}>20</option>
+                            <option value={24}>24</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">侧栏宽度</label>
+                          <select value={uiPreferences.sidebarWidth} onChange={(e) => updateUiPreference('sidebarWidth', e.target.value as UiPreferences['sidebarWidth'])} className={settingsSelectClass}>
+                            <option value="compact">紧凑</option>
+                            <option value="default">默认</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">控件圆角</label>
+                          <select value={uiPreferences.controlRadius} onChange={(e) => updateUiPreference('controlRadius', e.target.value as UiPreferences['controlRadius'])} className={settingsSelectClass}>
+                            <option value="lg">LG</option>
+                            <option value="xl">XL</option>
+                            <option value="full">FULL</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">按钮样式</label>
+                          <select value={uiPreferences.buttonStyle} onChange={(e) => updateUiPreference('buttonStyle', e.target.value as UiPreferences['buttonStyle'])} className={settingsSelectClass}>
+                            <option value="soft">柔和</option>
+                            <option value="solid">实心</option>
+                            <option value="outline">描边</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-2 flex items-center justify-between gap-3 pt-6 border-t border-zinc-100 dark:border-zinc-800 flex-wrap">
+                      <button onClick={() => setCustomTheme(DEFAULT_THEME)} className={textButtonClass}>恢复默认主题</button>
+                      <button onClick={() => setUiPreferences(DEFAULT_UI_PREFERENCES)} className={textButtonClass}>恢复默认 UI 设置</button>
                     </div>
                   </div>
                 </div>
@@ -1332,6 +1565,8 @@ export default function App() {
                   searchQuery={searchQuery}
                   onSearchChange={setSearchQuery}
                   searchSuggestions={Array.from(new Set(sourceData.map(g => g.name)))}
+                  controlRadius={uiPreferences.controlRadius}
+                  buttonStyle={uiPreferences.buttonStyle}
                 />
 
                 {isRefreshingData && savedData.length === 0 ? (
@@ -1407,7 +1642,9 @@ export default function App() {
                     onDragEnd={handleCardDragEnd}
                   >
                     <SortableContext items={viewData.map(g => g.id)} strategy={rectSortingStrategy}>
-                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 md:gap-5 relative">
+      <div
+        className={gridClassName}
+      >
                         {viewData.map((group, idx) => (
                           <SortableGunCard
                             key={`${activeTab}-${group.id}`}
@@ -1422,6 +1659,11 @@ export default function App() {
                             onAddVariant={handleAddVariant}
                             onReorderVariants={handleReorderVariants}
                             onTogglePin={handleTogglePin}
+                            cardSize={uiPreferences.cardSize}
+                            cardMinHeight={uiPreferences.cardMinHeight}
+                            variantsPerPage={uiPreferences.variantsPerPage}
+                            controlRadius={uiPreferences.controlRadius}
+                            buttonStyle={uiPreferences.buttonStyle}
                           />
                         ))}
                         {viewData.length === 0 && (
@@ -1436,7 +1678,7 @@ export default function App() {
                     </SortableContext>
                   </DndContext>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 md:gap-5 relative">
+                  <div className={gridClassName}>
                     {viewData.map((group, idx) => (
                       <div
                         key={`${activeTab}-${group.id}`}
@@ -1453,6 +1695,11 @@ export default function App() {
                           onAddVariant={handleAddVariant}
                           onReorderVariants={handleReorderVariants}
                           onTogglePin={handleTogglePin}
+                          cardSize={uiPreferences.cardSize}
+                          cardMinHeight={uiPreferences.cardMinHeight}
+                          variantsPerPage={uiPreferences.variantsPerPage}
+                          controlRadius={uiPreferences.controlRadius}
+                          buttonStyle={uiPreferences.buttonStyle}
                         />
                       </div>
                     ))}

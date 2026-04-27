@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Trash2, Plus, GripVertical, Pin } from 'lucide-react';
-import { cn, inputClasses } from '../utils';
-import { GunGroup, GunVariant } from '../types';
+import { cardSizeClassMap, cn, getButtonClassName, inputClasses, radiusClassMap } from '../utils';
+import { GunGroup, GunVariant, UiButtonStyle, UiCardSize, UiRadius } from '../types';
 import { VariantItem } from './VariantItem';
 
 import {
@@ -27,14 +27,18 @@ const SortableVariant: React.FC<{
   onUpdateVariant: (vid: string, field: keyof GunVariant, val: string | boolean) => void,
   onDeleteVariant: (vid: string) => void,
   copiedId: string | null,
-  handleCopy: (code: string, id: string) => void
+  handleCopy: (code: string, id: string) => void,
+  controlRadius: UiRadius,
+  buttonStyle: UiButtonStyle,
 }> = ({
   variant,
   isEditing,
   onUpdateVariant,
   onDeleteVariant,
   copiedId,
-  handleCopy
+  handleCopy,
+  controlRadius,
+  buttonStyle,
 }) => {
   const {
     attributes,
@@ -62,6 +66,8 @@ const SortableVariant: React.FC<{
         onDeleteVariant={onDeleteVariant}
         copiedId={copiedId}
         handleCopy={handleCopy}
+        controlRadius={controlRadius}
+        buttonStyle={buttonStyle}
       />
     );
   }
@@ -84,6 +90,8 @@ const SortableVariant: React.FC<{
           onDeleteVariant={onDeleteVariant}
           copiedId={copiedId}
           handleCopy={handleCopy}
+          controlRadius={controlRadius}
+          buttonStyle={buttonStyle}
         />
       </div>
     </div>
@@ -100,7 +108,12 @@ export function GunCard({
   onAddVariant,
   onReorderVariants,
   onTogglePin,
-  cardDragHandleProps
+  cardDragHandleProps,
+  cardSize = 'default',
+  cardMinHeight = 330,
+  variantsPerPage = 3,
+  controlRadius = 'xl',
+  buttonStyle = 'soft',
 }: {
   group: GunGroup,
   isEditing: boolean,
@@ -111,12 +124,24 @@ export function GunCard({
   onAddVariant: (groupId: string) => void,
   onReorderVariants?: (groupId: string, activeId: string, overId: string) => void,
   onTogglePin?: (groupId: string) => void,
-  cardDragHandleProps?: React.HTMLAttributes<HTMLElement>
+  cardDragHandleProps?: React.HTMLAttributes<HTMLElement>,
+  cardSize?: UiCardSize,
+  cardMinHeight?: number,
+  variantsPerPage?: number,
+  controlRadius?: UiRadius,
+  buttonStyle?: UiButtonStyle,
 }) {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [page, setPage] = useState(0);
   const [pinMessage, setPinMessage] = useState<{ text: string, type: 'pin' | 'unpin' } | null>(null);
   const pinTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const radiusClass = radiusClassMap[controlRadius];
+  const cardPaddingClass = cardSizeClassMap[cardSize];
+  const actionButtonClass = cn(
+    'transition duration-200 outline-none active:scale-95',
+    radiusClass,
+    getButtonClassName(buttonStyle === 'outline' ? 'soft' : buttonStyle, 'default')
+  );
 
   React.useEffect(() => {
     return () => {
@@ -124,7 +149,7 @@ export function GunCard({
     };
   }, []);
 
-  const pageSize = 3;
+  const pageSize = variantsPerPage;
   const totalPages = Math.ceil(group.variants.length / pageSize);
 
   React.useEffect(() => {
@@ -192,7 +217,8 @@ export function GunCard({
   return (
     <div
       className={cn(
-        "group/card relative flex flex-col p-4 md:p-5 rounded-2xl transition duration-200 h-full",
+        "group/card relative flex flex-col rounded-2xl transition duration-200 h-full",
+        cardPaddingClass,
         "bg-white dark:bg-[#121214] border hover:-translate-y-0.5",
         isEditing
           ? "border-emerald-500/40 ring-4 ring-emerald-500/10 shadow-[0_8px_30px_rgb(16,185,129,0.06)] bg-white/80 dark:bg-[#121214]/80"
@@ -224,7 +250,7 @@ export function GunCard({
               <button
                 type="button"
                 onClick={() => onDeleteGroup(group.id)}
-                className="shrink-0 p-2 bg-red-50 text-red-500 border border-red-100 hover:bg-red-500 hover:text-white rounded-lg transition duration-200 active:scale-90 outline-none"
+                className={cn("shrink-0 p-2 transition duration-200 active:scale-90 outline-none", radiusClass, getButtonClassName(buttonStyle === 'outline' ? 'soft' : buttonStyle, 'danger'))}
                 title="删除枪系"
               >
                 <Trash2 size={16} strokeWidth={2.5}/>
@@ -251,7 +277,13 @@ export function GunCard({
                 <button
                   type="button"
                   onClick={handlePinClick}
-                  className={cn("p-1 rounded-md transition-colors outline-none", group.pinned ? "text-yellow-600 bg-yellow-50 hover:bg-yellow-100" : "text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100")}
+                  className={cn(
+                    "p-1 transition-colors outline-none",
+                    radiusClass,
+                    group.pinned
+                      ? "text-yellow-600 bg-yellow-50 hover:bg-yellow-100"
+                      : "text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100"
+                  )}
                   title={group.pinned ? "取消置顶" : "置顶卡片"}
                 >
                   <Pin size={14} className={cn(group.pinned && "fill-yellow-500")} />
@@ -281,7 +313,13 @@ export function GunCard({
                 <button
                   type="button"
                   onClick={handlePinClick}
-                  className={cn("p-1 rounded-md transition-colors outline-none", group.pinned ? "text-yellow-600 bg-yellow-50 hover:bg-yellow-100" : "text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100")}
+                  className={cn(
+                    "p-1 transition-colors outline-none",
+                    radiusClass,
+                    group.pinned
+                      ? "text-yellow-600 bg-yellow-50 hover:bg-yellow-100"
+                      : "text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100"
+                  )}
                   title={group.pinned ? "取消置顶" : "置顶卡片"}
                 >
                   <Pin size={14} className={cn(group.pinned && "fill-yellow-500")} />
@@ -313,7 +351,7 @@ export function GunCard({
             items={displayedVariants.map(v => v.id)}
             strategy={verticalListSortingStrategy}
           >
-            <div className="flex flex-col gap-2 h-[330px] overflow-y-auto pr-1">
+            <div className="flex flex-col gap-2 overflow-y-auto pr-1" style={{ minHeight: `${cardMinHeight}px` }}>
               {displayedVariants.map((v) => (
                 <SortableVariant
                   key={v.id}
@@ -323,6 +361,8 @@ export function GunCard({
                   onDeleteVariant={(vid) => onDeleteVariant(group.id, vid)}
                   copiedId={copiedId}
                   handleCopy={handleCopy}
+                  controlRadius={controlRadius}
+                  buttonStyle={buttonStyle}
                 />
               ))}
             </div>

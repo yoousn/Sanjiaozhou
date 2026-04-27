@@ -22,11 +22,12 @@ const DAILY_PWD_FILE = path.join(__dirname, "src", "daily_pwd.json");
 const MAX_VARIANTS_PER_GUN = 5;
 const DEFAULT_PRESET_GUNS = ["M4A1", "AKM", "SCAR-L", "AUG", "MP7", "AWM", "M14"];
 const DEFAULT_PROVIDER_ID = "builtin-default";
+const BUILTIN_PROVIDER_API_KEY = String(process.env.YOUSN_API_KEY || "").trim();
 const BUILTIN_PROVIDER = {
   id: DEFAULT_PROVIDER_ID,
   name: "yousn.me 接口",
   baseUrl: "https://api.yousn.me/v1",
-  apiKey: "sk-88AqJeSQhfrmVTDcSAOTZDb6NqEbG3X8C3na3WqolNdasdpb",
+  apiKey: BUILTIN_PROVIDER_API_KEY,
   models: ["glm-5", "openai/gpt-oss-20b", "openai/gpt-oss-120b", "stepfun-ai/step-3.5-flash"],
 };
 const DEFAULT_MODEL_VALUE = `${DEFAULT_PROVIDER_ID}::openai/gpt-oss-120b`;
@@ -53,6 +54,7 @@ type GunGroup = {
   id: string;
   name: string;
   category: string;
+  pinned?: boolean;
   variants: GunVariant[];
 };
 
@@ -313,6 +315,7 @@ function ensureGroupShape(group: Partial<GunGroup>): GunGroup {
     id: group.id || `g_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
     name: group.name || "未知枪械",
     category: group.category || "other",
+    pinned: Boolean(group.pinned),
     variants: Array.isArray(group.variants) ? group.variants.map(ensureVariantShape) : [],
   };
 }
@@ -473,6 +476,31 @@ function buildCollectMeta(settings: CollectSettings) {
     providers: settings.providers.map(buildProviderMeta),
     modelOptions,
     concurrency: settings.concurrency,
+  };
+}
+
+function buildCollectSettingsDownload(settings: CollectSettings) {
+  return {
+    presetGuns: trimUniqueStrings(settings.presetGuns, DEFAULT_PRESET_GUNS),
+    providers: settings.providers.map((provider) => ({
+      id: provider.id,
+      name: provider.name,
+      baseUrl: provider.baseUrl,
+      apiKey: "",
+      models: trimUniqueStrings(provider.models, []),
+      hasApiKey: Boolean(provider.apiKey),
+    })),
+    defaultModel: settings.defaultModel,
+    concurrency: {
+      searchEnabled: Boolean(settings.concurrency.searchEnabled),
+      applyEnabled: Boolean(settings.concurrency.applyEnabled),
+    },
+    autoCollect: {
+      enabled: Boolean(settings.autoCollect?.enabled),
+      model: String(settings.autoCollect?.model || settings.defaultModel),
+      creatorIds: Array.isArray(settings.autoCollect?.creatorIds) ? settings.autoCollect.creatorIds : [],
+      intervalHours: Number(settings.autoCollect?.intervalHours) || 1,
+    }
   };
 }
 
@@ -865,7 +893,7 @@ async function startServer() {
     try {
       const data = Array.isArray(req.body) ? req.body.map(ensureGroupShape) : [];
       writeBuilds(data);
-      res.json({ success: true });
+      res.json(data);
     } catch (e) {
       console.error("API POST Error:", e);
       res.status(500).json({ error: "Failed to write data" });
@@ -1033,7 +1061,7 @@ async function startServer() {
   app.get("/api/config/settings-file", (req, res) => {
     try {
       const settings = readCollectSettings();
-      res.json(settings);
+      res.json(buildCollectSettingsDownload(settings));
     } catch (e) {
       console.error("API GET settings-file Error:", e);
       res.status(500).json({ error: "Failed to read settings file" });

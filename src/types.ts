@@ -1,3 +1,19 @@
+export type UiCardSize = 'compact' | 'default' | 'roomy';
+export type UiButtonStyle = 'soft' | 'solid' | 'outline';
+export type UiRadius = 'lg' | 'xl' | 'full';
+export type UiSidebarWidth = 'compact' | 'default';
+
+export type UiPreferences = {
+  cardSize: UiCardSize;
+  cardMinHeight: 300 | 330 | 360 | 400;
+  variantsPerPage: 2 | 3 | 4;
+  gridColumns: 3 | 4;
+  gridGap: 12 | 16 | 20 | 24;
+  sidebarWidth: UiSidebarWidth;
+  controlRadius: UiRadius;
+  buttonStyle: UiButtonStyle;
+};
+
 export type CollectModelProviderInput = {
   id?: string;
   name: string;

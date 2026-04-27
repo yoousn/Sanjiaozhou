@@ -1,7 +1,7 @@
 import React from 'react';
 import { Trash2, Check, Copy, Lock, Unlock, ExternalLink } from 'lucide-react';
-import { cn, inputClasses } from '../utils';
-import { GunVariant } from '../types';
+import { cn, getButtonClassName, inputClasses, radiusClassMap } from '../utils';
+import { GunVariant, UiButtonStyle, UiRadius } from '../types';
 
 export function VariantItem({
   variant,
@@ -9,15 +9,22 @@ export function VariantItem({
   onUpdateVariant,
   onDeleteVariant,
   copiedId,
-  handleCopy
+  handleCopy,
+  controlRadius = 'xl',
+  buttonStyle = 'soft',
 }: {
   variant: GunVariant,
   isEditing: boolean,
   onUpdateVariant: (vid: string, field: keyof GunVariant, val: string | boolean) => void,
   onDeleteVariant: (vid: string) => void,
   copiedId: string | null,
-  handleCopy: (code: string, id: string) => void
+  handleCopy: (code: string, id: string) => void,
+  controlRadius?: UiRadius,
+  buttonStyle?: UiButtonStyle,
 }) {
+  const radiusClass = radiusClassMap[controlRadius];
+  const softOrSolidButtonStyle = buttonStyle === 'outline' ? 'soft' : buttonStyle;
+
   const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>, field: keyof GunVariant) => {
     if (e.target.value !== variant[field]) {
       onUpdateVariant(variant.id, field, e.target.value);
@@ -60,8 +67,11 @@ export function VariantItem({
             type="button"
             onClick={() => onUpdateVariant(variant.id, 'locked', !variant.locked)}
             className={cn(
-              'shrink-0 p-1.5 rounded-lg transition duration-200 active:scale-90 outline-none border',
-              variant.locked ? 'text-amber-700 bg-amber-50 border-amber-200' : 'text-zinc-400 hover:text-zinc-700 bg-white border-zinc-200'
+              'shrink-0 p-1.5 transition duration-200 active:scale-90 outline-none border',
+              radiusClass,
+              variant.locked
+                ? 'text-amber-700 bg-amber-50 border-amber-200'
+                : cn(getButtonClassName(softOrSolidButtonStyle, 'default'), 'shadow-none text-zinc-500 hover:text-zinc-700')
             )}
             title={variant.locked ? '已锁定' : '未锁定'}
           >
@@ -70,7 +80,11 @@ export function VariantItem({
           <button
             type="button"
             onClick={() => onDeleteVariant(variant.id)}
-            className="shrink-0 p-1.5 text-zinc-400 border border-transparent hover:border-red-200 hover:text-red-600 hover:bg-red-50 rounded-lg transition duration-200 active:scale-90 outline-none"
+            className={cn(
+              "shrink-0 p-1.5 border border-transparent hover:border-red-200 transition duration-200 active:scale-90 outline-none",
+              radiusClass,
+              getButtonClassName(softOrSolidButtonStyle, 'danger')
+            )}
             title="删除此配置"
           >
             <Trash2 size={14} strokeWidth={2.5}/>
@@ -128,12 +142,15 @@ export function VariantItem({
               type="button"
               onClick={() => handleCopy(variant.code, variant.id)}
               className={cn(
-                "shrink-0 p-2 rounded-lg border border-zinc-200 shadow-sm cursor-pointer transition duration-200 focus:outline-none focus:ring-4 focus:ring-zinc-900/10 active:scale-95 group/btn relative overflow-hidden",
-                copiedId === variant.id ? "bg-emerald-500 text-white border-emerald-600 shadow-[inset_0_1px_rgba(255,255,255,0.4)]" : "bg-white hover:bg-zinc-900 hover:text-white hover:border-zinc-900"
+                "shrink-0 p-2 border border-zinc-200 shadow-sm cursor-pointer transition duration-200 focus:outline-none focus:ring-4 focus:ring-zinc-900/10 active:scale-95 group/btn relative overflow-hidden",
+                radiusClass,
+                copiedId === variant.id
+                  ? "bg-emerald-500 text-white border-emerald-600 shadow-[inset_0_1px_rgba(255,255,255,0.4)]"
+                  : getButtonClassName(softOrSolidButtonStyle, 'default')
               )}
               title="复制代码"
             >
-              {copiedId === variant.id ? <Check size={14} className="shrink-0" strokeWidth={3}/> : <Copy size={14} className="text-zinc-500 transition-colors group-hover/btn:text-white shrink-0" strokeWidth={2.5}/>}
+              {copiedId === variant.id ? <Check size={14} className="shrink-0" strokeWidth={3}/> : <Copy size={14} className="shrink-0" strokeWidth={2.5}/>}
             </button>
 
             {copiedId === variant.id && (

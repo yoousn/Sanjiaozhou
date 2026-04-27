@@ -2,19 +2,14 @@
 
 > 本文档记录详细施工过程与历史节点，不等同于正式版本说明。正式版本摘要请看 [release-notes.md](release-notes.md)。
 
-## [当前节点] v1.0.3 社区功能落地与代码结构拆分重构
-**时间：** 2026年04月28日 03:30
+## [当前节点] v1.0.4 图床配置即时可用
+**时间：** 2026年04月28日
 **状态：**
-1. 已完成 App.tsx 公共常量/工具提取：新增 `src/constants.ts`、`src/utils/collect.ts`、`src/components/SortableGunCard.tsx`，App.tsx 体积从 2016 行降至 ~1850 行。
-2. 已构建社区后端最小闭环：新增 `server/lib/communityStore.ts`（帖子 JSON 持久化）、`server/lib/communityUpload.ts`（CF 图床上传代理）、`server/lib/communityActivity.ts`（动态派生）、`server/routes/community.ts`（帖子列表/发帖/上传/reaction/动态 API）。
-3. 已接入社区前端入口：Sidebar 桌面端和移动端新增”社区”导航项，App.tsx 新增 `activeTab === 'community'` 分支。
-4. 已构建社区前端页面：新增 `src/pages/CommunityPage.tsx`、`src/hooks/useCommunity.ts`、`src/hooks/useClipboardImage.ts`、`src/components/community/CommunityToolbar.tsx`、`src/components/community/CommunityComposer.tsx`、`src/components/community/CommunityFeed.tsx`、`src/components/community/CommunityPostCard.tsx`、`src/components/community/CommunityActivityBar.tsx`。
-5. 社区发帖支持选择本地图片和读取剪切板图片，读取成功后显示小预览。
-6. 已完成 CollectModal.tsx 拆分：拆为 CollectSearchPanel、CollectVideoPanel、CollectApplyPanel、CollectProviderModal 四个子组件，CollectModal 自身降至 ~200 行。
-7. 版本号已升级至 1.0.3，已更新 release-notes.md。
-8. lint + build 已通过。
+1. 已在 `server/lib/communityUpload.ts` 中填写 CF 图床默认 URL (`img.yousn.me`) 与 Token，社区发帖上传功能即时可用。
+2. 版本号升至 1.0.4。
 
 ---
+
 
 
 ## [当前节点] v1.0.1 构建修复与页面版本显示补充

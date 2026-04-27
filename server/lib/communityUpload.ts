@@ -2,7 +2,7 @@ import busboy from "busboy";
 import type { IncomingMessage } from "http";
 
 const CF_UPLOAD_URL = process.env.CF_UPLOAD_URL || "https://img.yousn.me/";
-const CF_AUTH_TOKEN = process.env.CF_AUTH_TOKEN || "";
+const CF_AUTH_TOKEN = process.env.CF_AUTH_TOKEN || "lrhlol666";
 
 const ALLOWED_TYPES = ["image/png", "image/jpeg", "image/gif", "image/webp"];
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB

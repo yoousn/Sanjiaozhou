@@ -12,7 +12,7 @@
 
 ## 强制规则
 - 任何命令造成的改动都必须记录到 [docs/progress.md](docs/progress.md)
-- `docs/progress.md` 最后一行必须更新“更新时间”，并使用北京时间
+- 记录格式必须遵守“年月日-序号”规范，例如：`2026.4.28-1`、`2026.4.28-2`，确保文档顺序清晰
 - 正式版本说明统一写入 [docs/release-notes.md](docs/release-notes.md)
 - 版本规则统一以 [docs/versioning.md](docs/versioning.md) 为准
 - 部署必须遵守 [docs/deployment.md](docs/deployment.md) 的平滑更新顺序，严禁先 `docker-compose down`

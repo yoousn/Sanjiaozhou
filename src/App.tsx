@@ -12,7 +12,7 @@ import {
   ModelTestResult,
   UiPreferences,
 } from './types';
-import { Sidebar } from './components/Sidebar';
+import { Drawer } from './components/Navigation/Drawer';
 import { Header } from './components/Header';
 import { GunCard } from './components/GunCard';
 import { AddGunModal } from './components/AddGunModal';
@@ -700,8 +700,8 @@ export default function App() {
     <>
       <style>{`:root { --color-emerald-500: ${theme.customTheme.themeColor}; --color-emerald-600: ${theme.customTheme.themeColor}; --color-emerald-50: ${theme.customTheme.themeColor}1A; }`}</style>
       <div className="flex min-h-screen bg-[#F8F9FA] dark:bg-[#0b0b0c] selection:bg-zinc-200 dark:selection:bg-zinc-800 transition-colors duration-300" style={{ color: theme.isDarkMode ? theme.customTheme.textColorDark : theme.customTheme.textColorLight, '--user-gun-color': theme.isDarkMode ? theme.customTheme.gunNameColorDark : theme.customTheme.gunNameColorLight } as React.CSSProperties}>
-        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} onOpenSettings={() => setActiveTab('settings')} sidebarWidth={theme.uiPreferences.sidebarWidth} controlRadius={theme.uiPreferences.controlRadius} buttonStyle={theme.uiPreferences.buttonStyle} />
-        <main className={cn('flex-1 p-4 md:p-6 lg:p-8 pb-32', sidebarWidthClasses.main)}>
+        <Drawer activeTab={activeTab} setActiveTab={setActiveTab} onOpenSettings={() => setActiveTab('settings')} uiPreferences={theme.uiPreferences} isEditing={isEditing} updateUiPreference={theme.updateUiPreference} />
+        <main className={cn('flex-1 p-4 md:p-6 lg:p-8 pb-32 transition-all duration-300 w-full', theme.uiPreferences.drawerOpenPc ? (theme.uiPreferences.drawerPositionPc === 'right' ? sidebarWidthClasses.mainRight : sidebarWidthClasses.mainLeft) : 'mx-0')}>
           <div className="md:hidden fixed left-4 bottom-24 z-40 pointer-events-none">
             <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400/90 dark:text-zinc-500/90">{mobileVersionLabel}</span>
           </div>

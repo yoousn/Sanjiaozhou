@@ -17,6 +17,11 @@ export const DEFAULT_UI_PREFERENCES: UiPreferences = {
   sidebarWidth: 'default',
   controlRadius: 'xl',
   buttonStyle: 'soft',
+  drawerPositionPc: 'left',
+  drawerPositionMobile: 'bottom',
+  drawerOpenPc: true,
+  navItemsOrder: ['home', 'ar', 'br', 'smg', 'lmg', 'dmr', 'sr', 'pistol', 'community'],
+  hiddenNavItems: [],
 };
 
 export const radiusClassMap: Record<UiRadius, string> = {
@@ -38,14 +43,16 @@ export const gridGapClassMap: Record<number, string> = {
   24: 'gap-6',
 };
 
-export const sidebarWidthClassMap: Record<UiSidebarWidth, { nav: string; main: string }> = {
+export const sidebarWidthClassMap: Record<UiSidebarWidth, { nav: string; mainLeft: string; mainRight: string }> = {
   compact: {
     nav: 'w-20 lg:w-48',
-    main: 'md:ml-20 lg:ml-48',
+    mainLeft: 'md:ml-20 lg:ml-48',
+    mainRight: 'md:mr-20 lg:mr-48',
   },
   default: {
     nav: 'w-20 lg:w-56',
-    main: 'md:ml-20 lg:ml-56',
+    mainLeft: 'md:ml-20 lg:ml-56',
+    mainRight: 'md:mr-20 lg:mr-56',
   },
 };
 

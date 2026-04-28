@@ -2,8 +2,6 @@ export type UiCardSize = 'compact' | 'default' | 'roomy';
 export type UiButtonStyle = 'soft' | 'solid' | 'outline';
 export type UiRadius = 'lg' | 'xl' | 'full';
 export type UiSidebarWidth = 'compact' | 'default';
-export type DrawerPositionPc = 'left' | 'right';
-export type DrawerPositionMobile = 'bottom' | 'side';
 
 export type UiPreferences = {
   cardSize: UiCardSize;
@@ -14,11 +12,6 @@ export type UiPreferences = {
   sidebarWidth: UiSidebarWidth;
   controlRadius: UiRadius;
   buttonStyle: UiButtonStyle;
-  drawerPositionPc: DrawerPositionPc;
-  drawerPositionMobile: DrawerPositionMobile;
-  drawerOpenPc: boolean;
-  navItemsOrder: string[];
-  hiddenNavItems: string[];
 };
 
 export type CollectModelProviderInput = {

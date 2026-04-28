@@ -15,8 +15,8 @@ export function DailyPwdCard({
   if (!dailyPwd) return null;
 
   return (
-    <div className="w-full flex justify-center">
-      <div className="bg-white dark:bg-[#121214] border border-emerald-500/20 shadow-sm rounded-2xl px-3 py-3 md:px-4 md:py-3.5 animate-fade-in relative overflow-hidden max-w-4xl w-full xl:w-auto">
+    <div className="shrink-0 flex justify-end">
+      <div className="bg-white dark:bg-[#121214] border border-emerald-500/20 shadow-sm rounded-2xl px-3 py-3 md:px-4 md:py-3.5 animate-fade-in relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 via-emerald-500 to-emerald-600"></div>
         <div className="flex flex-col items-center text-center gap-2.5">
           <div className="flex flex-col items-center justify-center">

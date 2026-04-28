@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { AlertCircle, Loader2, Sparkles, CheckCircle2 } from 'lucide-react';
+import { AlertCircle, Loader2, Sparkles, CheckCircle2, Home, Crosshair, Target } from 'lucide-react';
 import { arrayMove } from '@dnd-kit/sortable';
 import {
   GunGroup,
@@ -65,6 +65,8 @@ import {
   sortableKeyboardCoordinates,
   rectSortingStrategy,
 } from '@dnd-kit/sortable';
+
+import { SortableCategoryWidget } from './components/SortableCategoryWidget';
 
 export default function App() {
   const queryClient = useQueryClient();
@@ -650,12 +652,33 @@ export default function App() {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
   const handleCardDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    if (over && active.id !== over.id) {
-      setDraftData(prev => {
-        const oldIndex = prev.findIndex(g => g.id === active.id);
-        const newIndex = prev.findIndex(g => g.id === over.id);
-        return (oldIndex !== -1 && newIndex !== -1) ? arrayMove(prev, oldIndex, newIndex) : prev;
-      });
+    if (!over || active.id === over.id) return;
+
+    const sortableItems = [...viewData.map(g => g.id)];
+    const widgetIdx = Math.min(theme.uiPreferences.categoryWidgetIndex || 0, sortableItems.length);
+    sortableItems.splice(widgetIdx, 0, 'category-widget');
+
+    const oldIndex = sortableItems.indexOf(active.id as string);
+    const newIndex = sortableItems.indexOf(over.id as string);
+
+    if (oldIndex !== -1 && newIndex !== -1) {
+      const newItems = arrayMove(sortableItems, oldIndex, newIndex);
+      const newWidgetIdx = newItems.indexOf('category-widget');
+      
+      if (newWidgetIdx !== widgetIdx) {
+        theme.updateUiPreference('categoryWidgetIndex', newWidgetIdx);
+      }
+
+      if (active.id !== 'category-widget') {
+        setDraftData(prev => {
+          const oldGroupIndex = prev.findIndex(g => g.id === active.id);
+          const overId = over.id === 'category-widget' 
+            ? (newIndex > oldIndex ? newItems[newIndex - 1] : newItems[newIndex + 1])
+            : over.id;
+          const newGroupIndex = prev.findIndex(g => g.id === overId);
+          return (oldGroupIndex !== -1 && newGroupIndex !== -1) ? arrayMove(prev, oldGroupIndex, newGroupIndex) : prev;
+        });
+      }
     }
   };
 
@@ -687,6 +710,37 @@ export default function App() {
 
   const sidebarWidthClasses = sidebarWidthClassMap[theme.uiPreferences.sidebarWidth];
   const gridClassName = cn('grid grid-cols-1 md:grid-cols-2 relative', theme.uiPreferences.gridColumns === 3 ? 'xl:grid-cols-3 2xl:grid-cols-3' : 'xl:grid-cols-3 2xl:grid-cols-4', gridGapClassMap[theme.uiPreferences.gridGap]);
+
+  const renderGridElements = (useSortableWrapper: boolean) => {
+    const widgetIdx = Math.min(theme.uiPreferences.categoryWidgetIndex || 0, viewData.length);
+    const widget = (
+      <SortableCategoryWidget
+        key="category-widget"
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        isEditing={isEditing && useSortableWrapper}
+        size={theme.uiPreferences.categoryWidgetSize || 'full'}
+        onToggleSize={() => theme.updateUiPreference('categoryWidgetSize', theme.uiPreferences.categoryWidgetSize === 'full' ? 'compact' : 'full')}
+      />
+    );
+
+    const elements = viewData.map((group, idx) => {
+      if (useSortableWrapper) {
+        return <SortableGunCard key={`${activeTab}-${group.id}`} group={group} idx={idx} isEditing={isEditing} activeTab={activeTab} onUpdateGroup={handleUpdateGroup} onDeleteGroup={handleDeleteGroup} onUpdateVariant={handleUpdateVariant} onDeleteVariant={handleDeleteVariant} onAddVariant={handleAddVariant} onReorderVariants={handleReorderVariants} onTogglePin={handleTogglePin} cardSize={theme.uiPreferences.cardSize} cardMinHeight={theme.uiPreferences.cardMinHeight} variantsPerPage={theme.uiPreferences.variantsPerPage} controlRadius={theme.uiPreferences.controlRadius} buttonStyle={theme.uiPreferences.buttonStyle} />;
+      }
+      return (
+        <div key={`${activeTab}-${group.id}`} className="self-start animate-fade-in w-full shadow-sm hover:shadow-md transition-shadow rounded-2xl" style={{ animationDelay: `${idx * 0.04}s` }}>
+          <GunCard group={group} isEditing={isEditing} onUpdateGroup={handleUpdateGroup} onDeleteGroup={handleDeleteGroup} onUpdateVariant={handleUpdateVariant} onDeleteVariant={handleDeleteVariant} onAddVariant={handleAddVariant} onReorderVariants={handleReorderVariants} onTogglePin={handleTogglePin} cardSize={theme.uiPreferences.cardSize} cardMinHeight={theme.uiPreferences.cardMinHeight} variantsPerPage={theme.uiPreferences.variantsPerPage} controlRadius={theme.uiPreferences.controlRadius} buttonStyle={theme.uiPreferences.buttonStyle} />
+        </div>
+      );
+    });
+
+    elements.splice(widgetIdx, 0, widget as any);
+    return elements;
+  };
+
+  const currentAppTitle = theme.uiPreferences.appTitle || '马坤时代';
+  const currentAppSubtitle = theme.uiPreferences.appSubtitle || '专注修脚。基于顶级重回修脚时代架构运行。';
 
   return (
     <>
@@ -731,11 +785,34 @@ export default function App() {
                   <div className="flex flex-col items-center justify-center py-24 animate-fade-in"><AlertCircle size={24} className="text-zinc-400 mb-4" /><p className="text-[13px] font-bold text-zinc-500 mb-4">{savedDataLoadError}</p><button onClick={() => { void refetch(); }} className="px-4 py-2 bg-zinc-900 text-white text-[12px] font-bold rounded-xl hover:bg-zinc-800 transition">重试</button></div>
                 ) : (
                   <>
-                    <div className="mb-6 pl-1 mt-2">
-                      <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-4">
-                        <div>
-                          <h1 className="text-3xl md:text-4xl font-black tracking-tighter mb-2"><span className="bg-clip-text text-transparent bg-gradient-to-br from-zinc-800 to-zinc-500">马坤时代</span> <span className="text-zinc-300 font-bold tracking-normal opacity-50 text-2xl">/ Base</span></h1>
-                          <p className="text-[13px] opacity-70 font-medium max-w-lg">专注修脚。基于顶级重回修脚时代架构运行。</p>
+                    <div className="mb-8 pl-1 mt-2">
+                      <div className="flex flex-row items-center justify-between gap-4 md:gap-8 w-full overflow-hidden">
+                        <div className="flex-1 min-w-[200px] pr-2 md:pr-8">
+                          <div className="w-full">
+                            {isEditing ? (
+                              <div className="flex flex-col gap-2 w-full max-w-sm">
+                                <input
+                                  type="text"
+                                  value={currentAppTitle}
+                                  onChange={e => theme.updateUiPreference('appTitle', e.target.value)}
+                                  className="text-3xl md:text-4xl font-black tracking-tighter bg-transparent border-b-2 border-dashed border-zinc-300 dark:border-zinc-700 outline-none focus:border-zinc-900 dark:focus:border-white w-full"
+                                  placeholder="主标题"
+                                />
+                                <input
+                                  type="text"
+                                  value={currentAppSubtitle}
+                                  onChange={e => theme.updateUiPreference('appSubtitle', e.target.value)}
+                                  className="text-[13px] opacity-70 font-medium bg-transparent border-b border-dashed border-zinc-300 dark:border-zinc-700 outline-none focus:border-zinc-900 dark:focus:border-white w-full"
+                                  placeholder="副标题描述"
+                                />
+                              </div>
+                            ) : (
+                              <>
+                                <h1 className="text-3xl md:text-4xl font-black tracking-tighter mb-2"><span className="bg-clip-text text-transparent bg-gradient-to-br from-zinc-800 to-zinc-500">{currentAppTitle}</span> <span className="text-zinc-300 font-bold tracking-normal opacity-50 text-2xl">/ Base</span></h1>
+                                <p className="text-[13px] opacity-70 font-medium max-w-lg">{currentAppSubtitle}</p>
+                              </>
+                            )}
+                          </div>
                         </div>
                         <DailyPwdCard dailyPwd={daily.dailyPwd} copiedDailyPwdKey={daily.copiedDailyPwdKey} handleCopyDailyPwd={daily.handleCopyDailyPwd} />
                       </div>
@@ -745,21 +822,19 @@ export default function App() {
                     )}
                     {isEditing && sortBy === 'default' ? (
                       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleCardDragEnd}>
-                        <SortableContext items={viewData.map(g => g.id)} strategy={rectSortingStrategy}>
+                        <SortableContext items={(() => {
+                           const items = [...viewData.map(g => g.id)];
+                           items.splice(Math.min(theme.uiPreferences.categoryWidgetIndex || 0, items.length), 0, 'category-widget');
+                           return items;
+                        })()} strategy={rectSortingStrategy}>
                           <div className={gridClassName}>
-                            {viewData.map((group, idx) => (
-                              <SortableGunCard key={`${activeTab}-${group.id}`} group={group} idx={idx} isEditing={isEditing} activeTab={activeTab} onUpdateGroup={handleUpdateGroup} onDeleteGroup={handleDeleteGroup} onUpdateVariant={handleUpdateVariant} onDeleteVariant={handleDeleteVariant} onAddVariant={handleAddVariant} onReorderVariants={handleReorderVariants} onTogglePin={handleTogglePin} cardSize={theme.uiPreferences.cardSize} cardMinHeight={theme.uiPreferences.cardMinHeight} variantsPerPage={theme.uiPreferences.variantsPerPage} controlRadius={theme.uiPreferences.controlRadius} buttonStyle={theme.uiPreferences.buttonStyle} />
-                            ))}
+                            {renderGridElements(true)}
                           </div>
                         </SortableContext>
                       </DndContext>
                     ) : (
                       <div className={gridClassName}>
-                        {viewData.map((group, idx) => (
-                          <div key={`${activeTab}-${group.id}`} className="self-start animate-fade-in w-full shadow-sm hover:shadow-md transition-shadow rounded-2xl" style={{ animationDelay: `${idx * 0.04}s` }}>
-                            <GunCard group={group} isEditing={isEditing} onUpdateGroup={handleUpdateGroup} onDeleteGroup={handleDeleteGroup} onUpdateVariant={handleUpdateVariant} onDeleteVariant={handleDeleteVariant} onAddVariant={handleAddVariant} onReorderVariants={handleReorderVariants} onTogglePin={handleTogglePin} cardSize={theme.uiPreferences.cardSize} cardMinHeight={theme.uiPreferences.cardMinHeight} variantsPerPage={theme.uiPreferences.variantsPerPage} controlRadius={theme.uiPreferences.controlRadius} buttonStyle={theme.uiPreferences.buttonStyle} />
-                          </div>
-                        ))}
+                        {renderGridElements(false)}
                       </div>
                     )}
                     {viewData.length === 0 && (

@@ -12,6 +12,10 @@ export type UiPreferences = {
   sidebarWidth: UiSidebarWidth;
   controlRadius: UiRadius;
   buttonStyle: UiButtonStyle;
+  appTitle?: string;
+  appSubtitle?: string;
+  categoryWidgetIndex?: number;
+  categoryWidgetSize?: 'compact' | 'full';
 };
 
 export type CollectModelProviderInput = {

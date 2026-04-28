@@ -17,6 +17,10 @@ export const DEFAULT_UI_PREFERENCES: UiPreferences = {
   sidebarWidth: 'default',
   controlRadius: 'xl',
   buttonStyle: 'soft',
+  appTitle: '马坤时代',
+  appSubtitle: '专注修脚。基于顶级重回修脚时代架构运行。',
+  categoryWidgetIndex: 0,
+  categoryWidgetSize: 'full',
 };
 
 export const radiusClassMap: Record<UiRadius, string> = {

@@ -6,10 +6,18 @@ export function CommunityFeed({
   posts,
   onReact,
   onTagClick,
+  onDelete,
+  onFetchComments,
+  onAddComment,
+  onDeleteComment,
 }: {
   posts: CommunityPost[];
   onReact: (postId: string, emoji: keyof CommunityReactions) => void;
   onTagClick: (tag: string) => void;
+  onDelete?: (postId: string) => Promise<void>;
+  onFetchComments?: (postId: string) => Promise<void>;
+  onAddComment?: (postId: string, content: string, author: string) => Promise<void>;
+  onDeleteComment?: (postId: string, commentId: string) => Promise<void>;
 }) {
   if (posts.length === 0) {
     return (
@@ -30,7 +38,15 @@ export function CommunityFeed({
           className="animate-fade-in"
           style={{ animationDelay: `${idx * 0.04}s` }}
         >
-          <CommunityPostCard post={post} onReact={onReact} onTagClick={onTagClick} />
+          <CommunityPostCard
+            post={post}
+            onReact={onReact}
+            onTagClick={onTagClick}
+            onDelete={onDelete}
+            onFetchComments={onFetchComments}
+            onAddComment={onAddComment}
+            onDeleteComment={onDeleteComment}
+          />
         </div>
       ))}
     </div>

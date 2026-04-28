@@ -2,6 +2,37 @@
 
 > 本文档记录详细施工过程与历史节点，不等同于正式版本说明。正式版本摘要请看 [release-notes.md](release-notes.md)。
 
+## [当前节点] App.tsx 深度拆分 Section 2 全部完成
+**时间：** 2026年04月28日
+**状态：**
+1. 提取 `useDailyPassword.ts` 与 `useTheme.ts`。
+2. 提取 `SettingsPage.tsx`、`DailyPwdCard.tsx` 等5个组件。
+3. 深度重构 `App.tsx`，大幅降低了主文件的代码行数，且通过了 lint 与 build 验证。
+
+---
+
+## [当前节点] 社区功能增强 Section 1 全部完成
+**时间：** 2026年04月28日 14:15
+**状态：**
+1. **评论系统：** 实现前端展示与折叠（超过3条折叠），要求填写昵称。
+2. **点赞动画：** 右下角新增 👍 悬浮图标，点击触发綠星飘动动画。
+3. **删除功能：** 实现后端 `DELETE /api/community/posts/:id`，前端增加删除按钮并支持删除动态记录。
+4. **发帖优化：** 支持纯文字发帖、按钮更名为“发布帖子/图片”、支持 Ctrl+V 粘贴剪切板图片并提供预览。
+5. **标签增强：** 新增 `#赌桥` 标签选项。
+6. **架构优化：** 将社区相关 API 统一迁移至 `server/routes/community.ts`，并实现 `CommunityActivity` 的独立文件存储以支持删除记录。
+
+---
+
+## [当前节点] 拆分 server.ts 与新增评论后端 API
+**时间：** 2026年04月28日 13:43
+**状态：**
+1. 提取 `server/lib/commentStore.ts`，实现社区评论的数据存储。
+2. 提取 `server/lib/logs.ts` 和 `server/lib/shape.ts`，开始拆分冗长的 `server.ts`。
+3. 在 `server.ts` 中新增了获取、发表、删除评论的 API。
+4. 更新了 `docs/收尾任务.md` 进度状态。
+
+---
+
 ## [当前节点] v1.0.4 图床配置即时可用
 **时间：** 2026年04月28日
 **状态：**
@@ -9,8 +40,6 @@
 2. 版本号升至 1.0.4。
 
 ---
-
-
 
 ## [当前节点] v1.0.1 构建修复与页面版本显示补充
 **时间：** 2026年04月28日 01:38
@@ -111,4 +140,12 @@
 4. 新增 `docs/project-rules.md`、`docs/collaboration.md`、`docs/deployment.md`、`docs/versioning.md`、`docs/release-notes.md`。
 5. 将当前稳定基线正式定义为 `v1.0.0`。
 
-更新时间：2026年04月28日 03:30
+## [当前节点] 深度拆分 server.ts 路由与工具库
+**时间：** 2026年04月28日
+**状态：**
+1. 提取 `server/lib/collectSettings.ts`、`server/lib/merge.ts`、`server/lib/collector.ts` 等核心业务逻辑。
+2. 提取 `server/routes/builds.ts`、`server/routes/collect.ts`、`server/routes/config.ts`、`server/routes/dailyPassword.ts` 路由模块。
+3. 删除 `server.ts` 中的重复类型，改为复用 `src/types.ts`。
+4. 在完成以上拆分后，对整体项目进行了 `lint` 与 `build` 校验，未发现异常。
+
+更新时间：2026年04月28日

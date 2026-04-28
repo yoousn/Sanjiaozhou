@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { addActivity } from "./communityActivity.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -78,7 +79,34 @@ export function createPost(data: {
   });
   posts.unshift(post);
   writePosts(posts);
+
+  // 记录动态
+  addActivity({
+    postId: post.id,
+    uploader: post.uploader,
+    action: `分享了新配置${post.description ? `："${post.description.slice(0, 30)}"` : ""}`,
+  });
+
   return post;
+}
+
+export function deletePost(id: string): boolean {
+  const posts = readPosts();
+  const index = posts.findIndex((p) => p.id === id);
+  if (index === -1) return false;
+
+  const post = posts[index];
+  const newPosts = posts.filter((p) => p.id !== id);
+  writePosts(newPosts);
+
+  // 记录动态
+  addActivity({
+    postId: id,
+    uploader: post.uploader,
+    action: `删除了配置${post.description ? `："${post.description.slice(0, 30)}"` : ""}`,
+  });
+
+  return true;
 }
 
 export function addReaction(postId: string, emoji: keyof CommunityReactions): CommunityPost | null {

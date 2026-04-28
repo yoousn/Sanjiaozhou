@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
-import type { CommunityPost, CommunityReactions } from "../types";
+import type { CommunityPost, CommunityReactions, CommunityComment } from "../types";
 
 export function useCommunity() {
   const [posts, setPosts] = useState<CommunityPost[]>([]);
@@ -63,6 +63,67 @@ export function useCommunity() {
     }
   };
 
+  const deletePost = async (postId: string) => {
+    try {
+      const res = await fetch(`/api/community/posts/${encodeURIComponent(postId)}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "删除失败");
+      setPosts((prev) => prev.filter((p) => p.id !== postId));
+      fetchActivity();
+    } catch (e) {
+      throw e;
+    }
+  };
+
+  const fetchComments = async (postId: string) => {
+    try {
+      const res = await fetch(`/api/community/posts/${encodeURIComponent(postId)}/comments`);
+      const data = await res.json();
+      if (res.ok) {
+        setPosts((prev) =>
+          prev.map((p) => (p.id === postId ? { ...p, comments: data } : p))
+        );
+      }
+    } catch {
+      // silent fail
+    }
+  };
+
+  const addComment = async (postId: string, content: string, author: string) => {
+    try {
+      const res = await fetch(`/api/community/posts/${encodeURIComponent(postId)}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content, author }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "发表评论失败");
+      
+      // 重新获取该帖子的评论以更新列表
+      await fetchComments(postId);
+    } catch (e) {
+      throw e;
+    }
+  };
+
+  const deleteComment = async (postId: string, commentId: string) => {
+    try {
+      const res = await fetch(`/api/community/posts/${encodeURIComponent(postId)}/comments/${encodeURIComponent(commentId)}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data?.error || "删除评论失败");
+      }
+      // 重新获取评论以更新
+      await fetchComments(postId);
+    } catch (e) {
+      throw e;
+    }
+  };
+
   return {
     posts,
     activity,
@@ -75,5 +136,9 @@ export function useCommunity() {
     fetchPosts,
     addReaction,
     fetchActivity,
+    deletePost,
+    fetchComments,
+    addComment,
+    deleteComment,
   };
 }

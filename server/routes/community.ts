@@ -1,7 +1,8 @@
 import { Router } from "express";
-import { queryPosts, createPost, addReaction } from "../lib/communityStore.js";
+import { queryPosts, createPost, addReaction, deletePost } from "../lib/communityStore.js";
 import { getRecentActivity } from "../lib/communityActivity.js";
 import { parseUploadFile, uploadToCF } from "../lib/communityUpload.js";
+import { getCommentsByPostId, addComment, deleteComment } from "../lib/commentStore.js";
 
 const router = Router();
 
@@ -26,14 +27,28 @@ router.post("/posts", (req, res) => {
     const tags = Array.isArray(body.tags) ? body.tags.map(String) : [];
     const uploader = String(body.uploader || "匿名").trim();
 
-    if (!imageUrl) {
-      return res.status(400).json({ success: false, error: "请先上传图片" });
+    // 1.4 允许无图片发帖，但至少要有描述
+    if (!imageUrl && !description) {
+      return res.status(400).json({ success: false, error: "图片或内容至少填写一项" });
     }
 
     const post = createPost({ imageUrl, description, tags, uploader });
     res.json({ success: true, data: post });
   } catch (e) {
     res.status(500).json({ success: false, error: "发帖失败" });
+  }
+});
+
+router.delete("/posts/:id", (req, res) => {
+  try {
+    const { id } = req.params;
+    const success = deletePost(id);
+    if (!success) {
+      return res.status(404).json({ success: false, error: "帖子不存在" });
+    }
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ success: false, error: "删除失败" });
   }
 });
 
@@ -84,6 +99,40 @@ router.get("/activity", (req, res) => {
     res.json({ success: true, data: activity });
   } catch (e) {
     res.status(500).json({ success: false, error: "获取动态失败" });
+  }
+});
+
+// ============ 社区评论 API ============
+router.get("/posts/:id/comments", (req, res) => {
+  try {
+    const postId = req.params.id;
+    res.json(getCommentsByPostId(postId));
+  } catch (e) {
+    res.status(500).json({ error: "获取评论失败" });
+  }
+});
+
+router.post("/posts/:id/comments", (req, res) => {
+  try {
+    const postId = req.params.id;
+    const { content, author } = req.body || {};
+    if (!content || !author) {
+      return res.status(400).json({ error: "内容与昵称不能为空" });
+    }
+    const newComment = addComment(postId, String(content), String(author));
+    res.json({ success: true, data: newComment });
+  } catch (e) {
+    res.status(500).json({ error: "添加评论失败" });
+  }
+});
+
+router.delete("/posts/:id/comments/:commentId", (req, res) => {
+  try {
+    const { commentId } = req.params;
+    deleteComment(commentId);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: "删除评论失败" });
   }
 });
 

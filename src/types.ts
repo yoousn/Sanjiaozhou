@@ -138,6 +138,14 @@ export type CommunityReactions = {
   skull: number;
 };
 
+export type CommunityComment = {
+  id: string;
+  postId: string;
+  content: string;
+  author: string;
+  createdAt: string;
+};
+
 export type CommunityPost = {
   id: string;
   imageUrl: string;
@@ -147,6 +155,7 @@ export type CommunityPost = {
   uploader: string;
   reactions: CommunityReactions;
   reactionTotal: number;
+  comments?: CommunityComment[];
 };
 
 export type CommunityActivity = {

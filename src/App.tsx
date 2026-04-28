@@ -18,16 +18,18 @@ import { GunCard } from './components/GunCard';
 import { AddGunModal } from './components/AddGunModal';
 import { CollectModal } from './components/CollectModal';
 import { SortableGunCard } from './components/SortableGunCard';
-import { CommunityPage } from './pages/CommunityPage';
-import { SettingsPage } from './components/SettingsPage';
 import { DailyPwdCard } from './components/DailyPwdCard';
 import { EditCustomizePanel } from './components/EditCustomizePanel';
 import { ModeSelectModal } from './components/ModeSelectModal';
 import { AutoCollectConfigModal, AutoCollectConfig } from './components/AutoCollectConfigModal';
 
+const CommunityPage = React.lazy(() => import('./pages/CommunityPage').then(m => ({ default: m.CommunityPage })));
+const SettingsPage = React.lazy(() => import('./components/SettingsPage').then(m => ({ default: m.SettingsPage })));
+
 import { useToast } from './components/useToast';
 import { useDailyPassword } from './hooks/useDailyPassword';
 import { useTheme } from './hooks/useTheme';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import {
   cn,
@@ -65,6 +67,7 @@ import {
 } from '@dnd-kit/sortable';
 
 export default function App() {
+  const queryClient = useQueryClient();
   const mobileVersionLabel = `v${__APP_VERSION__}`;
   const { toast, showToast } = useToast();
   const theme = useTheme();
@@ -115,10 +118,26 @@ export default function App() {
   });
   const [isSavingAuto, setIsSavingAuto] = useState(false);
 
-  const [savedData, setSavedData] = useState<GunGroup[]>([]);
   const [draftData, setDraftData] = useState<GunGroup[]>([]);
-  const [isRefreshingData, setIsRefreshingData] = useState(false);
-  const [savedDataLoadError, setSavedDataLoadError] = useState<string | null>(null);
+
+  const { data: savedData = [], isFetching: isRefreshingData, error: queryError, refetch } = useQuery({
+    queryKey: ['builds'],
+    queryFn: async () => {
+      const res = await fetch('/api/builds');
+      const data = await safeJson(res);
+      if (!res.ok) throw new Error(data?.error || '加载失败');
+      return data as GunGroup[];
+    },
+    refetchInterval: (query) => {
+      if (isEditing || activeModal !== 'none' || isSearchingCollect || isPreviewingCollect || isApplyingCollect) return false;
+      return 60000;
+    },
+  });
+  const savedDataLoadError = queryError instanceof Error ? queryError.message : null;
+
+  const setSavedData = (newData: GunGroup[]) => {
+    queryClient.setQueryData(['builds'], newData);
+  };
 
   const fetchCookieStatus = useCallback(() => {
     fetch('/api/config/cookie/status')
@@ -141,33 +160,6 @@ export default function App() {
       daily.fetchDailyPwdLogs();
     }
   }, [activeTab, fetchCookieStatus, fetchSettingsFileStatus, daily]);
-
-  const fetchData = useCallback((silent = false) => {
-    if (!silent) setIsRefreshingData(true);
-    fetch('/api/builds')
-      .then(safeJson)
-      .then(data => {
-        setSavedData(data);
-        setSavedDataLoadError(null);
-      })
-      .catch(err => {
-        console.error('加载失败:', err);
-        setSavedDataLoadError(err instanceof Error ? err.message : '加载失败');
-      })
-      .finally(() => {
-        if (!silent) setIsRefreshingData(false);
-      });
-  }, []);
-
-  useEffect(() => {
-    fetchData(false);
-    const interval = setInterval(() => {
-      if (!isEditing && activeModal === 'none' && !isSearchingCollect && !isPreviewingCollect && !isApplyingCollect) {
-        fetchData(true);
-      }
-    }, 60000);
-    return () => clearInterval(interval);
-  }, [fetchData, isEditing, activeModal, isSearchingCollect, isPreviewingCollect, isApplyingCollect]);
 
   useEffect(() => {
     if (activeModal === 'auto-collect') {
@@ -706,8 +698,13 @@ export default function App() {
             <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400/90 dark:text-zinc-500/90">{mobileVersionLabel}</span>
           </div>
           <div className="max-w-[1600px] mx-auto">
-            {activeTab === 'community' ? <CommunityPage /> : activeTab === 'settings' ? (
-              <SettingsPage
+            {activeTab === 'community' ? (
+              <React.Suspense fallback={<div className="flex flex-col items-center justify-center py-24 animate-fade-in"><Loader2 size={24} className="animate-spin text-zinc-400 mb-4" /><p className="text-[13px] font-bold text-zinc-500">正在加载社区模块...</p></div>}>
+                <CommunityPage />
+              </React.Suspense>
+            ) : activeTab === 'settings' ? (
+              <React.Suspense fallback={<div className="flex flex-col items-center justify-center py-24 animate-fade-in"><Loader2 size={24} className="animate-spin text-zinc-400 mb-4" /><p className="text-[13px] font-bold text-zinc-500">正在加载设置模块...</p></div>}>
+                <SettingsPage
                 uiPreferences={theme.uiPreferences}
                 customTheme={theme.customTheme}
                 setCustomTheme={theme.setCustomTheme}
@@ -724,13 +721,14 @@ export default function App() {
                 isRefreshingDailyPwd={daily.isRefreshingDailyPwd}
                 handleRefreshDailyPwd={daily.handleRefreshDailyPwd}
               />
+              </React.Suspense>
             ) : (
               <>
                 <Header isEditing={isEditing} onEditStart={handleEditStart} onSave={handleSave} onCancel={handleCancel} onAddNew={() => setIsModalOpen(true)} onOpenCollect={() => setActiveModal('mode-select')} sortBy={sortBy} onSortChange={setSortBy} isDarkMode={theme.isDarkMode} onToggleDarkMode={() => theme.setIsDarkMode(!theme.isDarkMode)} searchQuery={searchQuery} onSearchChange={setSearchQuery} searchSuggestions={Array.from(new Set(sourceData.map(g => g.name)))} controlRadius={theme.uiPreferences.controlRadius} buttonStyle={theme.uiPreferences.buttonStyle} />
                 {isRefreshingData && savedData.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-24 animate-fade-in"><Loader2 size={24} className="animate-spin text-zinc-400 mb-4" /><p className="text-[13px] font-bold text-zinc-500">正在加载...</p></div>
                 ) : savedDataLoadError && savedData.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-24 animate-fade-in"><AlertCircle size={24} className="text-zinc-400 mb-4" /><p className="text-[13px] font-bold text-zinc-500 mb-4">{savedDataLoadError}</p><button onClick={() => fetchData(false)} className="px-4 py-2 bg-zinc-900 text-white text-[12px] font-bold rounded-xl hover:bg-zinc-800 transition">重试</button></div>
+                  <div className="flex flex-col items-center justify-center py-24 animate-fade-in"><AlertCircle size={24} className="text-zinc-400 mb-4" /><p className="text-[13px] font-bold text-zinc-500 mb-4">{savedDataLoadError}</p><button onClick={() => { void refetch(); }} className="px-4 py-2 bg-zinc-900 text-white text-[12px] font-bold rounded-xl hover:bg-zinc-800 transition">重试</button></div>
                 ) : (
                   <>
                     <div className="mb-6 pl-1 mt-2">

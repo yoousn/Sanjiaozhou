@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { cn } from "../../utils";
 import type { CommunityPost, CommunityReactions } from "../../types";
 import { Trash2, MessageCircle, ChevronDown, ChevronUp, Send, Loader2 } from "lucide-react";
 
@@ -21,6 +22,23 @@ function formatTime(iso: string) {
   } catch {
     return iso;
   }
+}
+
+function LazyImage({ src, alt, className }: { src: string, alt: string, className: string }) {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <div className={cn("relative bg-zinc-100 dark:bg-zinc-800 overflow-hidden", className)}>
+      {!loaded && <div className="absolute inset-0 animate-pulse bg-zinc-200 dark:bg-zinc-700" />}
+      <img
+        src={src}
+        alt={alt}
+        className={cn("w-full h-full object-cover transition-opacity duration-500", loaded ? "opacity-100" : "opacity-0")}
+        loading="lazy"
+        decoding="async"
+        onLoad={() => setLoaded(true)}
+      />
+    </div>
+  );
 }
 
 export function CommunityPostCard({
@@ -123,11 +141,10 @@ export function CommunityPostCard({
 
       {post.imageUrl && (
         <a href={post.imageUrl} target="_blank" rel="noopener noreferrer" className="block">
-          <img
+          <LazyImage
             src={post.imageUrl}
             alt={post.description || "帖子图片"}
-            className="w-full aspect-[4/3] object-cover"
-            loading="lazy"
+            className="w-full aspect-[4/3]"
           />
         </a>
       )}

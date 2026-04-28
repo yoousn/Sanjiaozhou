@@ -1,7 +1,7 @@
 {
   "name": "react-example",
   "private": true,
-  "version": "1.0.8",
+  "version": "1.0.9",
   "type": "module",
   "scripts": {
     "dev": "node ./node_modules/tsx/dist/cli.mjs watch server.ts",
@@ -17,6 +17,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@google/genai": "^1.29.0",
     "@tailwindcss/vite": "^4.1.14",
+    "@tanstack/react-query": "^5.100.5",
     "@vitejs/plugin-react": "^5.0.4",
     "busboy": "^1.6.0",
     "clsx": "^2.1.1",

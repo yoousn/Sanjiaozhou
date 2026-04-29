@@ -160,6 +160,11 @@ export type CommunityPost = {
   reactions: CommunityReactions;
   reactionTotal: number;
   comments?: CommunityComment[];
+  reactedUsers?: {
+    fire: string[];
+    money: string[];
+    skull: string[];
+  };
 };
 
 export type CommunityActivity = {
@@ -169,3 +174,9 @@ export type CommunityActivity = {
   action: string;
   time: string;
 };
+
+export type AuthUser = {
+  id: string;
+  username: string;
+};
+

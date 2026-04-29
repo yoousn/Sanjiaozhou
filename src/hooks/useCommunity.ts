@@ -1,62 +1,50 @@
 import { useState, useCallback, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { CommunityPost, CommunityReactions, CommunityComment } from "../types";
 
 export function useCommunity() {
-  const [posts, setPosts] = useState<CommunityPost[]>([]);
-  const [activity, setActivity] = useState<Array<{ id: string; postId: string; uploader: string; action: string; time: string }>>([]);
+  const queryClient = useQueryClient();
   const [sort, setSort] = useState<"new" | "hot">("new");
   const [activeTag, setActiveTag] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const fetchPosts = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
+  const { data: posts = [], isLoading: loading, error: queryError, refetch: fetchPosts } = useQuery({
+    queryKey: ['community_posts', sort, activeTag],
+    queryFn: async () => {
       const params = new URLSearchParams({ sort });
       if (activeTag) params.set("tag", activeTag);
       const res = await fetch(`/api/community/posts?${params.toString()}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "加载失败");
-      setPosts(Array.isArray(data?.data) ? data.data : []);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "加载失败");
-    } finally {
-      setLoading(false);
-    }
-  }, [sort, activeTag]);
+      return Array.isArray(data?.data) ? data.data : [] as CommunityPost[];
+    },
+    refetchInterval: 10000, // 10秒自动刷新，实现近乎实时的更新
+  });
 
-  const fetchActivity = useCallback(async () => {
-    try {
+  const { data: activity = [] } = useQuery({
+    queryKey: ['community_activity'],
+    queryFn: async () => {
       const res = await fetch("/api/community/activity");
       const data = await res.json();
-      if (res.ok) {
-        setActivity(Array.isArray(data?.data) ? data.data : []);
-      }
-    } catch {
-      // activity is non-critical
-    }
-  }, []);
+      return Array.isArray(data?.data) ? data.data : [];
+    },
+    refetchInterval: 15000,
+  });
 
-  useEffect(() => {
-    fetchPosts();
-  }, [fetchPosts]);
+  const error = queryError instanceof Error ? queryError.message : null;
 
-  useEffect(() => {
-    fetchActivity();
-  }, [fetchPosts]);
-
-  const addReaction = async (postId: string, emoji: keyof CommunityReactions) => {
+  const addReaction = async (postId: string, emoji: keyof CommunityReactions, userId?: string) => {
     try {
       const res = await fetch(`/api/community/posts/${encodeURIComponent(postId)}/react`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ emoji }),
+        body: JSON.stringify({ emoji, userId }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "互动失败");
-      setPosts((prev) =>
-        prev.map((p) => (p.id === postId ? { ...p, ...data.data, reactionTotal: data.data.reactionTotal } : p))
+      
+      // 乐观更新或失效查询
+      queryClient.setQueryData(['community_posts', sort, activeTag], (prev: any) => 
+        prev.map((p: any) => p.id === postId ? { ...p, ...data.data } : p)
       );
     } catch (e) {
       throw e;
@@ -70,8 +58,9 @@ export function useCommunity() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "删除失败");
-      setPosts((prev) => prev.filter((p) => p.id !== postId));
-      fetchActivity();
+      
+      queryClient.invalidateQueries({ queryKey: ['community_posts'] });
+      queryClient.invalidateQueries({ queryKey: ['community_activity'] });
     } catch (e) {
       throw e;
     }
@@ -82,8 +71,8 @@ export function useCommunity() {
       const res = await fetch(`/api/community/posts/${encodeURIComponent(postId)}/comments`);
       const data = await res.json();
       if (res.ok) {
-        setPosts((prev) =>
-          prev.map((p) => (p.id === postId ? { ...p, comments: data } : p))
+        queryClient.setQueryData(['community_posts', sort, activeTag], (prev: any) => 
+          prev.map((p: any) => p.id === postId ? { ...p, comments: data } : p)
         );
       }
     } catch {
@@ -101,7 +90,6 @@ export function useCommunity() {
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "发表评论失败");
       
-      // 重新获取该帖子的评论以更新列表
       await fetchComments(postId);
     } catch (e) {
       throw e;
@@ -117,7 +105,6 @@ export function useCommunity() {
         const data = await res.json();
         throw new Error(data?.error || "删除评论失败");
       }
-      // 重新获取评论以更新
       await fetchComments(postId);
     } catch (e) {
       throw e;
@@ -135,10 +122,11 @@ export function useCommunity() {
     error,
     fetchPosts,
     addReaction,
-    fetchActivity,
+    fetchActivity: () => queryClient.invalidateQueries({ queryKey: ['community_activity'] }),
     deletePost,
     fetchComments,
     addComment,
     deleteComment,
   };
 }
+

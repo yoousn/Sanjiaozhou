@@ -23,6 +23,11 @@ export type CommunityPost = {
   uploader: string;
   reactions: CommunityReactions;
   reactionTotal: number;
+  reactedUsers?: {
+    fire: string[];
+    money: string[];
+    skull: string[];
+  };
 };
 
 function normalizePost(raw: Partial<CommunityPost>): CommunityPost {
@@ -30,6 +35,11 @@ function normalizePost(raw: Partial<CommunityPost>): CommunityPost {
     fire: Math.max(0, Number(raw.reactions?.fire) || 0),
     money: Math.max(0, Number(raw.reactions?.money) || 0),
     skull: Math.max(0, Number(raw.reactions?.skull) || 0),
+  };
+  const reactedUsers = {
+    fire: Array.isArray(raw.reactedUsers?.fire) ? raw.reactedUsers.fire.map(String) : [],
+    money: Array.isArray(raw.reactedUsers?.money) ? raw.reactedUsers.money.map(String) : [],
+    skull: Array.isArray(raw.reactedUsers?.skull) ? raw.reactedUsers.skull.map(String) : [],
   };
   return {
     id: String(raw.id || ""),
@@ -42,6 +52,7 @@ function normalizePost(raw: Partial<CommunityPost>): CommunityPost {
     uploader: String(raw.uploader || "匿名").trim().slice(0, 50),
     reactions,
     reactionTotal: reactions.fire + reactions.money + reactions.skull,
+    reactedUsers,
   };
 }
 
@@ -76,6 +87,7 @@ export function createPost(data: {
     ...data,
     createdAt: new Date().toISOString(),
     reactions: { fire: 0, money: 0, skull: 0 },
+    reactedUsers: { fire: [], money: [], skull: [] },
   });
   posts.unshift(post);
   writePosts(posts);
@@ -109,17 +121,31 @@ export function deletePost(id: string): boolean {
   return true;
 }
 
-export function addReaction(postId: string, emoji: keyof CommunityReactions): CommunityPost | null {
+export function addReaction(postId: string, emoji: keyof CommunityReactions, userId: string): CommunityPost | null {
   const posts = readPosts();
   const index = posts.findIndex((p) => p.id === postId);
   if (index === -1) return null;
 
   const post = posts[index];
+  
+  if (post.reactedUsers?.[emoji]?.includes(userId)) {
+    throw new Error("您已经表态过了");
+  }
+
+  const newReactedUsers = {
+    fire: [...(post.reactedUsers?.fire || [])],
+    money: [...(post.reactedUsers?.money || [])],
+    skull: [...(post.reactedUsers?.skull || [])],
+  };
+
+  newReactedUsers[emoji].push(userId);
+
   const newReactions = { ...post.reactions, [emoji]: post.reactions[emoji] + 1 };
   const updated: CommunityPost = {
     ...post,
     reactions: newReactions,
     reactionTotal: newReactions.fire + newReactions.money + newReactions.skull,
+    reactedUsers: newReactedUsers,
   };
   posts[index] = updated;
   writePosts(posts);

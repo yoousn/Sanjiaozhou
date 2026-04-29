@@ -10,14 +10,16 @@ export function CommunityFeed({
   onFetchComments,
   onAddComment,
   onDeleteComment,
+  auth,
 }: {
   posts: CommunityPost[];
-  onReact: (postId: string, emoji: keyof CommunityReactions) => void;
+  onReact: (postId: string, emoji: keyof CommunityReactions, userId: string) => void;
   onTagClick: (tag: string) => void;
   onDelete?: (postId: string) => Promise<void>;
   onFetchComments?: (postId: string) => Promise<void>;
   onAddComment?: (postId: string, content: string, author: string) => Promise<void>;
   onDeleteComment?: (postId: string, commentId: string) => Promise<void>;
+  auth: any;
 }) {
   if (posts.length === 0) {
     return (
@@ -46,6 +48,7 @@ export function CommunityFeed({
             onFetchComments={onFetchComments}
             onAddComment={onAddComment}
             onDeleteComment={onDeleteComment}
+            auth={auth}
           />
         </div>
       ))}

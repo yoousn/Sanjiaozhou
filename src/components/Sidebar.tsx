@@ -1,5 +1,4 @@
-import React from 'react';
-import { Home, Settings, Users } from 'lucide-react';
+import { Home, Settings, Users, LogIn, LogOut, User } from 'lucide-react';
 import { cn, getButtonClassName, radiusClassMap, sidebarWidthClassMap } from '../utils';
 import type { UiButtonStyle, UiRadius, UiSidebarWidth } from '../types';
 
@@ -12,6 +11,8 @@ export function Sidebar({
   sidebarWidth,
   controlRadius,
   buttonStyle,
+  auth,
+  onOpenAuth,
 }: {
   activeTab: string,
   setActiveTab: (tab: string) => void,
@@ -19,6 +20,8 @@ export function Sidebar({
   sidebarWidth: UiSidebarWidth,
   controlRadius: UiRadius,
   buttonStyle: UiButtonStyle,
+  auth: any,
+  onOpenAuth: () => void,
 }) {
   const radiusClass = radiusClassMap[controlRadius];
   const sidebarWidthClasses = sidebarWidthClassMap[sidebarWidth];
@@ -56,22 +59,48 @@ export function Sidebar({
               首页/改枪码
             </span>
           </button>
-        </div>
 
-        <div className="mt-auto mb-6 w-full px-2 shrink-0 pt-8">
           <button
             onClick={() => setActiveTab('community')}
             className={cn(
               "flex items-center lg:justify-start justify-center gap-3 px-3 py-2.5 transition duration-200 outline-none hover:bg-black/5 dark:hover:bg-white/5 w-full group mb-1",
+              radiusClass,
               activeTab === 'community'
                 ? cn(getButtonClassName(buttonStyle === 'outline' ? 'solid' : buttonStyle, 'default'), 'dark:bg-zinc-100 dark:text-zinc-900 text-zinc-900')
                 : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white",
-              radiusClass
             )}
           >
             <Users size={16} strokeWidth={activeTab === 'community' ? 2.5 : 2} className={cn("transition-transform duration-300", activeTab === 'community' && "scale-110")} />
             <span className={cn("hidden lg:block text-[13px]", activeTab === 'community' ? "font-bold" : "font-semibold")}>社区</span>
           </button>
+        </div>
+
+        <div className="mt-auto mb-6 w-full px-2 shrink-0 pt-8 flex flex-col gap-1">
+          {auth.isAuthenticated ? (
+            <div className={cn("flex items-center justify-between px-3 py-2.5 mb-2 bg-zinc-100 dark:bg-zinc-800/50", radiusClass)}>
+              <div className="flex items-center gap-2 overflow-hidden">
+                <div className="w-6 h-6 rounded-full bg-zinc-900 dark:bg-white flex items-center justify-center text-[10px] text-white dark:text-black font-black shrink-0">
+                  {auth.user?.username?.[0]?.toUpperCase()}
+                </div>
+                <span className="text-[12px] font-bold text-zinc-700 dark:text-zinc-300 truncate">{auth.user?.username}</span>
+              </div>
+              <button onClick={auth.logout} className="p-1.5 text-zinc-400 hover:text-red-500 transition-colors" title="退出登录">
+                <LogOut size={14} />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={onOpenAuth}
+              className={cn(
+                "flex items-center lg:justify-start justify-center gap-3 px-3 py-2.5 transition duration-200 outline-none hover:bg-black/5 dark:hover:bg-white/5 text-zinc-500 hover:text-zinc-900 dark:hover:text-white w-full group mb-2",
+                radiusClass
+              )}
+            >
+              <LogIn size={16} />
+              <span className="hidden lg:block text-[13px] font-bold">登录/注册</span>
+            </button>
+          )}
+
           <button
             onClick={onOpenSettings}
             className={cn(
@@ -125,13 +154,13 @@ export function Sidebar({
         <div className="w-[1px] h-6 bg-zinc-200 dark:bg-zinc-700 mx-1" />
 
         <button
-          onClick={onOpenSettings}
+          onClick={auth.isAuthenticated ? auth.logout : onOpenAuth}
           className={cn(
             "flex items-center justify-center px-3 py-2 outline-none transition duration-200 active:scale-95 text-zinc-500 hover:text-zinc-900 dark:hover:text-white",
             radiusClass
           )}
         >
-          <Settings size={16} strokeWidth={2} />
+          {auth.isAuthenticated ? <LogOut size={16} /> : <LogIn size={16} />}
         </button>
       </nav>
     </>

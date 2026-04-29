@@ -49,28 +49,43 @@ export function CommunityPostCard({
   onFetchComments,
   onAddComment,
   onDeleteComment,
+  auth,
 }: {
   post: CommunityPost;
-  onReact: (postId: string, emoji: keyof CommunityReactions) => void;
+  onReact: (postId: string, emoji: keyof CommunityReactions, userId: string) => void;
   onTagClick: (tag: string) => void;
   onDelete?: (postId: string) => Promise<void>;
   onFetchComments?: (postId: string) => Promise<void>;
   onAddComment?: (postId: string, content: string, author: string) => Promise<void>;
   onDeleteComment?: (postId: string, commentId: string) => Promise<void>;
+  auth: any;
 }) {
   const [reacting, setReacting] = useState<string | null>(null);
-  const [showComments, setShowComments] = useState(false);
+  const [showComments, setShowComments] = useState(true); // 默认显示评论
   const [commentContent, setCommentContent] = useState("");
-  const [authorName, setAuthorName] = useState(() => localStorage.getItem("comment_author") || "");
   const [submitting, setSubmitting] = useState(false);
   const [loadingComments, setLoadingComments] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // 身份逻辑：登录显示用户名，不登录显示匿名用户
+  const currentAuthorName = auth.isAuthenticated ? auth.user.username : "匿名用户";
+
+  // 初始化时获取评论
+  useEffect(() => {
+    if (showComments && onFetchComments && !post.comments) {
+      void onFetchComments(post.id);
+    }
+  }, [post.id, onFetchComments, showComments, post.comments]);
+
   const handleReact = async (emoji: keyof CommunityReactions) => {
+    if (!auth?.isAuthenticated) {
+      alert("请先登录才能进行互动");
+      return;
+    }
     if (reacting) return;
     setReacting(emoji);
     try {
-      await onReact(post.id, emoji);
+      await onReact(post.id, emoji, auth.user.id);
     } catch {
       // silently fail, optimistic UI already applied
     } finally {
@@ -90,12 +105,11 @@ export function CommunityPostCard({
 
   const handleAddComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!commentContent.trim() || !authorName.trim() || submitting || !onAddComment) return;
+    if (!commentContent.trim() || submitting || !onAddComment) return;
 
     setSubmitting(true);
     try {
-      localStorage.setItem("comment_author", authorName);
-      await onAddComment(post.id, commentContent, authorName);
+      await onAddComment(post.id, commentContent, currentAuthorName);
       setCommentContent("");
     } catch (err) {
       alert(err instanceof Error ? err.message : "评论失败");
@@ -180,20 +194,23 @@ export function CommunityPostCard({
               <MessageCircle size={14} />
               <span>{post.comments?.length || ""}</span>
             </button>
-            {EMOJIS.map(({ key, emoji, label }) => (
-              <button
-                key={key}
-                onClick={() => void handleReact(key)}
-                disabled={reacting !== null}
-                className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-lg text-[12px] font-bold transition hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50"
-                title={label}
-              >
-                <span>{emoji}</span>
-                <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                  {post.reactions[key]}
-                </span>
-              </button>
-            ))}
+            {EMOJIS.map(({ key, emoji, label }) => {
+              const hasReacted = auth?.isAuthenticated && post.reactedUsers?.[key]?.includes(auth.user.id);
+              return (
+                <button
+                  key={key}
+                  onClick={() => void handleReact(key)}
+                  disabled={reacting !== null || hasReacted}
+                  className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded-lg text-[12px] font-bold transition disabled:opacity-50 ${hasReacted ? "bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-white" : "hover:bg-zinc-100 dark:hover:bg-zinc-800"}`}
+                  title={label}
+                >
+                  <span>{emoji}</span>
+                  <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                    {post.reactions[key]}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -237,14 +254,13 @@ export function CommunityPostCard({
             </div>
 
             <form onSubmit={handleAddComment} className="flex flex-col gap-2">
-              <input
-                type="text"
-                placeholder="你的昵称"
-                value={authorName}
-                onChange={(e) => setAuthorName(e.target.value)}
-                required
-                className="px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 border-none rounded-lg text-[11px] focus:ring-1 focus:ring-zinc-300 dark:focus:ring-zinc-700 outline-none"
-              />
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg border border-zinc-100 dark:border-zinc-800">
+                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">发表为</span>
+                <span className="text-[11px] font-black text-zinc-700 dark:text-zinc-200">{currentAuthorName}</span>
+                {!auth.isAuthenticated && (
+                  <span className="text-[9px] text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-1 rounded ml-auto">匿名</span>
+                )}
+              </div>
               <div className="relative">
                 <textarea
                   placeholder="写下你的评论..."
@@ -256,7 +272,7 @@ export function CommunityPostCard({
                 />
                 <button
                   type="submit"
-                  disabled={submitting || !commentContent.trim() || !authorName.trim()}
+                  disabled={submitting || !commentContent.trim()}
                   className="absolute right-2 bottom-2 p-1.5 text-zinc-400 hover:text-zinc-900 dark:hover:text-white disabled:opacity-30 transition-colors"
                 >
                   {submitting ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}

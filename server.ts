@@ -8,6 +8,7 @@ import collectRouter, { startAutoCollectJob } from "./server/routes/collect.js";
 import configRouter from "./server/routes/config.js";
 import dailyPasswordRouter, { startDailyPwdJob } from "./server/routes/dailyPassword.js";
 import communityRouter from "./server/routes/community.js";
+import authRouter from "./server/routes/auth.js";
 import { testModel } from "./server/lib/collector.js";
 import { readCollectSettings } from "./server/lib/collectSettings.js";
 
@@ -24,6 +25,7 @@ async function startServer() {
   app.use("/api/config", configRouter);
   app.use("/api/daily-password", dailyPasswordRouter);
   app.use("/api/community", communityRouter);
+  app.use("/api/auth", authRouter);
 
   app.post("/api/model/test", async (req, res) => {
     try {

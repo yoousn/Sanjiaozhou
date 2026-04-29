@@ -22,6 +22,7 @@ import { DailyPwdCard } from './components/DailyPwdCard';
 import { EditCustomizePanel } from './components/EditCustomizePanel';
 import { ModeSelectModal } from './components/ModeSelectModal';
 import { AutoCollectConfigModal, AutoCollectConfig } from './components/AutoCollectConfigModal';
+import { AuthModal } from './components/AuthModal';
 
 const CommunityPage = React.lazy(() => import('./pages/CommunityPage').then(m => ({ default: m.CommunityPage })));
 const SettingsPage = React.lazy(() => import('./components/SettingsPage').then(m => ({ default: m.SettingsPage })));
@@ -29,6 +30,7 @@ const SettingsPage = React.lazy(() => import('./components/SettingsPage').then(m
 import { useToast } from './components/useToast';
 import { useDailyPassword } from './hooks/useDailyPassword';
 import { useTheme } from './hooks/useTheme';
+import { useAuth } from './hooks/useAuth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import {
@@ -74,11 +76,16 @@ export default function App() {
   const { toast, showToast } = useToast();
   const theme = useTheme();
   const daily = useDailyPassword(showToast);
+  const auth = useAuth();
 
-  const [activeTab, setActiveTab] = useState('home');
+  const [activeTab, setActiveTab] = useState(() => localStorage.getItem('active_nav_tab') || 'home');
+  useEffect(() => {
+    localStorage.setItem('active_nav_tab', activeTab);
+  }, [activeTab]);
+
   const [isEditing, setIsEditing] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [activeModal, setActiveModal] = useState<'none' | 'mode-select' | 'collect' | 'auto-collect'>('none');
+  const [activeModal, setActiveModal] = useState<'none' | 'mode-select' | 'collect' | 'auto-collect' | 'auth'>('none');
   
   // Collect related states
   const [isSearchingCollect, setIsSearchingCollect] = useState(false);
@@ -746,7 +753,7 @@ export default function App() {
     <>
       <style>{`:root { --color-emerald-500: ${theme.customTheme.themeColor}; --color-emerald-600: ${theme.customTheme.themeColor}; --color-emerald-50: ${theme.customTheme.themeColor}1A; }`}</style>
       <div className="flex min-h-screen bg-[#F8F9FA] dark:bg-[#0b0b0c] selection:bg-zinc-200 dark:selection:bg-zinc-800 transition-colors duration-300" style={{ color: theme.isDarkMode ? theme.customTheme.textColorDark : theme.customTheme.textColorLight, '--user-gun-color': theme.isDarkMode ? theme.customTheme.gunNameColorDark : theme.customTheme.gunNameColorLight } as React.CSSProperties}>
-        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} onOpenSettings={() => setActiveTab('settings')} sidebarWidth={theme.uiPreferences.sidebarWidth} controlRadius={theme.uiPreferences.controlRadius} buttonStyle={theme.uiPreferences.buttonStyle} />
+        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} onOpenSettings={() => setActiveTab('settings')} sidebarWidth={theme.uiPreferences.sidebarWidth} controlRadius={theme.uiPreferences.controlRadius} buttonStyle={theme.uiPreferences.buttonStyle} auth={auth} onOpenAuth={() => setActiveModal('auth')} />
         <main className={cn('flex-1 p-4 md:p-6 lg:p-8 pb-32', sidebarWidthClasses.main)}>
           <div className="md:hidden fixed left-4 bottom-24 z-40 pointer-events-none">
             <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400/90 dark:text-zinc-500/90">{mobileVersionLabel}</span>
@@ -754,7 +761,7 @@ export default function App() {
           <div className="max-w-[1600px] mx-auto">
             {activeTab === 'community' ? (
               <React.Suspense fallback={<div className="flex flex-col items-center justify-center py-24 animate-fade-in"><Loader2 size={24} className="animate-spin text-zinc-400 mb-4" /><p className="text-[13px] font-bold text-zinc-500">正在加载社区模块...</p></div>}>
-                <CommunityPage />
+                <CommunityPage auth={auth} onOpenAuth={() => setActiveModal('auth')} />
               </React.Suspense>
             ) : activeTab === 'settings' ? (
               <React.Suspense fallback={<div className="flex flex-col items-center justify-center py-24 animate-fade-in"><Loader2 size={24} className="animate-spin text-zinc-400 mb-4" /><p className="text-[13px] font-bold text-zinc-500">正在加载设置模块...</p></div>}>
@@ -872,6 +879,9 @@ export default function App() {
       )}
       {activeModal === 'collect' && (
         <CollectModal isOpen={activeModal === 'collect'} isSearching={isSearchingCollect || isRefreshingData} isPreviewing={isPreviewingCollect} isTestingModel={isTestingModel} isApplying={isApplyingCollect} meta={collectMeta} searchResult={collectSearchResult} selectedVideoIds={selectedVideoIds} selectedModel={selectedModel} selectedProviderId={selectedProviderId} modelTestResult={modelTestResult} preview={collectPreview} presetGunInput={presetGunInput} isSavingPresetGuns={isSavingPresetGuns} isProviderModalOpen={isProviderModalOpen} providerForm={providerForm} isFetchingProviderModels={isFetchingProviderModels} isSavingProvider={isSavingProvider} searchConcurrencyEnabled={searchConcurrencyEnabled} applyConcurrencyEnabled={applyConcurrencyEnabled} onClose={handleCloseCollectModal} onSearch={handleSearchCollect} onCancelSearch={handleCancelSearch} onSelectedVideoIdsChange={setSelectedVideoIds} onSelectedModelChange={setSelectedModel} onSelectedProviderIdChange={setSelectedProviderId} onTestModel={handleTestModel} onApply={handleApplyCollect} onPresetGunInputChange={setPresetGunInput} onSavePresetGuns={handleSavePresetGuns} onOpenProviderModal={() => setIsProviderModalOpen(true)} onCloseProviderModal={() => setIsProviderModalOpen(false)} onProviderFormChange={setProviderForm} onFetchProviderModels={handleFetchProviderModels} onSaveProvider={handleSaveProvider} onDeleteProvider={handleDeleteProvider} onSearchConcurrencyChange={(value) => void handleSaveConcurrency(value, applyConcurrencyEnabled)} onApplyConcurrencyChange={(value) => void handleSaveConcurrency(searchConcurrencyEnabled, value)} />
+      )}
+      {activeModal === 'auth' && (
+        <AuthModal isOpen={activeModal === 'auth'} onClose={() => setActiveModal('none')} onLogin={auth.login} onRegister={auth.register} />
       )}
       {toast && (
         <div className="fixed bottom-24 md:bottom-10 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-2 px-5 py-3 rounded-xl shadow-[0_12px_44px_rgba(0,0,0,0.12)] pointer-events-none animate-fade-in" style={{ backgroundColor: toast.type === 'success' ? '#18181B' : toast.type === 'error' ? '#B91C1C' : '#DC2626' }}>

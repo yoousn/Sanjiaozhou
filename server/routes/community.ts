@@ -77,17 +77,25 @@ router.post("/posts/:id/react", (req, res) => {
   try {
     const postId = req.params.id;
     const emoji = req.body?.emoji;
+    const userId = req.body?.userId;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, error: "请先登录才能进行互动" });
+    }
 
     if (!VALID_EMOJIS.includes(emoji)) {
       return res.status(400).json({ success: false, error: "无效的 Emoji 类型" });
     }
 
-    const updated = addReaction(postId, emoji);
-    if (!updated) {
-      return res.status(404).json({ success: false, error: "帖子不存在" });
+    try {
+      const updated = addReaction(postId, emoji, userId);
+      if (!updated) {
+        return res.status(404).json({ success: false, error: "帖子不存在" });
+      }
+      res.json({ success: true, data: updated });
+    } catch (err) {
+      return res.status(400).json({ success: false, error: err instanceof Error ? err.message : "互动失败" });
     }
-
-    res.json({ success: true, data: updated });
   } catch (e) {
     res.status(500).json({ success: false, error: "互动失败" });
   }

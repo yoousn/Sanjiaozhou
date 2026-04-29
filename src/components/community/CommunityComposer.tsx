@@ -8,18 +8,25 @@ const TAG_OPTIONS = ["满改", "跑刀", "大金", "白给", "修脚", "高配",
 export function CommunityComposer({
   onClose,
   onPosted,
+  uploaderName = "",
 }: {
   onClose: () => void;
   onPosted: () => void;
+  uploaderName?: string;
 }) {
   const [description, setDescription] = useState("");
   const [tags, setTags] = useState<string[]>([]);
-  const [uploader, setUploader] = useState("");
+  const [uploader, setUploader] = useState(uploaderName || "匿名用户");
   const [uploading, setUploading] = useState(false);
   const [posting, setPosting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const clipboard = useClipboardImage();
+
+  // 当 uploaderName 改变时更新（比如登录状态变化）
+  useEffect(() => {
+    setUploader(uploaderName || "匿名用户");
+  }, [uploaderName]);
 
   const hasImage = Boolean(clipboard.previewUrl);
 
@@ -213,13 +220,10 @@ export function CommunityComposer({
 
       {/* Uploader */}
       <div className="mb-5">
-        <input
-          type="text"
-          value={uploader}
-          onChange={(e) => setUploader(e.target.value.slice(0, 50))}
-          placeholder="你的昵称 (可选)"
-          className="w-full border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#18181b] rounded-xl px-3 py-2.5 text-[13px] font-medium text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 outline-none focus:ring-4 focus:ring-zinc-900/10"
-        />
+        <div className="flex items-center gap-2 px-3 py-2.5 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl border border-zinc-100 dark:border-zinc-800 opacity-80">
+          <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest">发布身份</span>
+          <span className="text-[13px] font-black text-zinc-700 dark:text-zinc-200">{uploader}</span>
+        </div>
       </div>
 
       {error && (

@@ -1,5 +1,6 @@
 import busboy from "busboy";
 import type { IncomingMessage } from "http";
+import sharp from "sharp";
 
 const CF_UPLOAD_URL = process.env.CF_UPLOAD_URL || "https://img.yousn.me/";
 const CF_AUTH_TOKEN = process.env.CF_AUTH_TOKEN || "lrhlol666";
@@ -76,18 +77,29 @@ export async function uploadToCF(buffer: Buffer, filename: string): Promise<Uplo
     return { success: false, error: "图床服务未配置" };
   }
 
-  const ext = filename.split(".").pop() || "png";
-  const key = `community_${Date.now()}.${ext}`;
-  const url = `${CF_UPLOAD_URL.replace(/\/+$/, "")}/${key}`;
-
   try {
+    // 压缩逻辑：如果是 GIF，尝试保留动画（sharp 对 GIF 压缩较弱）；其他格式一律压成 WebP，限制最大宽度 1920
+    const isGif = filename.toLowerCase().endsWith(".gif");
+    let processedBuffer = buffer;
+    let finalExt = isGif ? "gif" : "webp";
+
+    if (!isGif) {
+      processedBuffer = await sharp(buffer)
+        .resize({ width: 1920, withoutEnlargement: true }) // 限制最大宽度 1920px，不放大原图
+        .webp({ quality: 80 }) // 80% 质量的 WebP
+        .toBuffer();
+    }
+
+    const key = `community_${Date.now()}.${finalExt}`;
+    const url = `${CF_UPLOAD_URL.replace(/\/+$/, "")}/${key}`;
+
     const res = await fetch(url, {
       method: "PUT",
       headers: {
         Authorization: CF_AUTH_TOKEN,
         "Content-Type": "application/octet-stream",
       },
-      body: new Uint8Array(buffer),
+      body: new Uint8Array(processedBuffer),
     });
     if (!res.ok) {
       const text = await res.text().catch(() => "");
@@ -98,3 +110,4 @@ export async function uploadToCF(buffer: Buffer, filename: string): Promise<Uplo
     return { success: false, error: e instanceof Error ? e.message : "图床上传异常" };
   }
 }
+

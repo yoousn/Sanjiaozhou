@@ -3,7 +3,7 @@ import { X, Image, Clipboard, Loader2, Trash2 } from "lucide-react";
 import { cn } from "../../utils";
 import { useClipboardImage } from "../../hooks/useClipboardImage";
 
-const TAG_OPTIONS = ["满改", "跑刀", "大金", "白给", "修脚", "高配", "性价比", "赌桥"];
+const TAG_OPTIONS = ["满改", "跑刀", "大金", "白给", "修脚", "高配", "性价比", "赌桥", "赚飞了", "亏麻了"];
 
 export function CommunityComposer({
   onClose,

@@ -218,14 +218,6 @@ export function CommunityComposer({
         </div>
       </div>
 
-      {/* Uploader */}
-      <div className="mb-5">
-        <div className="flex items-center gap-2 px-3 py-2.5 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl border border-zinc-100 dark:border-zinc-800 opacity-80">
-          <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest">发布身份</span>
-          <span className="text-[13px] font-black text-zinc-700 dark:text-zinc-200">{uploader}</span>
-        </div>
-      </div>
-
       {error && (
         <p className="text-[12px] font-bold text-red-500 mb-4">{error}</p>
       )}

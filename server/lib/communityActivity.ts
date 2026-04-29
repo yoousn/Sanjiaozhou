@@ -23,7 +23,7 @@ function readActivities(): CommunityActivity[] {
       id: `act_${post.id}`,
       postId: post.id,
       uploader: post.uploader,
-      action: `分享了新配置${post.description ? `："${post.description.slice(0, 30)}"` : ""}`,
+      action: `分享了新帖子${post.description ? `："${post.description.slice(0, 30)}"` : ""}`,
       time: post.createdAt,
     }));
     writeActivities(derived);

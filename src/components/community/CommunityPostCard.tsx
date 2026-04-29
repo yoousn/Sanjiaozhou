@@ -200,7 +200,7 @@ export function CommunityPostCard({
                 <button
                   key={key}
                   onClick={() => void handleReact(key)}
-                  disabled={reacting !== null || hasReacted}
+                  disabled={reacting !== null}
                   className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded-lg text-[12px] font-bold transition disabled:opacity-50 ${hasReacted ? "bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-white" : "hover:bg-zinc-100 dark:hover:bg-zinc-800"}`}
                   title={label}
                 >
@@ -254,13 +254,6 @@ export function CommunityPostCard({
             </div>
 
             <form onSubmit={handleAddComment} className="flex flex-col gap-2">
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg border border-zinc-100 dark:border-zinc-800">
-                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">发表为</span>
-                <span className="text-[11px] font-black text-zinc-700 dark:text-zinc-200">{currentAuthorName}</span>
-                {!auth.isAuthenticated && (
-                  <span className="text-[9px] text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-1 rounded ml-auto">匿名</span>
-                )}
-              </div>
               <div className="relative">
                 <textarea
                   placeholder="写下你的评论..."

@@ -96,16 +96,16 @@ export function createPost(data: {
   addActivity({
     postId: post.id,
     uploader: post.uploader,
-    action: `分享了新配置${post.description ? `："${post.description.slice(0, 30)}"` : ""}`,
+    action: `分享了新帖子${post.description ? `："${post.description.slice(0, 30)}"` : ""}`,
   });
 
   return post;
 }
 
-export function deletePost(id: string): boolean {
+export function deletePost(id: string): CommunityPost | null {
   const posts = readPosts();
   const index = posts.findIndex((p) => p.id === id);
-  if (index === -1) return false;
+  if (index === -1) return null;
 
   const post = posts[index];
   const newPosts = posts.filter((p) => p.id !== id);
@@ -115,10 +115,10 @@ export function deletePost(id: string): boolean {
   addActivity({
     postId: id,
     uploader: post.uploader,
-    action: `删除了配置${post.description ? `："${post.description.slice(0, 30)}"` : ""}`,
+    action: `删除了帖子${post.description ? `："${post.description.slice(0, 30)}"` : ""}`,
   });
 
-  return true;
+  return post;
 }
 
 export function addReaction(postId: string, emoji: keyof CommunityReactions, userId: string): CommunityPost | null {
@@ -127,10 +127,6 @@ export function addReaction(postId: string, emoji: keyof CommunityReactions, use
   if (index === -1) return null;
 
   const post = posts[index];
-  
-  if (post.reactedUsers?.[emoji]?.includes(userId)) {
-    throw new Error("您已经表态过了");
-  }
 
   const newReactedUsers = {
     fire: [...(post.reactedUsers?.fire || [])],
@@ -138,9 +134,18 @@ export function addReaction(postId: string, emoji: keyof CommunityReactions, use
     skull: [...(post.reactedUsers?.skull || [])],
   };
 
-  newReactedUsers[emoji].push(userId);
+  const newReactions = { ...post.reactions };
 
-  const newReactions = { ...post.reactions, [emoji]: post.reactions[emoji] + 1 };
+  if (newReactedUsers[emoji].includes(userId)) {
+    // 已经表态过了，取消
+    newReactedUsers[emoji] = newReactedUsers[emoji].filter(id => id !== userId);
+    newReactions[emoji] = Math.max(0, newReactions[emoji] - 1);
+  } else {
+    // 未表态过，添加
+    newReactedUsers[emoji].push(userId);
+    newReactions[emoji] += 1;
+  }
+
   const updated: CommunityPost = {
     ...post,
     reactions: newReactions,

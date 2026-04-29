@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { queryPosts, createPost, addReaction, deletePost } from "../lib/communityStore.js";
 import { getRecentActivity } from "../lib/communityActivity.js";
-import { parseUploadFile, uploadToCF } from "../lib/communityUpload.js";
+import { parseUploadFile, uploadToCF, deleteFromCF } from "../lib/communityUpload.js";
 import { getCommentsByPostId, addComment, deleteComment } from "../lib/commentStore.js";
 
 const router = Router();
@@ -39,13 +39,19 @@ router.post("/posts", (req, res) => {
   }
 });
 
-router.delete("/posts/:id", (req, res) => {
+router.delete("/posts/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const success = deletePost(id);
-    if (!success) {
+    const deletedPost = deletePost(id);
+    if (!deletedPost) {
       return res.status(404).json({ success: false, error: "帖子不存在" });
     }
+    
+    // 如果有图片，尝试从图床删除
+    if (deletedPost.imageUrl) {
+      await deleteFromCF(deletedPost.imageUrl);
+    }
+
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ success: false, error: "删除失败" });

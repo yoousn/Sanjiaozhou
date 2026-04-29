@@ -111,3 +111,22 @@ export async function uploadToCF(buffer: Buffer, filename: string): Promise<Uplo
   }
 }
 
+export async function deleteFromCF(imageUrl: string): Promise<boolean> {
+  if (!CF_AUTH_TOKEN) {
+    return false;
+  }
+  
+  try {
+    const res = await fetch(imageUrl, {
+      method: "DELETE",
+      headers: {
+        Authorization: CF_AUTH_TOKEN,
+      },
+    });
+    return res.ok;
+  } catch (e) {
+    console.error("图床图片删除异常:", e);
+    return false;
+  }
+}
+

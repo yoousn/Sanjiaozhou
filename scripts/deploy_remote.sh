@@ -17,7 +17,11 @@ for file in \
   auto_logs.json \
   daily_pwd_logs.json \
   auto_processed_videos.json \
-  cookies.txt
+  cookies.txt \
+  users.json \
+  community_posts.json \
+  community_activity.json \
+  community_comments.json
  do
   target="$RUNTIME_DIR/$file"
   if [ ! -f "$target" ]; then
@@ -50,7 +54,7 @@ for file in \
           printf '{}\n' > "$target"
         fi
         ;;
-      auto_logs.json|daily_pwd_logs.json|auto_processed_videos.json)
+      users.json|community_posts.json|community_activity.json|community_comments.json|auto_logs.json|daily_pwd_logs.json|auto_processed_videos.json)
         if [ -f "scripts/$file" ]; then
           cp "scripts/$file" "$target"
         else

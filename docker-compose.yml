@@ -15,6 +15,10 @@ services:
       - ${RUNTIME_DIR:-./runtime}/daily_pwd_logs.json:/app/scripts/daily_pwd_logs.json
       - ${RUNTIME_DIR:-./runtime}/auto_processed_videos.json:/app/scripts/auto_processed_videos.json
       - ${RUNTIME_DIR:-./runtime}/cookies.txt:/app/scripts/cookies.txt
+      - ${RUNTIME_DIR:-./runtime}/users.json:/app/scripts/users.json
+      - ${RUNTIME_DIR:-./runtime}/community_posts.json:/app/scripts/community_posts.json
+      - ${RUNTIME_DIR:-./runtime}/community_activity.json:/app/scripts/community_activity.json
+      - ${RUNTIME_DIR:-./runtime}/community_comments.json:/app/scripts/community_comments.json
     environment:
       - NODE_ENV=production
       - PORT=3000

@@ -15,7 +15,7 @@ RUN set -eux; \
 
 # 安装依赖
 COPY package*.json ./
-RUN npm install
+RUN rm -f package-lock.json && npm install
 
 # 复制源代码
 COPY . .
@@ -29,7 +29,7 @@ RUN pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple &&
 
 # 确保所有需要持久化保存的 JSON 文件存在且可写
 RUN mkdir -p src scripts && \
-    touch src/data.json scripts/collect_settings.json scripts/auto_processed_videos.json scripts/auto_logs.json
+    touch src/data.json src/daily_pwd.json scripts/collect_settings.json scripts/auto_processed_videos.json scripts/auto_logs.json scripts/daily_pwd_logs.json scripts/users.json scripts/community_posts.json scripts/community_activity.json scripts/community_comments.json
 
 # 暴露端口
 EXPOSE 3000

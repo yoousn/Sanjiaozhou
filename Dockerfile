@@ -13,9 +13,9 @@ RUN set -eux; \
         chromium; \
     rm -rf /var/lib/apt/lists/*
 
-# 安装依赖
+# 安装依赖（使用国内 npm 镜像加速）
 COPY package*.json ./
-RUN rm -f package-lock.json && npm install
+RUN npm config set registry https://registry.npmmirror.com && npm install
 
 # 复制源代码
 COPY . .

@@ -138,9 +138,9 @@ export function Header({
                   radiusClass
                 )}
               >
-                <option value="default">默认排序</option>
+                <option value="date">默认排序</option>
+                <option value="default">手动排序</option>
                 <option value="name">按名称</option>
-                <option value="date">按创建日期</option>
                 <option value="price">按价格</option>
               </select>
               <div className="absolute right-3 pointer-events-none text-zinc-400">

@@ -689,7 +689,11 @@ export default function App() {
     }
   };
 
-  const [sortBy, setSortBy] = useState('default');
+  const [sortBy, setSortBy] = useState(() => localStorage.getItem('sortBy') || 'date');
+  const handleSortChange = (val: string) => {
+    setSortBy(val);
+    localStorage.setItem('sortBy', val);
+  };
   const sourceData = isEditing ? draftData : savedData;
   const viewData = sourceData.filter(g => {
     if (searchQuery) {
@@ -785,7 +789,7 @@ export default function App() {
               </React.Suspense>
             ) : (
               <>
-                <Header isEditing={isEditing} onEditStart={handleEditStart} onSave={handleSave} onCancel={handleCancel} onAddNew={() => setIsModalOpen(true)} onOpenCollect={() => setActiveModal('mode-select')} sortBy={sortBy} onSortChange={setSortBy} isDarkMode={theme.isDarkMode} onToggleDarkMode={() => theme.setIsDarkMode(!theme.isDarkMode)} searchQuery={searchQuery} onSearchChange={setSearchQuery} searchSuggestions={Array.from(new Set(sourceData.map(g => g.name)))} controlRadius={theme.uiPreferences.controlRadius} buttonStyle={theme.uiPreferences.buttonStyle} />
+                <Header isEditing={isEditing} onEditStart={handleEditStart} onSave={handleSave} onCancel={handleCancel} onAddNew={() => setIsModalOpen(true)} onOpenCollect={() => setActiveModal('mode-select')} sortBy={sortBy} onSortChange={handleSortChange} isDarkMode={theme.isDarkMode} onToggleDarkMode={() => theme.setIsDarkMode(!theme.isDarkMode)} searchQuery={searchQuery} onSearchChange={setSearchQuery} searchSuggestions={Array.from(new Set(sourceData.map(g => g.name)))} controlRadius={theme.uiPreferences.controlRadius} buttonStyle={theme.uiPreferences.buttonStyle} />
                 {isRefreshingData && savedData.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-24 animate-fade-in"><Loader2 size={24} className="animate-spin text-zinc-400 mb-4" /><p className="text-[13px] font-bold text-zinc-500">正在加载...</p></div>
                 ) : savedDataLoadError && savedData.length === 0 ? (

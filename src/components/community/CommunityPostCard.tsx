@@ -4,7 +4,7 @@ import type { CommunityPost, CommunityReactions } from "../../types";
 import { Trash2, MessageCircle, ChevronDown, ChevronUp, Send, Loader2 } from "lucide-react";
 
 const EMOJIS: Array<{ key: keyof CommunityReactions; emoji: string; label: string }> = [
-  { key: "fire", emoji: "🔥", label: "火" },
+  { key: "fire", emoji: "👍", label: "赞" },
   { key: "money", emoji: "💰", label: "钱" },
   { key: "skull", emoji: "💀", label: "骷髅" },
 ];

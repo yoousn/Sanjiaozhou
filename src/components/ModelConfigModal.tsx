@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Bot, Check, Loader2, MessageSquare, Plus, Save, Search, Send, TestTube2, Trash2, X } from 'lucide-react';
+import { Bot, Check, Loader2, MessageSquare, Plus, RefreshCw, Save, Search, Send, TestTube2, Trash2, X } from 'lucide-react';
 import { cn, inputClasses, parseModelOptionValue } from '../utils';
 import type { CollectMeta, CollectModelProviderInput, ModelTestResult } from '../types';
 
@@ -64,6 +64,7 @@ export function ModelConfigModal({
   const [chatError, setChatError] = useState('');
 
   const selectedProvider = meta.providers.find((provider) => provider.id === selectedProviderId) || meta.providers[0];
+  const draftProviderName = providerForm.name.trim() || '新模型源';
   const isDraftProvider = !providerForm.id && selectedProviderId === '';
   const modelOptions = useMemo(() => meta.modelOptions.filter((option) => option.providerId === selectedProviderId), [meta.modelOptions, selectedProviderId]);
   const activeModel = selectedModel || meta.defaultModel || modelOptions[0]?.value || '';
@@ -80,6 +81,29 @@ export function ModelConfigModal({
     });
   };
 
+  const sendMessages = async (messages: ChatMessage[]) => {
+    setChatError('');
+    setIsChatting(true);
+    try {
+      const result = await onChatModel(activeModel, messages.map(({ role, content }) => ({ role, content })));
+      if (!result.success) throw new Error(result.error || '模型回复失败');
+      setChatMessages((prev) => [...prev, { role: 'assistant', content: result.content || '', reasoning: result.reasoning, latencyMs: result.latencyMs }]);
+    } catch (error) {
+      setChatError(error instanceof Error ? error.message : '模型回复失败');
+    } finally {
+      setIsChatting(false);
+    }
+  };
+
+  const resendMessage = (index: number) => {
+    if (!activeModel || isChatting) return;
+    const message = chatMessages[index];
+    if (!message || message.role !== 'user') return;
+    const nextMessages = [...chatMessages.slice(0, index + 1)];
+    setChatMessages(nextMessages);
+    void sendMessages(nextMessages);
+  };
+
   const handleSend = async (event: React.FormEvent) => {
     event.preventDefault();
     const content = chatInput.trim();
@@ -88,17 +112,7 @@ export function ModelConfigModal({
     const nextMessages: ChatMessage[] = [...chatMessages, { role: 'user', content }];
     setChatMessages(nextMessages);
     setChatInput('');
-    setChatError('');
-    setIsChatting(true);
-    try {
-      const result = await onChatModel(activeModel, nextMessages.map(({ role, content }) => ({ role, content })));
-      if (!result.success) throw new Error(result.error || '模型回复失败');
-      setChatMessages((prev) => [...prev, { role: 'assistant', content: result.content || '', reasoning: result.reasoning, latencyMs: result.latencyMs }]);
-    } catch (error) {
-      setChatError(error instanceof Error ? error.message : '模型回复失败');
-    } finally {
-      setIsChatting(false);
-    }
+    void sendMessages(nextMessages);
   };
 
   return (
@@ -132,15 +146,6 @@ export function ModelConfigModal({
               </button>
             </div>
             <div className="space-y-2">
-              {isDraftProvider && (
-                <button
-                  type="button"
-                  className="w-full rounded-2xl border border-zinc-900 bg-zinc-900 px-3 py-3 text-left text-white transition dark:border-white dark:bg-white dark:text-zinc-900"
-                >
-                  <div className="truncate text-[13px] font-black">新模型源</div>
-                  <div className="mt-1 text-[11px] font-bold opacity-70">填写配置后保存生效</div>
-                </button>
-              )}
               {meta.providers.map((provider) => (
                 <button
                   key={provider.id}
@@ -157,6 +162,15 @@ export function ModelConfigModal({
                   <div className="mt-1 text-[11px] font-bold opacity-70">{provider.models.length} 个启用模型</div>
                 </button>
               ))}
+              {isDraftProvider && (
+                <button
+                  type="button"
+                  className="w-full rounded-xl border border-zinc-900 bg-zinc-900 px-3 py-2 text-left text-white transition dark:border-white dark:bg-white dark:text-zinc-900"
+                >
+                  <div className="truncate text-[12px] font-black">{draftProviderName}</div>
+                  <div className="mt-0.5 text-[10px] font-bold opacity-70">新模型源</div>
+                </button>
+              )}
             </div>
           </aside>
 
@@ -252,7 +266,14 @@ export function ModelConfigModal({
                 <div key={index} className={cn('rounded-2xl px-3 py-2 text-[12px] leading-relaxed', message.role === 'user' ? 'ml-8 bg-zinc-900 text-white' : 'mr-8 bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200')}>
                   {message.reasoning && <details className="mb-2 rounded-xl bg-white/60 p-2 text-[11px] dark:bg-black/20"><summary className="cursor-pointer font-black">思考内容</summary><div className="mt-1 whitespace-pre-wrap opacity-80">{message.reasoning}</div></details>}
                   <div className="whitespace-pre-wrap">{message.content}</div>
-                  {message.latencyMs ? <div className="mt-1 text-[10px] opacity-50">{message.latencyMs}ms</div> : null}
+                  <div className="mt-1 flex items-center justify-between gap-2 text-[10px] opacity-60">
+                    <span>{message.latencyMs ? `${message.latencyMs}ms` : ''}</span>
+                    {message.role === 'user' && (
+                      <button type="button" onClick={() => resendMessage(index)} disabled={isChatting || !activeModel} className="rounded-full p-1 hover:bg-white/15 disabled:opacity-40" title="重新发送">
+                        <RefreshCw size={12} />
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
               {isChatting && <div className="mr-8 inline-flex items-center gap-2 rounded-2xl bg-zinc-100 px-3 py-2 text-[12px] font-bold text-zinc-500 dark:bg-zinc-800"><Loader2 size={14} className="animate-spin" /> 思考中...</div>}

@@ -113,7 +113,18 @@ export async function runCollector(args: string[]) {
 
 export function normalizeProviderBaseUrl(baseUrl: string) {
   const normalized = String(baseUrl || "").trim().replace(/\/+$/, "");
-  return normalized.endsWith("/v1") ? normalized : `${normalized}/v1`;
+  if (!normalized) return "";
+  if (/\/v\d+(?:\/|$)/.test(normalized)) return normalized;
+  return `${normalized}/v1`;
+}
+
+async function readJsonResponse(response: Response) {
+  const text = await response.text();
+  try {
+    return text ? JSON.parse(text) : {};
+  } catch {
+    throw new Error(`解析 JSON 响应失败，接口地址可能不正确。返回内容为: ${text.slice(0, 180)}`);
+  }
 }
 
 export async function fetchModelsFromProvider(baseUrl: string, apiKey: string) {
@@ -125,7 +136,7 @@ export async function fetchModelsFromProvider(baseUrl: string, apiKey: string) {
     },
   });
 
-  const payload = await response.json().catch(() => ({}));
+  const payload = await readJsonResponse(response);
   if (!response.ok) {
     throw new Error(String(payload?.error?.message || payload?.error || "获取模型列表失败"));
   }
@@ -304,7 +315,7 @@ export async function chatWithModel(modelValue: string, messages: Array<{ role: 
     }),
   });
 
-  const payload = await response.json().catch(() => ({}));
+  const payload = await readJsonResponse(response);
   const latencyMs = Date.now() - start;
   if (!response.ok) {
     return {
@@ -342,7 +353,7 @@ export async function testModel(modelValue: string) {
     "--model",
     ensuredModel.model,
     "--base-url",
-    ensuredModel.provider.baseUrl,
+    normalizeProviderBaseUrl(ensuredModel.provider.baseUrl),
     "--api-key",
     ensuredModel.provider.apiKey,
   ]);

@@ -79,12 +79,12 @@ router.post("/providers", (req, res) => {
 
     const nextProviders = settings.providers.filter((item) => item.id !== provider.id);
     settings.providers = [provider, ...nextProviders];
-    const defaultCandidate = body.defaultModel && provider.models.includes(String(body.defaultModel))
+    const defaultModel = body.defaultModel && provider.models.includes(String(body.defaultModel))
       ? buildModelOptionValue(provider.id, String(body.defaultModel))
-      : settings.defaultModel;
-    settings.defaultModel = defaultCandidate;
+      : (settings.defaultModel && parseModelOptionValue(settings.defaultModel).providerId !== provider.id ? settings.defaultModel : buildModelOptionValue(provider.id, provider.models[0]));
+    settings.defaultModel = defaultModel;
     writeCollectSettings(settings);
-    res.json({ success: true, meta: buildCollectMeta(readCollectSettings()) });
+    res.json({ success: true, defaultModel: parseModelOptionValue(defaultModel).model, meta: buildCollectMeta(readCollectSettings()) });
   } catch (error) {
     res.status(500).json({ error: error instanceof Error ? error.message : "保存模型源失败" });
   }

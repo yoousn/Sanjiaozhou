@@ -57,14 +57,14 @@ export function normalizePresetGunsInput(value: string) {
 
 export function buildProviderFormFromMeta(meta: CollectMeta, providerId: string): CollectModelProviderInput {
   const provider = meta.providers.find((item) => item.id === providerId);
-  const selectedOption = meta.modelOptions.find((option) => option.providerId === providerId);
+  const defaultModel = meta.defaultModel && meta.defaultModel.startsWith(`${providerId}::`) ? meta.defaultModel.split('::').slice(1).join('::') : '';
   return {
     id: provider?.id || '',
     name: provider?.name || '',
     baseUrl: provider?.baseUrl || '',
     apiKey: '',
     models: provider?.models || [],
-    selectedModel: selectedOption?.model || provider?.models[0] || '',
+    selectedModel: defaultModel || provider?.models[0] || '',
   };
 }
 

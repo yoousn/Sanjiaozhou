@@ -244,11 +244,13 @@ export default function App() {
       const data = await safeJson(res);
       if (!res.ok) throw new Error(data?.error || '保存模型源失败');
       const nextMeta = normalizeCollectMeta(data?.meta);
-      const nextProviderId = providerForm.id || nextMeta.providers.find(p => p.baseUrl === providerForm.baseUrl && p.name === providerForm.name)?.id || '';
+      const savedProvider = nextMeta.providers.find(p => p.baseUrl === providerForm.baseUrl && p.name === providerForm.name);
+      const nextProviderId = providerForm.id || savedProvider?.id || '';
+      const savedSelectedModel = data?.defaultModel ? String(data.defaultModel) : providerForm.selectedModel;
       setCollectMeta(nextMeta);
       setSelectedProviderId(nextProviderId || parseModelOptionValue(nextMeta.defaultModel).providerId || nextMeta.providers[0]?.id || '');
-      if (providerForm.selectedModel) {
-        const nextValue = buildModelOptionValue(nextProviderId, providerForm.selectedModel);
+      if (savedSelectedModel && nextProviderId) {
+        const nextValue = buildModelOptionValue(nextProviderId, savedSelectedModel);
         setSelectedModel(nextMeta.modelOptions.some(o => o.value === nextValue) ? nextValue : nextMeta.defaultModel);
       } else {
         setSelectedModel(nextMeta.defaultModel);

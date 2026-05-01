@@ -111,8 +111,13 @@ export async function runCollector(args: string[]) {
   return parsed;
 }
 
+export function normalizeProviderBaseUrl(baseUrl: string) {
+  const normalized = String(baseUrl || "").trim().replace(/\/+$/, "");
+  return normalized.endsWith("/v1") ? normalized : `${normalized}/v1`;
+}
+
 export async function fetchModelsFromProvider(baseUrl: string, apiKey: string) {
-  const normalizedBaseUrl = String(baseUrl || "").trim().replace(/\/+$/, "");
+  const normalizedBaseUrl = normalizeProviderBaseUrl(baseUrl);
   const response = await fetch(`${normalizedBaseUrl}/models`, {
     headers: {
       Authorization: `Bearer ${apiKey}`,
@@ -282,7 +287,7 @@ export async function chatWithModel(modelValue: string, messages: Array<{ role: 
     };
   }
 
-  const normalizedBaseUrl = ensuredModel.provider.baseUrl.trim().replace(/\/+$/, "");
+  const normalizedBaseUrl = normalizeProviderBaseUrl(ensuredModel.provider.baseUrl);
   const start = Date.now();
   const response = await fetch(`${normalizedBaseUrl}/chat/completions`, {
     method: "POST",

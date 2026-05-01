@@ -185,11 +185,16 @@ export default function App() {
 
   useEffect(() => {
     if (activeModal !== 'model-config') return;
+    if (selectedProviderId === '') return;
     setProviderForm(buildProviderFormFromMeta(collectMeta, selectedProviderId));
     setFetchedProviderModels([]);
   }, [activeModal, collectMeta, selectedProviderId]);
 
   const handleFetchProviderModels = async () => {
+    if (!providerForm.baseUrl.trim()) {
+      showToast('请先填写接口地址', 'warn');
+      return;
+    }
     setIsFetchingProviderModels(true);
     try {
       const res = await fetch('/api/collect/providers/fetch-models', {
@@ -200,6 +205,9 @@ export default function App() {
       const data = await safeJson(res);
       if (!res.ok) throw new Error(data?.error || '获取模型列表失败');
       const models = Array.isArray(data?.models) ? data.models.map(String) : [];
+      if (models.length === 0) {
+        throw new Error(data?.error || '未获取到模型，请检查接口地址是否为 OpenAI 兼容地址');
+      }
       setFetchedProviderModels(models);
       setProviderForm(prev => ({
         ...prev,

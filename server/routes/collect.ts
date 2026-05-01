@@ -44,7 +44,14 @@ router.post("/preset-guns", (req, res) => {
 router.post("/providers/fetch-models", async (req, res) => {
   try {
     const body = req.body || {};
-    const models = await fetchModelsFromProvider(String(body.baseUrl || ""), String(body.apiKey || ""));
+    const baseUrl = String(body.baseUrl || "").trim();
+    if (!baseUrl) {
+      return res.status(400).json({ error: "请填写接口地址" });
+    }
+    const models = await fetchModelsFromProvider(baseUrl, String(body.apiKey || ""));
+    if (models.length === 0) {
+      return res.status(400).json({ error: "接口未返回可用模型，请检查接口地址或 API Key" });
+    }
     res.json({ success: true, models });
   } catch (error) {
     res.status(500).json({ error: error instanceof Error ? error.message : "获取模型列表失败" });
@@ -65,6 +72,9 @@ router.post("/providers", (req, res) => {
 
     if (!provider.baseUrl) {
       return res.status(400).json({ error: "请填写接口地址" });
+    }
+    if (provider.models.length === 0) {
+      return res.status(400).json({ error: "请先获取并勾选至少一个模型" });
     }
 
     const nextProviders = settings.providers.filter((item) => item.id !== provider.id);

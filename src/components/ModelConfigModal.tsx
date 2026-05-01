@@ -64,6 +64,7 @@ export function ModelConfigModal({
   const [chatError, setChatError] = useState('');
 
   const selectedProvider = meta.providers.find((provider) => provider.id === selectedProviderId) || meta.providers[0];
+  const isDraftProvider = !providerForm.id && selectedProviderId === '';
   const modelOptions = useMemo(() => meta.modelOptions.filter((option) => option.providerId === selectedProviderId), [meta.modelOptions, selectedProviderId]);
   const activeModel = selectedModel || meta.defaultModel || modelOptions[0]?.value || '';
   const parsedActiveModel = parseModelOptionValue(activeModel);
@@ -131,6 +132,15 @@ export function ModelConfigModal({
               </button>
             </div>
             <div className="space-y-2">
+              {isDraftProvider && (
+                <button
+                  type="button"
+                  className="w-full rounded-2xl border border-zinc-900 bg-zinc-900 px-3 py-3 text-left text-white transition dark:border-white dark:bg-white dark:text-zinc-900"
+                >
+                  <div className="truncate text-[13px] font-black">新模型源</div>
+                  <div className="mt-1 text-[11px] font-bold opacity-70">填写配置后保存生效</div>
+                </button>
+              )}
               {meta.providers.map((provider) => (
                 <button
                   key={provider.id}
@@ -158,7 +168,7 @@ export function ModelConfigModal({
               </div>
               <div>
                 <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-zinc-500">接口地址</label>
-                <input value={providerForm.baseUrl} onChange={(e) => onProviderFormChange((prev) => ({ ...prev, baseUrl: e.target.value }))} className={cn(inputClasses, 'border border-zinc-200 bg-white py-2 text-[13px] shadow-sm dark:border-zinc-800 dark:bg-[#18181b] dark:text-white')} placeholder="https://api.example.com/v1" />
+                <input value={providerForm.baseUrl} onChange={(e) => onProviderFormChange((prev) => ({ ...prev, baseUrl: e.target.value }))} className={cn(inputClasses, 'border border-zinc-200 bg-white py-2 text-[13px] shadow-sm dark:border-zinc-800 dark:bg-[#18181b] dark:text-white')} placeholder="https://api.example.com/v1 或 https://api.example.com" />
               </div>
             </div>
 

@@ -29,7 +29,7 @@ export function AutoCollectConfigModal({
   onSave,
 }: AutoCollectConfigModalProps) {
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden p-4 overscroll-contain" onWheel={(event) => event.stopPropagation()}>
       <div className="absolute inset-0 bg-zinc-900/60" onClick={onClose} />
       <div className="bg-white dark:bg-[#121214] rounded-3xl p-6 md:p-8 relative z-10 w-full max-w-2xl flex flex-col gap-5 shadow-2xl animate-fade-in">
         <div className="flex justify-between items-center">

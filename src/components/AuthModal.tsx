@@ -37,7 +37,7 @@ export function AuthModal({ isOpen, onClose, onLogin, onRegister }: AuthModalPro
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center overflow-hidden p-4 bg-black/60 backdrop-blur-sm animate-fade-in overscroll-contain" onWheel={(event) => event.stopPropagation()}>
       <div className="bg-white dark:bg-[#121214] w-full max-w-sm rounded-[2rem] shadow-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 animate-scale-up">
         <div className="px-8 pt-8 pb-4 flex items-center justify-between">
           <h2 className="text-2xl font-black tracking-tighter text-zinc-900 dark:text-white">

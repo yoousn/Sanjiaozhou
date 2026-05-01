@@ -87,7 +87,8 @@ export function ModelConfigModal({
     try {
       const result = await onChatModel(activeModel, messages.map(({ role, content }) => ({ role, content })));
       if (!result.success) throw new Error(result.error || '模型回复失败');
-      setChatMessages((prev) => [...prev, { role: 'assistant', content: result.content || '', reasoning: result.reasoning, latencyMs: result.latencyMs }]);
+      const assistantContent = result.content || (result.reasoning ? '模型仅返回了思考内容，未返回正文。' : '模型没有返回文本内容');
+      setChatMessages((prev) => [...prev, { role: 'assistant', content: assistantContent, reasoning: result.reasoning, latencyMs: result.latencyMs }]);
     } catch (error) {
       setChatError(error instanceof Error ? error.message : '模型回复失败');
     } finally {
@@ -116,7 +117,7 @@ export function ModelConfigModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden p-4 overscroll-contain" onWheel={(event) => event.stopPropagation()}>
       <div className="absolute inset-0 bg-zinc-900/60" onClick={onClose} />
       <div className="relative z-10 flex h-[86vh] w-full max-w-6xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl dark:bg-[#121214]">
         <div className="flex items-center justify-between border-b border-zinc-200 px-6 py-4 dark:border-zinc-800">

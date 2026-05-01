@@ -327,41 +327,24 @@ export async function chatWithModel(modelValue: string, messages: Array<{ role: 
   }
 
   const message = payload?.choices?.[0]?.message || {};
+  const content = String(message.content || "").trim();
   const reasoning = message.reasoning_content || message.reasoning;
   return {
     model: ensuredModel.value,
-    success: true,
-    content: String(message.content || ""),
+    success: Boolean(content || reasoning),
+    content,
     reasoning: reasoning ? String(reasoning) : undefined,
     latencyMs,
+    error: content || reasoning ? undefined : "模型没有返回文本内容",
   };
 }
+
 export async function testModel(modelValue: string) {
-  const ensuredModel = ensureModel(modelValue);
-  if (!ensuredModel.provider || !ensuredModel.model) {
-    return {
-      model: modelValue,
-      success: false,
-      latencyMs: 0,
-      error: "请选择可用模型",
-    };
-  }
-
-  const parsed = await runCollector([
-    "--mode",
-    "test-model",
-    "--model",
-    ensuredModel.model,
-    "--base-url",
-    normalizeProviderBaseUrl(ensuredModel.provider.baseUrl),
-    "--api-key",
-    ensuredModel.provider.apiKey,
-  ]);
-
+  const result = await chatWithModel(modelValue, [{ role: "user", content: '回复"ok"' }]);
   return {
-    model: ensuredModel.value,
-    success: Boolean(parsed?.success),
-    latencyMs: Number(parsed?.latencyMs) || 0,
-    error: parsed?.error ? String(parsed.error) : undefined,
+    model: result.model,
+    success: Boolean(result.success && (result.content || result.reasoning)),
+    latencyMs: Number(result.latencyMs) || 0,
+    error: result.success ? undefined : result.error,
   };
 }

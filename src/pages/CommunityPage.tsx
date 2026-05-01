@@ -26,6 +26,8 @@ export function CommunityPage({ auth, onOpenAuth }: { auth: any, onOpenAuth: () 
             onSortChange={community.setSort}
             activeTag={community.activeTag}
             onTagChange={community.setActiveTag}
+            searchQuery={community.searchQuery}
+            onSearchChange={community.setSearchQuery}
             onOpenComposer={() => setShowComposer(true)}
           />
 

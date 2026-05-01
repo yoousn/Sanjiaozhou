@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Edit3, Plus, X, Save, ArrowUpDown, Radio, Moon, Sun } from 'lucide-react';
+import { Bot, Search, Save, X, Edit3, Plus, ArrowUpDown, Radio, Moon, Sun } from 'lucide-react';
 import { cn, getButtonClassName, inputClasses, radiusClassMap } from '../utils';
 import type { UiButtonStyle, UiRadius } from '../types';
 
@@ -10,6 +10,7 @@ export function Header({
   onCancel,
   onAddNew,
   onOpenCollect,
+  onOpenModelConfig,
   sortBy,
   onSortChange,
   isDarkMode,
@@ -26,6 +27,7 @@ export function Header({
   onCancel: () => void,
   onAddNew: () => void,
   onOpenCollect: () => void,
+  onOpenModelConfig: () => void,
   sortBy: string,
   onSortChange: (sort: string) => void,
   isDarkMode: boolean,
@@ -117,6 +119,13 @@ export function Header({
 
         {!isEditing && (
           <>
+            <button
+              onClick={onOpenModelConfig}
+              className={defaultButtonClass}
+            >
+              <Bot size={14} strokeWidth={2.5}/>
+              <span>模型配置</span>
+            </button>
             <button
               onClick={onOpenCollect}
               className={primaryButtonClass}

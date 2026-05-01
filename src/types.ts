@@ -2,9 +2,11 @@ export type UiCardSize = 'compact' | 'default' | 'roomy';
 export type UiButtonStyle = 'soft' | 'solid' | 'outline';
 export type UiRadius = 'lg' | 'xl' | 'full';
 export type UiSidebarWidth = 'compact' | 'default';
+export type UiDensityPreset = 'compact' | 'balanced' | 'comfortable';
 
 export type UiPreferences = {
   cardSize: UiCardSize;
+  densityPreset?: UiDensityPreset;
   cardMinHeight: 300 | 330 | 360 | 400;
   variantsPerPage: 2 | 3 | 4;
   gridColumns: 3 | 4;

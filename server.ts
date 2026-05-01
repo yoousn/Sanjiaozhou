@@ -18,7 +18,7 @@ async function startServer() {
     const { default: dailyPasswordRouter, startDailyPwdJob } = await import("./server/routes/dailyPassword.js");
     const communityRouter = (await import("./server/routes/community.js")).default;
     const authRouter = (await import("./server/routes/auth.js")).default;
-    const { testModel } = await import("./server/lib/collector.js");
+    const { testModel, chatWithModel } = await import("./server/lib/collector.js");
     const { readCollectSettings } = await import("./server/lib/collectSettings.js");
 
     app.use("/api/builds", buildsRouter);
@@ -37,6 +37,26 @@ async function startServer() {
       } catch (e) {
         console.error("API MODEL TEST Error:", e);
         res.status(500).json({ error: e instanceof Error ? e.message : "Model test failed" });
+      }
+    });
+
+    app.post("/api/model/chat", async (req, res) => {
+      try {
+        const body = req.body || {};
+        const settings = readCollectSettings();
+        const rawMessages = Array.isArray(body.messages) ? body.messages : [];
+        const messages = rawMessages
+          .map((message: any) => ({ role: String(message?.role || "user"), content: String(message?.content || "").trim() }))
+          .filter((message: { role: string; content: string }) => message.content);
+        if (messages.length === 0) {
+          res.status(400).json({ error: "请输入聊天内容" });
+          return;
+        }
+        const result = await chatWithModel(String(body.model || settings.defaultModel), messages);
+        res.json(result);
+      } catch (e) {
+        console.error("API MODEL CHAT Error:", e);
+        res.status(500).json({ error: e instanceof Error ? e.message : "Model chat failed" });
       }
     });
 

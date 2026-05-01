@@ -271,6 +271,55 @@ export async function previewCollectGroups(
   };
 }
 
+export async function chatWithModel(modelValue: string, messages: Array<{ role: string; content: string }>) {
+  const ensuredModel = ensureModel(modelValue);
+  if (!ensuredModel.provider || !ensuredModel.model) {
+    return {
+      model: modelValue,
+      success: false,
+      latencyMs: 0,
+      error: "请选择可用模型",
+    };
+  }
+
+  const normalizedBaseUrl = ensuredModel.provider.baseUrl.trim().replace(/\/+$/, "");
+  const start = Date.now();
+  const response = await fetch(`${normalizedBaseUrl}/chat/completions`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${ensuredModel.provider.apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: ensuredModel.model,
+      messages: messages.map((message) => ({
+        role: message.role === "assistant" ? "assistant" : "user",
+        content: String(message.content || ""),
+      })),
+    }),
+  });
+
+  const payload = await response.json().catch(() => ({}));
+  const latencyMs = Date.now() - start;
+  if (!response.ok) {
+    return {
+      model: ensuredModel.value,
+      success: false,
+      latencyMs,
+      error: String(payload?.error?.message || payload?.error || "模型回复失败"),
+    };
+  }
+
+  const message = payload?.choices?.[0]?.message || {};
+  const reasoning = message.reasoning_content || message.reasoning;
+  return {
+    model: ensuredModel.value,
+    success: true,
+    content: String(message.content || ""),
+    reasoning: reasoning ? String(reasoning) : undefined,
+    latencyMs,
+  };
+}
 export async function testModel(modelValue: string) {
   const ensuredModel = ensureModel(modelValue);
   if (!ensuredModel.provider || !ensuredModel.model) {

@@ -19,9 +19,8 @@
 - 部署必须遵守 [docs/deployment.md](docs/deployment.md) 的平滑更新顺序，严禁先 `docker-compose down`
 
 ## 根目录约定
-根目录只保留两个 Markdown 文档：
+根目录只保留3个 Markdown 文档：
 - [README.md](README.md)
 - [AGENTS.md](AGENTS.md)
 
 其他规则、进度、部署、版本说明统一放在 [docs/](docs/)
-..1

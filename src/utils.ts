@@ -10,6 +10,7 @@ export const inputClasses = "w-full bg-black/5 hover:bg-black/10 focus:bg-white 
 
 export const DEFAULT_UI_PREFERENCES: UiPreferences = {
   cardSize: 'default',
+  densityPreset: 'balanced',
   cardMinHeight: 330,
   variantsPerPage: 3,
   gridColumns: 4,

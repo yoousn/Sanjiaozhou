@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { CommunityPost, CommunityReactions, CommunityComment } from "../types";
 
@@ -6,6 +6,7 @@ export function useCommunity() {
   const queryClient = useQueryClient();
   const [sort, setSort] = useState<"new" | "hot">("new");
   const [activeTag, setActiveTag] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { data: posts = [], isLoading: loading, error: queryError, refetch: fetchPosts } = useQuery({
     queryKey: ['community_posts', sort, activeTag],
@@ -31,6 +32,11 @@ export function useCommunity() {
   });
 
   const error = queryError instanceof Error ? queryError.message : null;
+  const filteredPosts = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return posts;
+    return posts.filter((post: CommunityPost) => [post.description, post.uploader, ...(post.tags || [])].some((value) => String(value || "").toLowerCase().includes(query)));
+  }, [posts, searchQuery]);
 
   const addReaction = async (postId: string, emoji: keyof CommunityReactions, userId?: string) => {
     try {
@@ -43,9 +49,10 @@ export function useCommunity() {
       if (!res.ok) throw new Error(data?.error || "互动失败");
       
       // 乐观更新或失效查询
-      queryClient.setQueryData(['community_posts', sort, activeTag], (prev: any) => 
+      queryClient.setQueryData(['community_posts', sort, activeTag], (prev: any) =>
         prev.map((p: any) => p.id === postId ? { ...p, ...data.data } : p)
       );
+      queryClient.invalidateQueries({ queryKey: ['community_activity'] });
     } catch (e) {
       throw e;
     }
@@ -89,8 +96,9 @@ export function useCommunity() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "发表评论失败");
-      
+
       await fetchComments(postId);
+      queryClient.invalidateQueries({ queryKey: ['community_activity'] });
     } catch (e) {
       throw e;
     }
@@ -106,14 +114,18 @@ export function useCommunity() {
         throw new Error(data?.error || "删除评论失败");
       }
       await fetchComments(postId);
+      queryClient.invalidateQueries({ queryKey: ['community_activity'] });
     } catch (e) {
       throw e;
     }
   };
 
   return {
-    posts,
+    posts: filteredPosts,
+    rawPosts: posts,
     activity,
+    searchQuery,
+    setSearchQuery,
     sort,
     setSort,
     activeTag,

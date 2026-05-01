@@ -1,4 +1,5 @@
 import React from "react";
+import { Search, X } from "lucide-react";
 import { cn } from "../../utils";
 
 export function CommunityToolbar({
@@ -6,12 +7,16 @@ export function CommunityToolbar({
   onSortChange,
   activeTag,
   onTagChange,
+  searchQuery,
+  onSearchChange,
   onOpenComposer,
 }: {
   sort: "new" | "hot";
   onSortChange: (sort: "new" | "hot") => void;
   activeTag: string | null;
   onTagChange: (tag: string | null) => void;
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
   onOpenComposer: () => void;
 }) {
   const commonTags = ["满改", "跑刀", "大金", "白给", "修脚"];
@@ -19,6 +24,20 @@ export function CommunityToolbar({
   return (
     <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
       <div className="flex items-center gap-2 flex-wrap">
+        <div className="relative w-full sm:w-56">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+          <input
+            value={searchQuery}
+            onChange={(event) => onSearchChange(event.target.value)}
+            placeholder="搜索帖子..."
+            className="w-full rounded-xl border border-zinc-200 bg-white py-2 pl-9 pr-8 text-[12px] font-bold outline-none focus:border-zinc-300 dark:border-zinc-800 dark:bg-[#18181b] dark:text-white"
+          />
+          {searchQuery && (
+            <button onClick={() => onSearchChange("")} className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-zinc-400 hover:text-zinc-700 dark:hover:text-white">
+              <X size={13} />
+            </button>
+          )}
+        </div>
         <button
           onClick={() => onSortChange("new")}
           className={cn(
@@ -56,6 +75,11 @@ export function CommunityToolbar({
             #{tag}
           </button>
         ))}
+        {(activeTag || searchQuery) && (
+          <button onClick={() => { onTagChange(null); onSearchChange(""); }} className="px-3 py-1.5 rounded-xl text-[12px] font-bold border border-zinc-200 bg-white text-zinc-500 hover:border-zinc-300 dark:border-zinc-800 dark:bg-[#18181b]">
+            清除筛选
+          </button>
+        )}
       </div>
       <button
         onClick={onOpenComposer}

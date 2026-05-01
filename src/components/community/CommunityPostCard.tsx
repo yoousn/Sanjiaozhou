@@ -61,7 +61,8 @@ export function CommunityPostCard({
   auth: any;
 }) {
   const [reacting, setReacting] = useState<string | null>(null);
-  const [showComments, setShowComments] = useState(true); // 默认显示评论
+  const [showComments, setShowComments] = useState(false);
+  const [previewImage, setPreviewImage] = useState(false);
   const [commentContent, setCommentContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [loadingComments, setLoadingComments] = useState(false);
@@ -79,8 +80,7 @@ export function CommunityPostCard({
 
   const handleReact = async (emoji: keyof CommunityReactions) => {
     if (!auth?.isAuthenticated) {
-      alert("请先登录才能进行互动");
-      return;
+      throw new Error("请先登录才能进行互动");
     }
     if (reacting) return;
     setReacting(emoji);
@@ -98,8 +98,11 @@ export function CommunityPostCard({
     setShowComments(nextShow);
     if (nextShow && onFetchComments && !post.comments) {
       setLoadingComments(true);
-      await onFetchComments(post.id);
-      setLoadingComments(false);
+      try {
+        await onFetchComments(post.id);
+      } finally {
+        setLoadingComments(false);
+      }
     }
   };
 
@@ -154,13 +157,13 @@ export function CommunityPostCard({
       )}
 
       {post.imageUrl && (
-        <a href={post.imageUrl} target="_blank" rel="noopener noreferrer" className="block">
+        <button type="button" onClick={() => setPreviewImage(true)} className="block w-full">
           <LazyImage
             src={post.imageUrl}
             alt={post.description || "帖子图片"}
             className="w-full aspect-[4/3]"
           />
-        </a>
+        </button>
       )}
       
       <div className="p-4">
@@ -201,7 +204,7 @@ export function CommunityPostCard({
                   key={key}
                   onClick={() => void handleReact(key)}
                   disabled={reacting !== null}
-                  className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded-lg text-[12px] font-bold transition disabled:opacity-50 ${hasReacted ? "bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-white" : "hover:bg-zinc-100 dark:hover:bg-zinc-800"}`}
+                  className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded-lg text-[12px] font-bold transition disabled:opacity-50 ${reacting === key ? "bg-zinc-100 dark:bg-zinc-800" : ""} ${hasReacted ? "bg-zinc-200 ring-1 ring-zinc-400 dark:bg-zinc-700 text-zinc-900 dark:text-white" : "hover:bg-zinc-100 dark:hover:bg-zinc-800"}`}
                   title={label}
                 >
                   <span>{emoji}</span>
@@ -275,6 +278,11 @@ export function CommunityPostCard({
           </div>
         )}
       </div>
+      {post.imageUrl && previewImage && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/80 p-4" onClick={() => setPreviewImage(false)}>
+          <img src={post.imageUrl} alt={post.description || "帖子图片"} className="max-h-full max-w-full rounded-2xl object-contain" />
+        </div>
+      )}
     </div>
   );
 }

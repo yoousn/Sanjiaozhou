@@ -17,6 +17,7 @@ import {
   SIDEBAR_WIDTH_OPTIONS,
   RADIUS_OPTIONS,
   BUTTON_STYLE_OPTIONS,
+  DENSITY_PRESETS,
 } from '../constants';
 
 type SliderFieldProps = {
@@ -73,6 +74,15 @@ export function EditCustomizePanel({
   const gridGapIndex = getOptionIndex(GRID_GAP_OPTIONS, uiPreferences.gridGap);
   const radiusIndex = getOptionIndex(RADIUS_OPTIONS.map((o) => o.value), uiPreferences.controlRadius);
 
+  const applyDensityPreset = (preset: typeof DENSITY_PRESETS[number]) => {
+    updateUiPreference('densityPreset', preset.value);
+    updateUiPreference('cardSize', preset.preferences.cardSize);
+    updateUiPreference('cardMinHeight', preset.preferences.cardMinHeight);
+    updateUiPreference('variantsPerPage', preset.preferences.variantsPerPage);
+    updateUiPreference('gridColumns', preset.preferences.gridColumns);
+    updateUiPreference('gridGap', preset.preferences.gridGap);
+  };
+
   return (
     <div className={settingsPanelClass}>
       <div className="mb-5 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
@@ -81,6 +91,28 @@ export function EditCustomizePanel({
           <p className="text-[13px] text-zinc-500">编辑模式下直接调整卡片大小、列数、间距、圆角和按钮样式，刷新后会自动保留。</p>
         </div>
         <button onClick={resetUiPreferences} className="text-[13px] font-bold text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition">恢复默认 UI 设置</button>
+      </div>
+
+      <div className="mb-5 grid grid-cols-1 gap-2 md:grid-cols-3">
+        {DENSITY_PRESETS.map((preset) => {
+          const active = uiPreferences.densityPreset === preset.value;
+          return (
+            <button
+              key={preset.value}
+              type="button"
+              onClick={() => applyDensityPreset(preset)}
+              className={cn(
+                'rounded-2xl border px-4 py-3 text-left transition',
+                active
+                  ? 'border-zinc-900 bg-zinc-900 text-white dark:border-white dark:bg-white dark:text-zinc-900'
+                  : 'border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 dark:border-zinc-800 dark:bg-[#18181b] dark:text-zinc-400'
+              )}
+            >
+              <div className="text-[13px] font-black">{preset.label}</div>
+              <div className="mt-1 text-[11px] font-bold opacity-70">{preset.preferences.gridColumns}列 / {preset.preferences.variantsPerPage}条 / {preset.preferences.gridGap}px</div>
+            </button>
+          );
+        })}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">

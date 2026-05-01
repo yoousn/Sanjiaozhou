@@ -1,28 +1,22 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { AlertCircle, Loader2, Sparkles, CheckCircle2, Home, Crosshair, Target } from 'lucide-react';
 import { arrayMove } from '@dnd-kit/sortable';
 import {
   GunGroup,
   GunVariant,
   CollectMeta,
-  CollectModelProviderInput,
-  CollectPreview,
-  CollectSearchResult,
-  CollectVideoCandidate,
   ModelTestResult,
-  UiPreferences,
 } from './types';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { GunCard } from './components/GunCard';
 import { AddGunModal } from './components/AddGunModal';
-import { CollectModal } from './components/CollectModal';
 import { SortableGunCard } from './components/SortableGunCard';
 import { DailyPwdCard } from './components/DailyPwdCard';
 import { EditCustomizePanel } from './components/EditCustomizePanel';
-import { ModeSelectModal } from './components/ModeSelectModal';
 import { AutoCollectConfigModal, AutoCollectConfig } from './components/AutoCollectConfigModal';
 import { AuthModal } from './components/AuthModal';
+import { ModelConfigModal } from './components/ModelConfigModal';
 
 const CommunityPage = React.lazy(() => import('./pages/CommunityPage').then(m => ({ default: m.CommunityPage })));
 const SettingsPage = React.lazy(() => import('./components/SettingsPage').then(m => ({ default: m.SettingsPage })));
@@ -43,12 +37,9 @@ import {
 import {
   EMPTY_META,
   EMPTY_PROVIDER_FORM,
-  EMPTY_SEARCH,
 } from './constants';
 import {
-  normalizeCollectSearchResult,
   normalizeCollectMeta,
-  normalizePresetGunsInput,
   buildProviderFormFromMeta,
   safeJson,
 } from './utils/collect';
@@ -85,30 +76,18 @@ export default function App() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [activeModal, setActiveModal] = useState<'none' | 'mode-select' | 'collect' | 'auto-collect' | 'auth'>('none');
-  
-  // Collect related states
-  const [isSearchingCollect, setIsSearchingCollect] = useState(false);
-  const [isPreviewingCollect, setIsPreviewingCollect] = useState(false);
+  const [activeModal, setActiveModal] = useState<'none' | 'auto-collect' | 'model-config' | 'auth'>('none');
+
   const [isTestingModel, setIsTestingModel] = useState(false);
-  const [isApplyingCollect, setIsApplyingCollect] = useState(false);
   const [collectMeta, setCollectMeta] = useState<CollectMeta>(EMPTY_META);
-  const [collectSearchResult, setCollectSearchResult] = useState<CollectSearchResult>(EMPTY_SEARCH);
-  const [collectPreview, setCollectPreview] = useState<CollectPreview | null>(null);
-  const [selectedVideoIds, setSelectedVideoIds] = useState<string[]>([]);
   const [selectedModel, setSelectedModel] = useState('');
   const [selectedProviderId, setSelectedProviderId] = useState('');
-  const [searchConcurrencyEnabled, setSearchConcurrencyEnabled] = useState(false);
-  const [applyConcurrencyEnabled, setApplyConcurrencyEnabled] = useState(false);
-  const [isProviderModalOpen, setIsProviderModalOpen] = useState(false);
   const [providerForm, setProviderForm] = useState(EMPTY_PROVIDER_FORM);
+  const [fetchedProviderModels, setFetchedProviderModels] = useState<string[]>([]);
   const [isFetchingProviderModels, setIsFetchingProviderModels] = useState(false);
   const [isSavingProvider, setIsSavingProvider] = useState(false);
-  const [isSavingPresetGuns, setIsSavingPresetGuns] = useState(false);
-  const [presetGunInput, setPresetGunInput] = useState('');
   const [modelTestResult, setModelTestResult] = useState<ModelTestResult | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const searchPollRef = useRef<number | null>(null);
 
   // Settings related states
   const [isUploadingCookie, setIsUploadingCookie] = useState(false);
@@ -138,7 +117,7 @@ export default function App() {
       return data as GunGroup[];
     },
     refetchInterval: (query) => {
-      if (isEditing || activeModal !== 'none' || isSearchingCollect || isPreviewingCollect || isApplyingCollect) return false;
+      if (isEditing || activeModal !== 'none') return false;
       return 60000;
     },
   });
@@ -185,15 +164,12 @@ export default function App() {
   }, [activeModal]);
 
   useEffect(() => {
-    if (activeModal !== 'collect' && activeModal !== 'auto-collect') return;
-    fetch('/api/collect/meta')
+    if (activeModal === 'auto-collect' || activeModal === 'model-config') {
+      fetch('/api/collect/meta')
       .then(safeJson)
       .then((rawData) => {
         const data = normalizeCollectMeta(rawData);
         setCollectMeta(data);
-        setPresetGunInput(data.defaultGuns.join(', '));
-        setSearchConcurrencyEnabled(data.concurrency.searchEnabled);
-        setApplyConcurrencyEnabled(data.concurrency.applyEnabled);
         setSelectedModel((prev) => (prev && data.modelOptions.some(o => o.value === prev) ? prev : data.defaultModel || ''));
         setSelectedProviderId((prev) => {
           const providerId = prev || parseModelOptionValue(data.defaultModel).providerId || data.providers[0]?.id || '';
@@ -201,37 +177,17 @@ export default function App() {
         });
       })
       .catch(err => {
-        console.error('加载采集配置失败:', err);
-        showToast('加载采集配置失败', 'warn');
+        console.error('加载模型配置失败:', err);
+        showToast('加载模型配置失败', 'warn');
       });
+    }
   }, [activeModal, showToast]);
 
   useEffect(() => {
-    if (!isProviderModalOpen) return;
+    if (activeModal !== 'model-config') return;
     setProviderForm(buildProviderFormFromMeta(collectMeta, selectedProviderId));
-  }, [isProviderModalOpen, collectMeta, selectedProviderId]);
-
-  const handleSavePresetGuns = async () => {
-    setIsSavingPresetGuns(true);
-    try {
-      const presetGuns = normalizePresetGunsInput(presetGunInput);
-      const res = await fetch('/api/collect/preset-guns', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ presetGuns }),
-      });
-      const data = await safeJson(res);
-      if (!res.ok) throw new Error(data?.error || '保存预设枪械失败');
-      const nextMeta = normalizeCollectMeta(data?.meta);
-      setCollectMeta(nextMeta);
-      setPresetGunInput(nextMeta.defaultGuns.join(', '));
-      showToast('预设枪械已保存');
-    } catch (error) {
-      showToast(error instanceof Error ? error.message : '保存预设枪械失败', 'warn');
-    } finally {
-      setIsSavingPresetGuns(false);
-    }
-  };
+    setFetchedProviderModels([]);
+  }, [activeModal, collectMeta, selectedProviderId]);
 
   const handleFetchProviderModels = async () => {
     setIsFetchingProviderModels(true);
@@ -244,10 +200,11 @@ export default function App() {
       const data = await safeJson(res);
       if (!res.ok) throw new Error(data?.error || '获取模型列表失败');
       const models = Array.isArray(data?.models) ? data.models.map(String) : [];
+      setFetchedProviderModels(models);
       setProviderForm(prev => ({
         ...prev,
-        models,
-        selectedModel: models.includes(prev.selectedModel || '') ? (prev.selectedModel || '') : (models[0] || ''),
+        models: prev.models.filter(model => models.includes(model)),
+        selectedModel: models.includes(prev.selectedModel || '') ? (prev.selectedModel || '') : (prev.models.find(model => models.includes(model)) || models[0] || ''),
       }));
       showToast(`已获取 ${models.length} 个模型`);
     } catch (error) {
@@ -284,7 +241,6 @@ export default function App() {
       } else {
         setSelectedModel(nextMeta.defaultModel);
       }
-      setIsProviderModalOpen(false);
       showToast('模型源已保存');
     } catch (error) {
       showToast(error instanceof Error ? error.message : '保存模型源失败', 'warn');
@@ -308,7 +264,6 @@ export default function App() {
       setCollectMeta(nextMeta);
       setSelectedProviderId(parseModelOptionValue(nextMeta.defaultModel).providerId || nextMeta.providers[0]?.id || '');
       setSelectedModel(nextMeta.defaultModel || '');
-      setIsProviderModalOpen(false);
       showToast('模型源已删除', 'warn');
     } catch (error) {
       showToast(error instanceof Error ? error.message : '删除模型源失败', 'warn');
@@ -317,139 +272,15 @@ export default function App() {
     }
   };
 
-  const handleSaveConcurrency = async (nextSearchEnabled: boolean, nextApplyEnabled: boolean) => {
-    setSearchConcurrencyEnabled(nextSearchEnabled);
-    setApplyConcurrencyEnabled(nextApplyEnabled);
-    try {
-      const res = await fetch('/api/collect/concurrency', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ searchEnabled: nextSearchEnabled, applyEnabled: nextApplyEnabled }),
-      });
-      const data = await safeJson(res);
-      if (!res.ok) throw new Error(data?.error || '保存并发配置失败');
-      setCollectMeta(normalizeCollectMeta(data?.meta));
-    } catch (error) {
-      showToast(error instanceof Error ? error.message : '保存并发配置失败', 'warn');
-    }
-  };
-
-  const stopSearchPolling = useCallback(() => {
-    if (searchPollRef.current !== null) {
-      window.clearInterval(searchPollRef.current);
-      searchPollRef.current = null;
-    }
-  }, []);
-
-  useEffect(() => {
-    return () => stopSearchPolling();
-  }, [stopSearchPolling]);
-
-  const handleSearchCollect = async (guns: string[], creatorIds: string[], maxVideos: number) => {
-    stopSearchPolling();
-    setIsSearchingCollect(true);
-    setCollectPreview(null);
-    setSelectedVideoIds([]);
-    setModelTestResult(null);
-
-    try {
-      const startRes = await fetch('/api/collect/search/start', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ guns, creatorIds, concurrent: searchConcurrencyEnabled, maxVideos }),
-      });
-      const startData = await safeJson(startRes);
-      if (!startRes.ok) throw new Error(startData?.error || '搜索启动失败');
-
-      const requestId = typeof startData?.requestId === 'string' ? startData.requestId : '';
-      if (!requestId) throw new Error('搜索任务创建失败');
-
-      setCollectSearchResult(normalizeCollectSearchResult(null, { guns, creatorIds, requestId, isPending: true }));
-      setSelectedModel(prev => prev || collectMeta.defaultModel || '');
-
-      const pollStatus = async () => {
-        try {
-          const statusRes = await fetch(`/api/collect/search/status/${encodeURIComponent(requestId)}`);
-          const statusData = await safeJson(statusRes);
-          if (!statusRes.ok) throw new Error(statusData?.error || '搜索状态获取失败');
-
-          const isDone = Boolean(statusData?.done);
-          const result = statusData?.result as Partial<CollectSearchResult> | undefined;
-          const nextResult = normalizeCollectSearchResult(result || { guns, creatorIds, logs: statusData?.logs, errors: statusData?.error ? [String(statusData.error)] : [] }, { guns, creatorIds, requestId, isPending: !isDone });
-
-          setCollectSearchResult({ ...nextResult, logs: Array.isArray(statusData?.logs) ? statusData.logs : nextResult.logs, errors: statusData?.error ? [...(nextResult.errors || []), String(statusData.error)] : nextResult.errors, requestId, isPending: !isDone });
-
-          if (isDone) {
-            stopSearchPolling();
-            setIsSearchingCollect(false);
-            if (nextResult.videos.length > 0) showToast(`已命中 ${nextResult.videos.length} 个视频`);
-            else if (nextResult.errors?.length) showToast(nextResult.errors[0], 'warn');
-            else showToast('搜索完成，但没有命中视频', 'warn');
-            return true;
-          }
-          return false;
-        } catch (error) {
-          stopSearchPolling();
-          setIsSearchingCollect(false);
-          const message = error instanceof Error ? error.message : '搜索状态获取失败';
-          setCollectSearchResult(normalizeCollectSearchResult({ logs: [{ timestamp: Date.now(), stage: 'request-error', message }], errors: [message] }, { guns, creatorIds, requestId, isPending: false }));
-          showToast(message, 'warn');
-          return true;
-        }
-      };
-
-      const finishedImmediately = await pollStatus();
-      if (!finishedImmediately && searchPollRef.current === null && startData?.success) {
-        searchPollRef.current = window.setInterval(() => { void pollStatus(); }, 1200);
-      }
-    } catch (e) {
-      stopSearchPolling();
-      const message = e instanceof Error ? e.message : '搜索失败';
-      setCollectSearchResult(normalizeCollectSearchResult({ logs: [{ timestamp: Date.now(), stage: 'request-error', message }], errors: [message] }, { guns, creatorIds, isPending: false }));
-      setIsSearchingCollect(false);
-      showToast(message, 'warn');
-    }
-  };
-
-  const handleCancelSearch = async () => {
-    if (collectSearchResult.requestId && isSearchingCollect) {
-      try {
-        await fetch(`/api/collect/search/cancel/${encodeURIComponent(collectSearchResult.requestId)}`, { method: 'POST' });
-      } catch (e) { console.error(e); }
-      stopSearchPolling();
-      setIsSearchingCollect(false);
-      setCollectSearchResult(prev => ({
-        ...prev,
-        isPending: false,
-        errors: [...(prev.errors || []), '搜索已手动取消'],
-        logs: [...(prev.logs || []), { timestamp: Date.now(), stage: 'cancelled', message: '搜索已手动取消' }]
-      }));
-      showToast('搜索已取消', 'warn');
-    }
-  };
-
-  const handlePreviewCollect = async (guns: string[], creatorIds: string[], videoIds: string[], model: string, videos: CollectVideoCandidate[] = []) => {
-    setIsPreviewingCollect(true);
-    try {
-      const res = await fetch('/api/collect/preview', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ guns, creatorIds, videoIds, model, videos, concurrent: applyConcurrencyEnabled }),
-      });
-      const data = await safeJson(res);
-      if (!res.ok) throw new Error(data?.error || '预览失败');
-      const nextPreview: CollectPreview = { ...data, groups: Array.isArray(data?.groups) ? data.groups : [], errors: Array.isArray(data?.errors) ? data.errors : [] };
-      setCollectPreview(nextPreview);
-      return nextPreview;
-    } catch (e) {
-      const message = e instanceof Error ? e.message : '预览失败';
-      const failedPreview: CollectPreview = { groups: [], errors: [message] };
-      setCollectPreview(failedPreview);
-      showToast(message, 'warn');
-      return failedPreview;
-    } finally {
-      setIsPreviewingCollect(false);
-    }
+  const handleChatModel = async (model: string, messages: Array<{ role: 'user' | 'assistant'; content: string }>) => {
+    const res = await fetch('/api/model/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model, messages }),
+    });
+    const data = await safeJson(res);
+    if (!res.ok) throw new Error(data?.error || '模型回复失败');
+    return data;
   };
 
   const handleTestModel = async (model: string) => {
@@ -472,54 +303,6 @@ export default function App() {
     } finally {
       setIsTestingModel(false);
     }
-  };
-
-  const handleApplyCollect = async (guns: string[], creatorIds: string[], videoIds: string[], model: string) => {
-    if (videoIds.length === 0) {
-      showToast('请至少选择一个视频', 'warn');
-      return;
-    }
-    const selectedVideos = (collectSearchResult.videos || []).filter(v => v && videoIds.includes(v.id));
-    const previewResult = await handlePreviewCollect(guns, creatorIds, videoIds, model, selectedVideos);
-    if (!previewResult.groups?.length) {
-      showToast(previewResult.errors?.[0] || '没有可加入的网站内容', 'warn');
-      return;
-    }
-
-    setIsApplyingCollect(true);
-    try {
-      const res = await fetch('/api/collect/apply', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ groups: previewResult.groups }),
-      });
-      const data = await safeJson(res);
-      if (!res.ok) throw new Error(data?.error || '写入失败');
-      setSavedData(Array.isArray(data?.data) ? data.data : []);
-      setCollectPreview(null);
-      setCollectSearchResult(EMPTY_SEARCH);
-      setSelectedVideoIds([]);
-      setModelTestResult(null);
-      setActiveModal('none');
-      showToast('已自动加入网站');
-    } catch (e) {
-      showToast(e instanceof Error ? e.message : '写入失败', 'warn');
-    } finally {
-      setIsApplyingCollect(false);
-    }
-  };
-
-  const handleCloseCollectModal = () => {
-    if (isSearchingCollect || isPreviewingCollect || isApplyingCollect) {
-      showToast('当前有正在执行的任务，无法关闭弹窗', 'warn');
-      return;
-    }
-    stopSearchPolling();
-    setActiveModal('none');
-    setCollectSearchResult(EMPTY_SEARCH);
-    setCollectPreview(null);
-    setSelectedVideoIds([]);
-    setModelTestResult(null);
   };
 
   const handleEditStart = () => {
@@ -789,7 +572,7 @@ export default function App() {
               </React.Suspense>
             ) : (
               <>
-                <Header isEditing={isEditing} onEditStart={handleEditStart} onSave={handleSave} onCancel={handleCancel} onAddNew={() => setIsModalOpen(true)} onOpenCollect={() => setActiveModal('mode-select')} sortBy={sortBy} onSortChange={handleSortChange} isDarkMode={theme.isDarkMode} onToggleDarkMode={() => theme.setIsDarkMode(!theme.isDarkMode)} searchQuery={searchQuery} onSearchChange={setSearchQuery} searchSuggestions={Array.from(new Set(sourceData.map(g => g.name)))} controlRadius={theme.uiPreferences.controlRadius} buttonStyle={theme.uiPreferences.buttonStyle} />
+                <Header isEditing={isEditing} onEditStart={handleEditStart} onSave={handleSave} onCancel={handleCancel} onAddNew={() => setIsModalOpen(true)} onOpenCollect={() => setActiveModal('auto-collect')} onOpenModelConfig={() => setActiveModal('model-config')} sortBy={sortBy} onSortChange={handleSortChange} isDarkMode={theme.isDarkMode} onToggleDarkMode={() => theme.setIsDarkMode(!theme.isDarkMode)} searchQuery={searchQuery} onSearchChange={setSearchQuery} searchSuggestions={Array.from(new Set(sourceData.map(g => g.name)))} controlRadius={theme.uiPreferences.controlRadius} buttonStyle={theme.uiPreferences.buttonStyle} />
                 {isRefreshingData && savedData.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-24 animate-fade-in"><Loader2 size={24} className="animate-spin text-zinc-400 mb-4" /><p className="text-[13px] font-bold text-zinc-500">正在加载...</p></div>
                 ) : savedDataLoadError && savedData.length === 0 ? (
@@ -861,7 +644,6 @@ export default function App() {
 
       <div className="fixed inset-0 pointer-events-none z-[-1]" style={{ backgroundImage: 'linear-gradient(to right, #00000004 1px, transparent 1px), linear-gradient(to bottom, #00000004 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
       {isModalOpen && <AddGunModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onConfirm={handleConfirmNewGun} />}
-      {activeModal === 'mode-select' && <ModeSelectModal onClose={() => setActiveModal('none')} onSelectManual={() => setActiveModal('collect')} onSelectAuto={() => setActiveModal('auto-collect')} />}
       {activeModal === 'auto-collect' && (
         <AutoCollectConfigModal
           onClose={() => setActiveModal('none')}
@@ -881,8 +663,27 @@ export default function App() {
           }}
         />
       )}
-      {activeModal === 'collect' && (
-        <CollectModal isOpen={activeModal === 'collect'} isSearching={isSearchingCollect || isRefreshingData} isPreviewing={isPreviewingCollect} isTestingModel={isTestingModel} isApplying={isApplyingCollect} meta={collectMeta} searchResult={collectSearchResult} selectedVideoIds={selectedVideoIds} selectedModel={selectedModel} selectedProviderId={selectedProviderId} modelTestResult={modelTestResult} preview={collectPreview} presetGunInput={presetGunInput} isSavingPresetGuns={isSavingPresetGuns} isProviderModalOpen={isProviderModalOpen} providerForm={providerForm} isFetchingProviderModels={isFetchingProviderModels} isSavingProvider={isSavingProvider} searchConcurrencyEnabled={searchConcurrencyEnabled} applyConcurrencyEnabled={applyConcurrencyEnabled} onClose={handleCloseCollectModal} onSearch={handleSearchCollect} onCancelSearch={handleCancelSearch} onSelectedVideoIdsChange={setSelectedVideoIds} onSelectedModelChange={setSelectedModel} onSelectedProviderIdChange={setSelectedProviderId} onTestModel={handleTestModel} onApply={handleApplyCollect} onPresetGunInputChange={setPresetGunInput} onSavePresetGuns={handleSavePresetGuns} onOpenProviderModal={() => setIsProviderModalOpen(true)} onCloseProviderModal={() => setIsProviderModalOpen(false)} onProviderFormChange={setProviderForm} onFetchProviderModels={handleFetchProviderModels} onSaveProvider={handleSaveProvider} onDeleteProvider={handleDeleteProvider} onSearchConcurrencyChange={(value) => void handleSaveConcurrency(value, applyConcurrencyEnabled)} onApplyConcurrencyChange={(value) => void handleSaveConcurrency(searchConcurrencyEnabled, value)} />
+      {activeModal === 'model-config' && (
+        <ModelConfigModal
+          onClose={() => setActiveModal('none')}
+          meta={collectMeta}
+          selectedProviderId={selectedProviderId}
+          selectedModel={selectedModel}
+          providerForm={providerForm}
+          fetchedModels={fetchedProviderModels}
+          isFetchingProviderModels={isFetchingProviderModels}
+          isSavingProvider={isSavingProvider}
+          isTestingModel={isTestingModel}
+          modelTestResult={modelTestResult}
+          onSelectedProviderIdChange={setSelectedProviderId}
+          onSelectedModelChange={setSelectedModel}
+          onProviderFormChange={setProviderForm}
+          onFetchProviderModels={handleFetchProviderModels}
+          onSaveProvider={handleSaveProvider}
+          onDeleteProvider={handleDeleteProvider}
+          onTestModel={handleTestModel}
+          onChatModel={handleChatModel}
+        />
       )}
       {activeModal === 'auth' && (
         <AuthModal isOpen={activeModal === 'auth'} onClose={() => setActiveModal('none')} onLogin={auth.login} onRegister={auth.register} />

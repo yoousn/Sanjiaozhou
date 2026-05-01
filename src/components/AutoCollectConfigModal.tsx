@@ -6,6 +6,7 @@ import { CollectMeta } from '../types';
 export type AutoCollectConfig = {
   enabled: boolean;
   model: string;
+  backupModel: string;
   intervalHours: number;
   creatorIds: string[];
   logs: Array<{ time: string; message: string; success: boolean }>;
@@ -101,18 +102,34 @@ export function AutoCollectConfigModal({
           </select>
         </div>
 
-        <div className="flex flex-col gap-2">
-          <label className="text-[12px] font-bold uppercase tracking-widest text-zinc-500">使用的提取模型</label>
-          <select
-            value={config.model}
-            onChange={(e) => setConfig((p) => ({ ...p, model: e.target.value }))}
-            className="w-full border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#18181b] py-2.5 px-3 rounded-xl text-[13px] font-bold shadow-sm focus:ring-4 focus:ring-zinc-900/10 outline-none"
-          >
-            <option value="">-- 请选择模型 --</option>
-            {meta.modelOptions.map((opt) => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="flex flex-col gap-2">
+            <label className="text-[12px] font-bold uppercase tracking-widest text-zinc-500">主提取模型</label>
+            <select
+              value={config.model}
+              onChange={(e) => setConfig((p) => ({ ...p, model: e.target.value }))}
+              className="w-full border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#18181b] py-2.5 px-3 rounded-xl text-[13px] font-bold shadow-sm focus:ring-4 focus:ring-zinc-900/10 outline-none"
+            >
+              <option value="">-- 请选择模型 --</option>
+              {meta.modelOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label className="text-[12px] font-bold uppercase tracking-widest text-zinc-500">备用提取模型</label>
+            <select
+              value={config.backupModel}
+              onChange={(e) => setConfig((p) => ({ ...p, backupModel: e.target.value }))}
+              className="w-full border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#18181b] py-2.5 px-3 rounded-xl text-[13px] font-bold shadow-sm focus:ring-4 focus:ring-zinc-900/10 outline-none"
+            >
+              <option value="">-- 不使用备用模型 --</option>
+              {meta.modelOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <button

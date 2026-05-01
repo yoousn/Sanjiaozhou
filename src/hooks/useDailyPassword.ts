@@ -79,7 +79,11 @@ export function useDailyPassword(showToast: (msg: string, type?: 'success' | 'wa
         return;
       }
 
-      const refreshRes = await fetch('/api/daily-password/refresh', { method: 'POST' });
+      const refreshRes = await fetch('/api/daily-password/refresh', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ manual: false }),
+      });
       const refreshData = await safeJson(refreshRes);
       if (refreshRes.ok) {
         const payload = refreshData.data ?? refreshData;
@@ -115,7 +119,11 @@ export function useDailyPassword(showToast: (msg: string, type?: 'success' | 'wa
     if (isRefreshingDailyPwd) return;
     setIsRefreshingDailyPwd(true);
     try {
-      const res = await fetch('/api/daily-password/refresh', { method: 'POST' });
+      const res = await fetch('/api/daily-password/refresh', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ manual: true }),
+      });
       const data = await safeJson(res);
       if (!res.ok) throw new Error(data?.error || '获取每日密码失败');
       applyDailyPwd(data?.data ?? data);
@@ -166,7 +174,7 @@ export function useDailyPassword(showToast: (msg: string, type?: 'success' | 'wa
       if (document.visibilityState === 'visible') {
         checkDailyPwdDateChange();
         if (!isDailyPwdForToday(dailyPwdLatestRef.current) || shouldRefreshDailyPwd(dailyPwdLatestRef.current)) {
-          void syncDailyPwd({ forceRefreshToday: true });
+          void syncDailyPwd();
         }
       }
     };

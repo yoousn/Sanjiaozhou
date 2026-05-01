@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Bot, Check, Loader2, MessageSquare, Plus, RefreshCw, Save, Search, Send, TestTube2, Trash2, X } from 'lucide-react';
-import { cn, inputClasses, parseModelOptionValue } from '../utils';
+import { cn, inputClasses, parseModelOptionValue, buildModelOptionValue } from '../utils';
 import type { CollectMeta, CollectModelProviderInput, ModelTestResult } from '../types';
 
 type ChatMessage = {
@@ -25,7 +25,6 @@ export function ModelConfigModal({
   selectedProviderId,
   selectedModel,
   providerForm,
-  fetchedModels,
   isFetchingProviderModels,
   isSavingProvider,
   isTestingModel,
@@ -44,7 +43,6 @@ export function ModelConfigModal({
   selectedProviderId: string;
   selectedModel: string;
   providerForm: CollectModelProviderInput;
-  fetchedModels: string[];
   isFetchingProviderModels: boolean;
   isSavingProvider: boolean;
   isTestingModel: boolean;
@@ -66,20 +64,18 @@ export function ModelConfigModal({
   const selectedProvider = meta.providers.find((provider) => provider.id === selectedProviderId) || meta.providers[0];
   const draftProviderName = providerForm.name.trim() || '新模型源';
   const isDraftProvider = !providerForm.id && selectedProviderId === '';
-  const modelOptions = useMemo(() => meta.modelOptions.filter((option) => option.providerId === selectedProviderId), [meta.modelOptions, selectedProviderId]);
-  const activeModel = selectedModel || meta.defaultModel || modelOptions[0]?.value || '';
+  const providerModelOptions = useMemo(
+    () => providerForm.models.map((model) => ({
+      value: selectedProviderId ? buildModelOptionValue(selectedProviderId, model) : '',
+      label: model,
+      providerId: selectedProviderId,
+      model,
+    })).filter((option) => option.value),
+    [providerForm.models, selectedProviderId]
+  );
+  const modelOptions = providerModelOptions.length > 0 ? providerModelOptions : meta.modelOptions.filter((option) => option.providerId === selectedProviderId);
+  const activeModel = selectedModel || (modelOptions[0]?.value ?? meta.defaultModel) || '';
   const parsedActiveModel = parseModelOptionValue(activeModel);
-  const availableModels = useMemo(() => [...new Set([...fetchedModels, ...providerForm.models])], [providerForm.models, fetchedModels]);
-  const formModelSet = new Set(providerForm.models);
-
-  const toggleModel = (model: string) => {
-    onProviderFormChange((prev) => {
-      const exists = prev.models.includes(model);
-      const models = exists ? prev.models.filter((item) => item !== model) : [...prev.models, model];
-      const selectedModel = models.includes(prev.selectedModel || '') ? prev.selectedModel : (models[0] || '');
-      return { ...prev, models, selectedModel };
-    });
-  };
 
   const sendMessages = async (messages: ChatMessage[]) => {
     setChatError('');
@@ -123,7 +119,7 @@ export function ModelConfigModal({
         <div className="flex items-center justify-between border-b border-zinc-200 px-6 py-4 dark:border-zinc-800">
           <div>
             <h3 className="text-xl font-black text-zinc-900 dark:text-white">模型配置</h3>
-            <p className="mt-1 text-[12px] font-medium text-zinc-500 dark:text-zinc-400">启用模型、测试连通性，并在操练场直接对话</p>
+            <p className="mt-1 text-[12px] font-medium text-zinc-500 dark:text-zinc-400">获取模型、设置默认模型，并在操练场直接对话</p>
           </div>
           <button onClick={onClose} className="rounded-full bg-zinc-100 p-2 text-zinc-500 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700">
             <X size={18} strokeWidth={2.5} />
@@ -160,7 +156,7 @@ export function ModelConfigModal({
                   )}
                 >
                   <div className="truncate text-[13px] font-black">{provider.name}</div>
-                  <div className="mt-1 text-[11px] font-bold opacity-70">{provider.models.length} 个启用模型</div>
+                  <div className="mt-1 text-[11px] font-bold opacity-70">{provider.models.length} 个模型</div>
                 </button>
               ))}
               {isDraftProvider && (
@@ -195,24 +191,13 @@ export function ModelConfigModal({
             <div className="mt-5 rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-[#18181b]">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <div className="text-[13px] font-black text-zinc-900 dark:text-white">启用模型</div>
-                  <div className="mt-1 text-[11px] font-medium text-zinc-400">获取模型后勾选要参与自动采集和操练场的模型</div>
+                  <div className="text-[13px] font-black text-zinc-900 dark:text-white">获取模型</div>
+                  <div className="mt-1 text-[11px] font-medium text-zinc-400">获取后会更新默认模型和操练场列表</div>
                 </div>
                 <button type="button" onClick={onFetchProviderModels} disabled={isFetchingProviderModels || isSavingProvider} className="inline-flex items-center gap-2 rounded-2xl border border-zinc-200 bg-white px-4 py-2 text-[12px] font-black text-zinc-700 transition hover:border-zinc-300 disabled:opacity-60 dark:border-zinc-800 dark:bg-[#121214] dark:text-zinc-300">
                   {isFetchingProviderModels ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} strokeWidth={2.5} />}
                   获取模型
                 </button>
-              </div>
-
-              <div className="mt-4 max-h-72 space-y-2 overflow-y-auto pr-1">
-                {availableModels.length > 0 ? availableModels.map((model) => (
-                  <label key={model} className="flex cursor-pointer items-center justify-between gap-3 rounded-2xl border border-zinc-200 bg-white px-3 py-2 text-[12px] font-bold text-zinc-700 transition hover:border-zinc-300 dark:border-zinc-800 dark:bg-[#121214] dark:text-zinc-300">
-                    <span className="truncate">{model}</span>
-                    <input type="checkbox" checked={formModelSet.has(model)} onChange={() => toggleModel(model)} className="h-4 w-4 accent-zinc-900" />
-                  </label>
-                )) : (
-                  <div className="rounded-2xl border border-dashed border-zinc-200 bg-white p-6 text-center text-[12px] font-bold text-zinc-400 dark:border-zinc-800 dark:bg-[#121214]">暂无模型，请先获取模型</div>
-                )}
               </div>
             </div>
 

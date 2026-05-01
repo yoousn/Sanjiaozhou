@@ -525,36 +525,44 @@ def save_processed_videos(processed: set[str]) -> None:
     AUTO_PROCESSED_VIDEOS_FILE.write_text(json.dumps(list(processed), ensure_ascii=False), encoding="utf-8")
 
 
-def auto_mode(creator_ids: list[str], model: str, base_url: str, api_key: str) -> dict:
+def auto_mode(creator_ids: list[str], model: str, base_url: str, api_key: str, retry_videos: list[dict] | None = None) -> dict:
     processed_vids = load_processed_videos()
-    sources, errors, cookie_source, logs = fetch_creator_videos(creator_ids, max_videos=5, concurrent=False)
-    videos = []
-    
-    for source in sources:
-        for video in source.get("videos", []):
-            vid = video.get("bvid") or video.get("id")
-            if vid and vid not in processed_vids:
-                videos.append(video)
+    logs: list[dict] = []
+    errors: list[dict] = []
+    videos = retry_videos or []
+
+    if not videos:
+        sources, errors, cookie_source, logs = fetch_creator_videos(creator_ids, max_videos=5, concurrent=False)
+
+        for source in sources:
+            for video in source.get("videos", []):
+                vid = video.get("bvid") or video.get("id")
+                if vid and vid not in processed_vids:
+                    videos.append(video)
 
     if not videos:
         return {
             "success": False,
             "groups": [],
+            "videos": [],
             "logs": logs,
             "errors": [str(item.get("error") or "") for item in errors if item.get("error")] or ["未发现新的待采集视频"]
         }
 
     groups, ai_logs, ai_errors = build_groups_from_videos(videos, [], model, base_url, api_key, False)
-    
-    for video in videos:
-        vid = video.get("bvid") or video.get("id")
-        if vid:
-            processed_vids.add(vid)
-    save_processed_videos(processed_vids)
+    success = len(groups) > 0 and len(ai_errors) == 0
+
+    if success:
+        for video in videos:
+            vid = video.get("bvid") or video.get("id")
+            if vid:
+                processed_vids.add(vid)
+        save_processed_videos(processed_vids)
 
     return {
-        "success": len(groups) > 0,
+        "success": success,
         "groups": groups,
+        "videos": videos,
         "logs": logs + ai_logs,
         "errors": [str(item.get("error") or "") for item in errors if item.get("error")] + ai_errors
     }
@@ -628,7 +636,7 @@ def main():
     elif args.mode == "preview":
         result = preview_mode(target_guns, creator_ids, video_ids, args.model, args.base_url, args.api_key, args.max_videos, selected_videos, concurrent)
     elif args.mode == "auto":
-        result = auto_mode(creator_ids, args.model, args.base_url, args.api_key)
+        result = auto_mode(creator_ids, args.model, args.base_url, args.api_key, selected_videos)
     elif args.mode == "fetch-models":
         result = fetch_models_mode(args.base_url, args.api_key)
     elif args.mode == "check-cookie":

@@ -43,6 +43,7 @@ export const CREATOR_OPTIONS: CollectCreator[] = [
 export type AutoCollectSettings = {
   enabled: boolean;
   model: string;
+  backupModel: string;
   creatorIds: string[];
   intervalHours: number;
 };
@@ -101,6 +102,7 @@ export function getDefaultCollectSettings(): CollectSettings {
     autoCollect: {
       enabled: false,
       model: DEFAULT_MODEL_VALUE,
+      backupModel: "",
       creatorIds: [],
       intervalHours: 1,
     }
@@ -135,6 +137,7 @@ export function readCollectSettings(): CollectSettings {
       autoCollect: {
         enabled: Boolean(parsed?.autoCollect?.enabled),
         model: modelOptions.includes(String(parsed?.autoCollect?.model || "")) ? String(parsed.autoCollect.model) : defaultModel,
+        backupModel: modelOptions.includes(String(parsed?.autoCollect?.backupModel || "")) ? String(parsed.autoCollect.backupModel) : "",
         creatorIds: Array.isArray(parsed?.autoCollect?.creatorIds) ? parsed.autoCollect.creatorIds : [],
         intervalHours: Number(parsed?.autoCollect?.intervalHours) || 1,
       }
@@ -152,6 +155,7 @@ export function writeCollectSettings(settings: CollectSettings) {
   const modelOptions = providers.flatMap((provider) => provider.models.map((model) => buildModelOptionValue(provider.id, model)));
   const defaultModel = modelOptions.includes(settings.defaultModel) ? settings.defaultModel : (modelOptions[0] || "");
   const autoCollectModel = modelOptions.includes(String(settings.autoCollect?.model || "")) ? String(settings.autoCollect.model) : defaultModel;
+  const autoCollectBackupModel = modelOptions.includes(String(settings.autoCollect?.backupModel || "")) ? String(settings.autoCollect.backupModel) : "";
 
   const nextSettings: CollectSettings = {
     presetGuns: trimUniqueStrings(settings.presetGuns, DEFAULT_PRESET_GUNS),
@@ -164,6 +168,7 @@ export function writeCollectSettings(settings: CollectSettings) {
     autoCollect: {
       enabled: Boolean(settings.autoCollect?.enabled),
       model: autoCollectModel,
+      backupModel: autoCollectBackupModel,
       creatorIds: Array.isArray(settings.autoCollect?.creatorIds) ? settings.autoCollect.creatorIds : [],
       intervalHours: Number(settings.autoCollect?.intervalHours) || 1,
     }

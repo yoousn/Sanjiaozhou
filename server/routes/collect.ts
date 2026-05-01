@@ -16,6 +16,7 @@ import {
   previewCollectGroups,
   ensureCreatorIds,
   ensureModel,
+  normalizeProviderBaseUrl,
   runCollector
 } from "../lib/collector.js";
 import { trimUniqueStrings, ensureGroupShape } from "../lib/shape.js";
@@ -223,7 +224,8 @@ router.get("/auto", (req, res) => {
   const logs = readAutoLogs();
   res.json({ 
     enabled: settings.autoCollect.enabled, 
-    model: settings.autoCollect.model, 
+    model: settings.autoCollect.model,
+    backupModel: settings.autoCollect.backupModel,
     creatorIds: settings.autoCollect.creatorIds,
     intervalHours: settings.autoCollect.intervalHours,
     logs 
@@ -236,6 +238,7 @@ router.post("/auto", (req, res) => {
     settings.autoCollect = {
       enabled: Boolean(req.body.enabled),
       model: String(req.body.model || settings.autoCollect.model),
+      backupModel: String(req.body.backupModel || ""),
       creatorIds: Array.isArray(req.body.creatorIds) ? req.body.creatorIds : [],
       intervalHours: Number(req.body.intervalHours) || 1,
     };
@@ -246,15 +249,54 @@ router.post("/auto", (req, res) => {
   }
 });
 
+type AutoCollectRetryState = {
+  videos: any[];
+  nextRunAt: number;
+  errors: string[];
+};
+
+const AUTO_COLLECT_RETRY_DELAY_MS = 5 * 60 * 1000;
+
+function buildAutoCollectArgs(modelValue: string, creatorIds: string[], videos: any[] = []) {
+  const ensuredModel = ensureModel(modelValue);
+  if (!ensuredModel.provider || !ensuredModel.model) return null;
+  const args = [
+    "--mode", "auto",
+    "--creator-ids", creatorIds.join(","),
+    "--model", ensuredModel.model,
+    "--base-url", normalizeProviderBaseUrl(ensuredModel.provider.baseUrl),
+    "--api-key", ensuredModel.provider.apiKey,
+  ];
+  if (videos.length > 0) {
+    args.push("--videos-json", JSON.stringify(videos));
+  }
+  return { args, model: ensuredModel.model };
+}
+
+async function runAutoCollectAttempt(modelValue: string, creatorIds: string[], videos: any[] = []) {
+  const built = buildAutoCollectArgs(modelValue, creatorIds, videos);
+  if (!built) {
+    return { parsed: null, groups: [], errors: ["未配置有效模型"], model: modelValue };
+  }
+  const parsed = await runCollector(built.args);
+  return {
+    parsed,
+    groups: Array.isArray(parsed?.groups) ? parsed.groups.map(ensureGroupShape) : [],
+    errors: Array.isArray(parsed?.errors) ? parsed.errors.map(String).filter(Boolean) : [],
+    model: built.model,
+  };
+}
+
 export function startAutoCollectJob() {
   let lastAutoCollectTime = 0;
+  let retryState: AutoCollectRetryState | null = null;
   setInterval(async () => {
     const settings = readCollectSettings();
     if (!settings.autoCollect.enabled) return;
     
     const intervalMs = (settings.autoCollect.intervalHours || 1) * 60 * 60 * 1000;
-    // 防止定时器漂移，增加 5 秒的宽容度
-    if (Date.now() - lastAutoCollectTime < intervalMs - 5000) return;
+    const hasDueRetry = Boolean(retryState && retryState.nextRunAt <= Date.now());
+    if (!hasDueRetry && Date.now() - lastAutoCollectTime < intervalMs - 5000) return;
 
     const creatorIds = settings.autoCollect.creatorIds;
     if (!creatorIds || creatorIds.length === 0) {
@@ -264,35 +306,39 @@ export function startAutoCollectJob() {
     }
 
     try {
-      const ensuredModel = ensureModel(settings.autoCollect.model);
-      if (!ensuredModel.provider || !ensuredModel.model) {
-        lastAutoCollectTime = Date.now();
-        addAutoLog("自动采集失败：未配置有效模型", false);
-        return;
-      }
-      
+      const retryVideos = hasDueRetry ? retryState?.videos || [] : [];
       lastAutoCollectTime = Date.now();
-      const args = [
-        "--mode", "auto",
-        "--creator-ids", creatorIds.join(","),
-        "--model", ensuredModel.model,
-        "--base-url", ensuredModel.provider.baseUrl,
-        "--api-key", ensuredModel.provider.apiKey,
-      ];
-      const parsed = await runCollector(args);
-      const groups = Array.isArray(parsed?.groups) ? parsed.groups.map(ensureGroupShape) : [];
+      const primary = await runAutoCollectAttempt(settings.autoCollect.model, creatorIds, retryVideos);
+      let finalResult = primary;
+      if (primary.groups.length === 0 && settings.autoCollect.backupModel) {
+        addAutoLog(`主模型采集失败，正在切换备用模型：${primary.errors.join("; ") || "未提取到任何配置"}`, false);
+        finalResult = await runAutoCollectAttempt(settings.autoCollect.backupModel, creatorIds, retryVideos);
+      }
+      const groups = finalResult.groups;
       if (groups.length > 0) {
         const currentData = readBuilds();
         const nextData = mergeCollectedGroups(currentData, groups);
         writeBuilds(nextData);
         const gunNames = groups.map(g => g.name).join(", ");
+        retryState = null;
         addAutoLog(`成功收集了 ${groups.length} 把枪械 (${gunNames})`, true);
       } else {
-        const errs = Array.isArray(parsed?.errors) ? parsed.errors.join("; ") : "未提取到任何配置";
-        addAutoLog(`未收集到新枪械：${errs}`, false);
+        const videos = Array.isArray(finalResult.parsed?.videos) ? finalResult.parsed.videos : retryVideos;
+        const errors = [...primary.errors, ...(finalResult === primary ? [] : finalResult.errors)].filter(Boolean);
+        if (videos.length > 0) {
+          retryState = { videos, errors, nextRunAt: Date.now() + AUTO_COLLECT_RETRY_DELAY_MS };
+          addAutoLog(`模型采集失败，5分钟后重试 ${videos.length} 条视频：${errors.join("; ") || "未提取到任何配置"}`, false);
+        } else {
+          retryState = null;
+          addAutoLog(`未收集到新枪械：${errors.join("; ") || "未提取到任何配置"}`, false);
+        }
       }
     } catch(e) {
-      addAutoLog(`自动采集异常: ${e instanceof Error ? e.message : String(e)}`, false);
+      const message = e instanceof Error ? e.message : String(e);
+      if (retryState?.videos.length) {
+        retryState = { ...retryState, nextRunAt: Date.now() + AUTO_COLLECT_RETRY_DELAY_MS, errors: [message] };
+      }
+      addAutoLog(`自动采集异常: ${message}`, false);
     }
   }, 1000 * 30); // 每 30 秒轮询一次心跳
 }

@@ -100,6 +100,7 @@ export default function App() {
   const [autoCollectConfig, setAutoConfig] = useState<AutoCollectConfig>({
     enabled: false,
     model: '',
+    backupModel: '',
     intervalHours: 1,
     creatorIds: [],
     logs: []
@@ -156,6 +157,7 @@ export default function App() {
         .then(data => setAutoConfig({
            enabled: Boolean(data.enabled),
            model: data.model || '',
+           backupModel: data.backupModel || '',
            intervalHours: Number(data.intervalHours) || 1,
            creatorIds: Array.isArray(data.creatorIds) ? data.creatorIds : [],
            logs: Array.isArray(data.logs) ? data.logs : []
@@ -224,7 +226,7 @@ export default function App() {
 
   const handleSaveProvider = async () => {
     if (providerForm.models.length === 0) {
-      showToast('请先获取并勾选至少一个模型', 'warn');
+      showToast('请先获取模型', 'warn');
       return;
     }
     setIsSavingProvider(true);
@@ -670,7 +672,7 @@ export default function App() {
           onSave={async () => {
             setIsSavingAuto(true);
             try {
-              const res = await fetch('/api/collect/auto', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ enabled: autoCollectConfig.enabled, model: autoCollectConfig.model, intervalHours: autoCollectConfig.intervalHours || 1, creatorIds: autoCollectConfig.creatorIds || [] }) });
+              const res = await fetch('/api/collect/auto', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ enabled: autoCollectConfig.enabled, model: autoCollectConfig.model, backupModel: autoCollectConfig.backupModel, intervalHours: autoCollectConfig.intervalHours || 1, creatorIds: autoCollectConfig.creatorIds || [] }) });
               const data = await safeJson(res);
               if (!res.ok) throw new Error(data?.error || '保存配置失败');
               showToast('自动采集配置已保存');
@@ -686,7 +688,6 @@ export default function App() {
           selectedProviderId={selectedProviderId}
           selectedModel={selectedModel}
           providerForm={providerForm}
-          fetchedModels={fetchedProviderModels}
           isFetchingProviderModels={isFetchingProviderModels}
           isSavingProvider={isSavingProvider}
           isTestingModel={isTestingModel}

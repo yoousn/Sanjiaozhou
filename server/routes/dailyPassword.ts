@@ -34,6 +34,8 @@ router.get("/", (req, res) => {
 });
 
 router.post("/refresh", async (req, res) => {
+  const isManual = Boolean(req.body?.manual);
+  const sourceLabel = isManual ? "手动刷新" : "自动刷新";
   try {
     const { stdout } = await execFileAsync("python", ["-u", DAILY_PWD_SCRIPT], {
       cwd: path.join(__dirname, "..", ".."),
@@ -47,11 +49,13 @@ router.post("/refresh", async (req, res) => {
     const beijingDate = new Date().toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai' });
     const payload = { date: beijingDate, data: parsed };
     fs.writeFileSync(DAILY_PWD_FILE, JSON.stringify(payload, null, 2), "utf-8");
-    addDailyPwdLog(`手动刷新成功：已获取 ${beijingDate} 的每日密码`, true);
+    if (isManual) {
+      addDailyPwdLog(`手动刷新成功：已获取 ${beijingDate} 的每日密码`, true);
+    }
     res.json({ success: true, data: payload });
   } catch (e) {
     const message = e instanceof Error ? e.message : "获取密码失败，请检查脚本";
-    addDailyPwdLog(`手动刷新失败：${message}`, false);
+    addDailyPwdLog(`${sourceLabel}失败：${message}`, false);
     console.error("API PASSWORD REFRESH Error:", e);
     res.status(500).json({ error: message });
   }

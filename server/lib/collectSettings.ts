@@ -116,12 +116,13 @@ export function readCollectSettings(): CollectSettings {
   try {
     const parsed = JSON.parse(fs.readFileSync(COLLECT_SETTINGS_FILE, "utf-8") || "{}");
     const savedProviders = Array.isArray(parsed?.providers) ? parsed.providers.map((provider: Partial<BackendCollectModelProvider>) => sanitizeProvider(provider)) : [];
-    const providers = [
-      sanitizeProvider(BUILTIN_PROVIDER, DEFAULT_PROVIDER_ID),
-      ...savedProviders.filter((provider) => provider.id !== DEFAULT_PROVIDER_ID && provider.id !== "yousn-provider"),
-    ];
+    const legacyHasCustomProviders = savedProviders.some((provider) => provider.id !== DEFAULT_PROVIDER_ID && provider.id !== "yousn-provider");
+    const providers = savedProviders.length > 0
+      ? savedProviders.filter((provider) => legacyHasCustomProviders || (provider.id !== DEFAULT_PROVIDER_ID && provider.id !== "yousn-provider"))
+      : [...defaults.providers];
     const modelOptions = providers.flatMap((provider) => provider.models.map((model) => buildModelOptionValue(provider.id, model)));
-    const defaultModel = modelOptions.includes(String(parsed?.defaultModel || "")) ? String(parsed.defaultModel) : DEFAULT_MODEL_VALUE;
+    const fallbackModel = modelOptions[0] || DEFAULT_MODEL_VALUE;
+    const defaultModel = modelOptions.includes(String(parsed?.defaultModel || "")) ? String(parsed.defaultModel) : fallbackModel;
 
     return {
       presetGuns: trimUniqueStrings(parsed?.presetGuns, DEFAULT_PRESET_GUNS),
@@ -133,7 +134,7 @@ export function readCollectSettings(): CollectSettings {
       },
       autoCollect: {
         enabled: Boolean(parsed?.autoCollect?.enabled),
-        model: String(parsed?.autoCollect?.model || defaultModel),
+        model: modelOptions.includes(String(parsed?.autoCollect?.model || "")) ? String(parsed.autoCollect.model) : defaultModel,
         creatorIds: Array.isArray(parsed?.autoCollect?.creatorIds) ? parsed.autoCollect.creatorIds : [],
         intervalHours: Number(parsed?.autoCollect?.intervalHours) || 1,
       }
@@ -148,17 +149,21 @@ export function writeCollectSettings(settings: CollectSettings) {
     .map((provider) => sanitizeProvider(provider))
     .filter((provider, index, array) => provider.baseUrl && provider.models.length > 0 && array.findIndex((item) => item.id === provider.id) === index);
 
+  const modelOptions = providers.flatMap((provider) => provider.models.map((model) => buildModelOptionValue(provider.id, model)));
+  const defaultModel = modelOptions.includes(settings.defaultModel) ? settings.defaultModel : (modelOptions[0] || "");
+  const autoCollectModel = modelOptions.includes(String(settings.autoCollect?.model || "")) ? String(settings.autoCollect.model) : defaultModel;
+
   const nextSettings: CollectSettings = {
     presetGuns: trimUniqueStrings(settings.presetGuns, DEFAULT_PRESET_GUNS),
     providers,
-    defaultModel: settings.defaultModel,
+    defaultModel,
     concurrency: {
       searchEnabled: Boolean(settings.concurrency.searchEnabled),
       applyEnabled: Boolean(settings.concurrency.applyEnabled),
     },
     autoCollect: {
       enabled: Boolean(settings.autoCollect?.enabled),
-      model: String(settings.autoCollect?.model || settings.defaultModel),
+      model: autoCollectModel,
       creatorIds: Array.isArray(settings.autoCollect?.creatorIds) ? settings.autoCollect.creatorIds : [],
       intervalHours: Number(settings.autoCollect?.intervalHours) || 1,
     }

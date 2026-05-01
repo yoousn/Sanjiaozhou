@@ -67,7 +67,7 @@ export function ModelConfigModal({
   const modelOptions = useMemo(() => meta.modelOptions.filter((option) => option.providerId === selectedProviderId), [meta.modelOptions, selectedProviderId]);
   const activeModel = selectedModel || meta.defaultModel || modelOptions[0]?.value || '';
   const parsedActiveModel = parseModelOptionValue(activeModel);
-  const availableModels = useMemo(() => [...new Set([...providerForm.models, ...fetchedModels])], [providerForm.models, fetchedModels]);
+  const availableModels = useMemo(() => [...new Set([...fetchedModels, ...providerForm.models])], [providerForm.models, fetchedModels]);
   const formModelSet = new Set(providerForm.models);
 
   const toggleModel = (model: string) => {

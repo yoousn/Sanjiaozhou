@@ -5,10 +5,7 @@ import {
   writeCollectSettings, 
   DEFAULT_PRESET_GUNS,
   sanitizeProvider,
-  DEFAULT_PROVIDER_ID,
-  BUILTIN_PROVIDER,
   buildModelOptionValue,
-  DEFAULT_MODEL_VALUE,
   parseModelOptionValue
 } from "../lib/collectSettings.js";
 import { 
@@ -17,7 +14,6 @@ import {
   runSearchCollectorStream, 
   searchStreams,
   previewCollectGroups,
-  testModel,
   ensureCreatorIds,
   ensureModel,
   runCollector
@@ -71,8 +67,8 @@ router.post("/providers", (req, res) => {
       return res.status(400).json({ error: "请填写接口地址" });
     }
 
-    const nextProviders = settings.providers.filter((item) => item.id !== DEFAULT_PROVIDER_ID && item.id !== provider.id);
-    settings.providers = [settings.providers.find((item) => item.id === DEFAULT_PROVIDER_ID) || sanitizeProvider(BUILTIN_PROVIDER, DEFAULT_PROVIDER_ID), provider, ...nextProviders];
+    const nextProviders = settings.providers.filter((item) => item.id !== provider.id);
+    settings.providers = [provider, ...nextProviders];
     const defaultCandidate = body.defaultModel && provider.models.includes(String(body.defaultModel))
       ? buildModelOptionValue(provider.id, String(body.defaultModel))
       : settings.defaultModel;
@@ -88,14 +84,15 @@ router.post("/providers/delete", (req, res) => {
   try {
     const body = req.body || {};
     const providerId = String(body.id || "").trim();
-    if (!providerId || providerId === DEFAULT_PROVIDER_ID) {
-      return res.status(400).json({ error: "默认模型源不能删除" });
+    if (!providerId) {
+      return res.status(400).json({ error: "请选择模型源" });
     }
 
     const settings = readCollectSettings();
     settings.providers = settings.providers.filter((provider) => provider.id !== providerId);
     if (parseModelOptionValue(settings.defaultModel).providerId === providerId) {
-      settings.defaultModel = DEFAULT_MODEL_VALUE;
+      const fallbackProvider = settings.providers[0];
+      settings.defaultModel = fallbackProvider?.models[0] ? buildModelOptionValue(fallbackProvider.id, fallbackProvider.models[0]) : "";
     }
     writeCollectSettings(settings);
     res.json({ success: true, meta: buildCollectMeta(readCollectSettings()) });

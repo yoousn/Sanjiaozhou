@@ -203,8 +203,8 @@ export default function App() {
       setFetchedProviderModels(models);
       setProviderForm(prev => ({
         ...prev,
-        models: prev.models.filter(model => models.includes(model)),
-        selectedModel: models.includes(prev.selectedModel || '') ? (prev.selectedModel || '') : (prev.models.find(model => models.includes(model)) || models[0] || ''),
+        models,
+        selectedModel: models.includes(prev.selectedModel || '') ? (prev.selectedModel || '') : (models[0] || ''),
       }));
       showToast(`已获取 ${models.length} 个模型`);
     } catch (error) {
@@ -215,6 +215,10 @@ export default function App() {
   };
 
   const handleSaveProvider = async () => {
+    if (providerForm.models.length === 0) {
+      showToast('请先获取并勾选至少一个模型', 'warn');
+      return;
+    }
     setIsSavingProvider(true);
     try {
       const res = await fetch('/api/collect/providers', {
@@ -264,6 +268,7 @@ export default function App() {
       setCollectMeta(nextMeta);
       setSelectedProviderId(parseModelOptionValue(nextMeta.defaultModel).providerId || nextMeta.providers[0]?.id || '');
       setSelectedModel(nextMeta.defaultModel || '');
+      setFetchedProviderModels([]);
       showToast('模型源已删除', 'warn');
     } catch (error) {
       showToast(error instanceof Error ? error.message : '删除模型源失败', 'warn');
@@ -294,8 +299,9 @@ export default function App() {
       });
       const data = await safeJson(res);
       if (!res.ok) throw new Error(data?.error || '模型测试失败');
+      if (!data?.success) throw new Error(data?.error || '模型测试失败');
       setModelTestResult(data);
-      showToast(data?.success ? '模型测试成功' : '模型测试失败', data?.success ? 'success' : 'warn');
+      showToast('模型测试成功', 'success');
     } catch (e) {
       const message = e instanceof Error ? e.message : '模型测试失败';
       setModelTestResult({ model, success: false, latencyMs: 0, error: message });

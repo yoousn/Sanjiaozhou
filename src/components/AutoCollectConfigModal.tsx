@@ -10,6 +10,7 @@ export type AutoCollectConfig = {
   intervalHours: number;
   creatorIds: string[];
   logs: Array<{ time: string; message: string; success: boolean }>;
+  hasRetry?: boolean;
 };
 
 export type AutoCollectConfigModalProps = {
@@ -141,7 +142,24 @@ export function AutoCollectConfigModal({
         </button>
 
         <div className="mt-2 flex flex-col gap-2">
-          <h4 className="text-[12px] font-bold uppercase tracking-widest text-zinc-500">运行日志 (仅存最近100条)</h4>
+          <div className="flex justify-between items-center">
+            <h4 className="text-[12px] font-bold uppercase tracking-widest text-zinc-500">运行日志 (仅存最近100条)</h4>
+            {config.hasRetry && (
+              <button
+                onClick={async () => {
+                  try {
+                    await fetch('/api/collect/auto/cancel-retry', { method: 'POST' });
+                    setConfig(p => ({ ...p, hasRetry: false }));
+                  } catch (e) {
+                    console.error('Failed to cancel retry', e);
+                  }
+                }}
+                className="text-[11px] px-3 py-1 rounded-full bg-red-100 text-red-600 dark:bg-red-500/10 dark:text-red-400 font-bold hover:bg-red-200 transition"
+              >
+                取消重试任务
+              </button>
+            )}
+          </div>
           <div className="bg-zinc-900 text-zinc-300 font-mono text-[11px] p-4 rounded-2xl h-48 overflow-y-auto flex flex-col gap-2 shadow-inner">
             {config.logs.length === 0 ? (
               <span className="opacity-50">暂无日志...</span>

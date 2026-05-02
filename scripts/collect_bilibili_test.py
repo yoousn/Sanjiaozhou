@@ -274,7 +274,11 @@ def call_ai(prompt: str, model: str, base_url: str, api_key: str, timeout: int =
     if error_msg:
         raise RuntimeError(f"API 返回错误: {error_msg}")
 
-    return payload.get("choices", [{}])[0].get("message", {}).get("content", "") or ""
+    choices = payload.get("choices")
+    if not choices:
+        raise RuntimeError(f"API 返回数据异常 (没有 choices): {payload}")
+    
+    return choices[0].get("message", {}).get("content", "") or ""
 
 
 def parse_ai_json_array(text: str) -> list[dict]:
@@ -550,7 +554,7 @@ def auto_mode(creator_ids: list[str], model: str, base_url: str, api_key: str, r
         }
 
     groups, ai_logs, ai_errors = build_groups_from_videos(videos, [], model, base_url, api_key, False)
-    success = len(groups) > 0 and len(ai_errors) == 0
+    success = len(ai_errors) == 0
 
     if success:
         for video in videos:

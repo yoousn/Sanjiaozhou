@@ -229,7 +229,8 @@ router.get("/auto", (req, res) => {
     backupModel: settings.autoCollect.backupModel,
     creatorIds: settings.autoCollect.creatorIds,
     intervalHours: settings.autoCollect.intervalHours,
-    logs 
+    logs,
+    hasRetry: retryState !== null
   });
 });
 
@@ -288,9 +289,18 @@ async function runAutoCollectAttempt(modelValue: string, creatorIds: string[], v
   };
 }
 
+let lastAutoCollectTime = 0;
+let retryState: AutoCollectRetryState | null = null;
+
+router.post("/auto/cancel-retry", (req, res) => {
+  if (retryState) {
+    retryState = null;
+    addAutoLog("已手动取消当前的重试任务", false);
+  }
+  res.json({ success: true });
+});
+
 export function startAutoCollectJob() {
-  let lastAutoCollectTime = 0;
-  let retryState: AutoCollectRetryState | null = null;
   setInterval(async () => {
     const settings = readCollectSettings();
     if (!settings.autoCollect.enabled) return;
@@ -321,17 +331,19 @@ export function startAutoCollectJob() {
         const nextData = mergeCollectedGroups(currentData, groups);
         writeBuilds(nextData);
         const gunNames = groups.map(g => g.name).join(", ");
-        retryState = null;
         addAutoLog(`成功收集了 ${groups.length} 把枪械 (${gunNames})`, true);
+      }
+
+      const errors = [...primary.errors, ...(finalResult === primary ? [] : finalResult.errors)].filter(Boolean);
+      const videos = Array.isArray(finalResult.parsed?.videos) ? finalResult.parsed.videos : retryVideos;
+
+      if (errors.length > 0 && videos.length > 0) {
+        retryState = { videos, errors, nextRunAt: Date.now() + AUTO_COLLECT_RETRY_DELAY_MS };
+        addAutoLog(`模型采集失败，5分钟后重试 ${videos.length} 条视频：${errors.join("; ") || "未知错误"}`, false);
       } else {
-        const videos = Array.isArray(finalResult.parsed?.videos) ? finalResult.parsed.videos : retryVideos;
-        const errors = [...primary.errors, ...(finalResult === primary ? [] : finalResult.errors)].filter(Boolean);
-        if (videos.length > 0) {
-          retryState = { videos, errors, nextRunAt: Date.now() + AUTO_COLLECT_RETRY_DELAY_MS };
-          addAutoLog(`模型采集失败，5分钟后重试 ${videos.length} 条视频：${errors.join("; ") || "未提取到任何配置"}`, false);
-        } else {
-          retryState = null;
-          addAutoLog(`未收集到新枪械：${errors.join("; ") || "未提取到任何配置"}`, false);
+        retryState = null;
+        if (groups.length === 0) {
+          addAutoLog(`未收集到新枪械`, false);
         }
       }
     } catch(e) {

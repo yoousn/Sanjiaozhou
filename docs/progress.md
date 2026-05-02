@@ -1,6 +1,16 @@
 # 项目进度存档
 
-> 本文档记录详细施工过程与历史节点，不等同于正式版本说明。正式版本摘要请看 [release-notes.md](release-notes.md)。更真实的请查看release-notes.md
+> 本文档记录详细施工过程与历史节点，不等同于正式版本说明。正式版本摘要请看 [release-notes.md](release-notes.md)。
+
+## [当前节点] 修复自动采集死循环与异常重试机制
+**时间：** 2026年5月2日
+**编号：** 2026.5.2-1
+**状态：**
+1. 修复了 `scripts/collect_bilibili_test.py` 中解析 AI 响应缺失 `choices` 时导致 `'NoneType' object is not subscriptable` 的崩溃问题。
+2. 修复了自动采集在视频提取成功（未发生异常）但未收集到枪械数据时，被错误判定为失败并无限加入 5 分钟重试队列的问题。
+3. 在自动采集设置面板中新增了“取消重试任务”按钮，同时提供 `POST /api/collect/auto/cancel-retry` 接口支持一键终止死循环重试。
+
+---更真实的请查看release-notes.md
 
 ## [当前节点] App.tsx 深度拆分 Section 2 全部完成
 **时间：** 2026年04月28日

@@ -160,7 +160,9 @@ export default function App() {
            backupModel: data.backupModel || '',
            intervalHours: Number(data.intervalHours) || 1,
            creatorIds: Array.isArray(data.creatorIds) ? data.creatorIds : [],
-           logs: Array.isArray(data.logs) ? data.logs : []
+           logs: Array.isArray(data.logs) ? data.logs : [],
+           hasRetry: Boolean(data.hasRetry),
+           retryVideos: Array.isArray(data.retryVideos) ? data.retryVideos : []
         }));
     }
   }, [activeModal]);

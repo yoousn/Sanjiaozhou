@@ -230,7 +230,8 @@ router.get("/auto", (req, res) => {
     creatorIds: settings.autoCollect.creatorIds,
     intervalHours: settings.autoCollect.intervalHours,
     logs,
-    hasRetry: retryState !== null
+    hasRetry: retryState !== null,
+    retryVideos: retryState?.videos || []
   });
 });
 
@@ -293,11 +294,20 @@ let lastAutoCollectTime = 0;
 let retryState: AutoCollectRetryState | null = null;
 
 router.post("/auto/cancel-retry", (req, res) => {
+  const videoId = req.body?.videoId;
   if (retryState) {
-    retryState = null;
-    addAutoLog("已手动取消当前的重试任务", false);
+    if (videoId) {
+      retryState.videos = retryState.videos.filter(v => (v.bvid || v.id) !== videoId);
+      addAutoLog(`已手动取消视频 ${videoId} 的重试任务`, false);
+      if (retryState.videos.length === 0) {
+        retryState = null;
+      }
+    } else {
+      retryState = null;
+      addAutoLog("已手动取消全部当前的重试任务", false);
+    }
   }
-  res.json({ success: true });
+  res.json({ success: true, hasRetry: retryState !== null, retryVideos: retryState?.videos || [] });
 });
 
 export function startAutoCollectJob() {
@@ -334,7 +344,7 @@ export function startAutoCollectJob() {
         addAutoLog(`成功收集了 ${groups.length} 把枪械 (${gunNames})`, true);
       }
 
-      const errors = [...primary.errors, ...(finalResult === primary ? [] : finalResult.errors)].filter(Boolean);
+      const errors = finalResult.errors.filter(Boolean);
       const videos = Array.isArray(finalResult.parsed?.videos) ? finalResult.parsed.videos : retryVideos;
 
       if (errors.length > 0 && videos.length > 0) {

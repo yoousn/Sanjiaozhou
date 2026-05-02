@@ -11,6 +11,7 @@ export type AutoCollectConfig = {
   creatorIds: string[];
   logs: Array<{ time: string; message: string; success: boolean }>;
   hasRetry?: boolean;
+  retryVideos?: any[];
 };
 
 export type AutoCollectConfigModalProps = {
@@ -142,23 +143,58 @@ export function AutoCollectConfigModal({
         </button>
 
         <div className="mt-2 flex flex-col gap-2">
-          <div className="flex justify-between items-center">
+          {config.hasRetry && config.retryVideos && config.retryVideos.length > 0 && (
+            <div className="flex flex-col gap-2 bg-red-50 dark:bg-red-500/10 p-3 rounded-2xl border border-red-100 dark:border-red-500/20">
+              <div className="flex justify-between items-center">
+                <h4 className="text-[12px] font-bold text-red-600 dark:text-red-400 flex items-center gap-1">
+                  等待重试的视频 ({config.retryVideos.length})
+                </h4>
+                <button
+                  onClick={async () => {
+                    try {
+                      await fetch('/api/collect/auto/cancel-retry', { method: 'POST' });
+                      setConfig(p => ({ ...p, hasRetry: false, retryVideos: [] }));
+                    } catch (e) {
+                      console.error('Failed to cancel retry', e);
+                    }
+                  }}
+                  className="text-[11px] px-3 py-1 rounded-full bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400 font-bold hover:bg-red-200 transition"
+                >
+                  一键终止全部
+                </button>
+              </div>
+              <div className="flex flex-col gap-1.5 max-h-32 overflow-y-auto pr-1">
+                {config.retryVideos.map(v => (
+                  <div key={v.bvid || v.id} className="flex justify-between items-center bg-white dark:bg-[#18181b] p-2 rounded-xl border border-red-100 dark:border-red-500/10">
+                    <span className="text-[11px] text-zinc-700 dark:text-zinc-300 truncate max-w-[200px]" title={v.title}>{v.title || v.bvid || v.id}</span>
+                    <button
+                      onClick={async () => {
+                        try {
+                          const res = await fetch('/api/collect/auto/cancel-retry', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ videoId: v.bvid || v.id })
+                          });
+                          const data = await res.json();
+                          if (data.success) {
+                            setConfig(p => ({ ...p, hasRetry: data.hasRetry, retryVideos: data.retryVideos || [] }));
+                          }
+                        } catch (e) {
+                          console.error('Failed to cancel specific retry', e);
+                        }
+                      }}
+                      className="text-[10px] px-2.5 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
+                    >
+                      单独取消
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-between items-center mt-1">
             <h4 className="text-[12px] font-bold uppercase tracking-widest text-zinc-500">运行日志 (仅存最近100条)</h4>
-            {config.hasRetry && (
-              <button
-                onClick={async () => {
-                  try {
-                    await fetch('/api/collect/auto/cancel-retry', { method: 'POST' });
-                    setConfig(p => ({ ...p, hasRetry: false }));
-                  } catch (e) {
-                    console.error('Failed to cancel retry', e);
-                  }
-                }}
-                className="text-[11px] px-3 py-1 rounded-full bg-red-100 text-red-600 dark:bg-red-500/10 dark:text-red-400 font-bold hover:bg-red-200 transition"
-              >
-                取消重试任务
-              </button>
-            )}
           </div>
           <div className="bg-zinc-900 text-zinc-300 font-mono text-[11px] p-4 rounded-2xl h-48 overflow-y-auto flex flex-col gap-2 shadow-inner">
             {config.logs.length === 0 ? (

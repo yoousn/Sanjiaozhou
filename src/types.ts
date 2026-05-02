@@ -27,6 +27,7 @@ export type CollectModelProviderInput = {
   apiKey: string;
   models: string[];
   selectedModel?: string;
+  hasSavedApiKey?: boolean;
 };
 
 export type CollectModelProvider = {

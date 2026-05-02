@@ -63,11 +63,12 @@ router.post("/providers", (req, res) => {
   try {
     const body = req.body || {};
     const settings = readCollectSettings();
+    const existingProvider = body.id ? settings.providers.find((item) => item.id === String(body.id)) : undefined;
     const provider = sanitizeProvider({
       id: body.id,
       name: body.name,
       baseUrl: body.baseUrl,
-      apiKey: body.apiKey,
+      apiKey: String(body.apiKey || "").trim() || existingProvider?.apiKey || "",
       models: body.models,
     }, body.id);
 
@@ -75,7 +76,7 @@ router.post("/providers", (req, res) => {
       return res.status(400).json({ error: "请填写接口地址" });
     }
     if (provider.models.length === 0) {
-      return res.status(400).json({ error: "请先获取并勾选至少一个模型" });
+      return res.status(400).json({ error: "请先获取模型" });
     }
 
     const nextProviders = settings.providers.filter((item) => item.id !== provider.id);

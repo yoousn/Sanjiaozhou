@@ -65,6 +65,7 @@ export function buildProviderFormFromMeta(meta: CollectMeta, providerId: string)
     apiKey: '',
     models: provider?.models || [],
     selectedModel: defaultModel || provider?.models[0] || '',
+    hasSavedApiKey: Boolean(provider?.hasApiKey),
   };
 }
 

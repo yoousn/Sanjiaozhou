@@ -134,7 +134,7 @@ export function ModelConfigModal({
                 type="button"
                 onClick={() => {
                   onSelectedProviderIdChange('');
-                  onProviderFormChange({ id: '', name: '', baseUrl: '', apiKey: '', models: [], selectedModel: '' });
+                  onProviderFormChange({ id: '', name: '', baseUrl: '', apiKey: '', models: [], selectedModel: '', hasSavedApiKey: false });
                 }}
                 className="rounded-xl bg-white p-2 text-zinc-500 hover:text-zinc-900 dark:bg-[#121214] dark:hover:text-white"
                 title="新增模型源"
@@ -185,7 +185,7 @@ export function ModelConfigModal({
 
             <div className="mt-4">
               <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-zinc-500">API Key</label>
-              <input value={providerForm.apiKey} onChange={(e) => onProviderFormChange((prev) => ({ ...prev, apiKey: e.target.value }))} className={cn(inputClasses, 'border border-zinc-200 bg-white py-2 text-[13px] shadow-sm dark:border-zinc-800 dark:bg-[#18181b] dark:text-white')} placeholder="sk-..." />
+              <input value={providerForm.apiKey} onChange={(e) => onProviderFormChange((prev) => ({ ...prev, apiKey: e.target.value }))} className={cn(inputClasses, 'border border-zinc-200 bg-white py-2 text-[13px] shadow-sm dark:border-zinc-800 dark:bg-[#18181b] dark:text-white')} placeholder={providerForm.hasSavedApiKey ? '已保存 API Key，留空则继续使用原 Key' : 'sk-...'} />
             </div>
 
             <div className="mt-5 rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-[#18181b]">

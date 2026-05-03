@@ -159,3 +159,9 @@ v1.1.3   日期2026.5.3
 - **修复社区 JSON 解析报错**：服务端 catch-all 路由 `/api/*` 路径未匹配时返回 JSON 而非 HTML，启动失败时 API 路径也返回 JSON，彻底消除 `Unexpected token '<'` 报错；`useCommunity` 查询增加 content-type 检查
 - **社区帖子图片优化**：上传时自动生成 480px 缩略图存到 R2，帖子新增 `thumbUrl` 字段；列表卡片加载缩略图（快），点击预览加载原图（大图）；旧帖子 `thumbUrl` 兜底为 `imageUrl`；删除帖子时同时清理缩略图
 - **社区标签防御**：`post.tags.map` 改为 `(post.tags || []).map`，防止旧数据无 tags 字段时崩溃
+
+v1.1.4   日期2026.5.4
+说明
+- **修复登录无法完成**：根本原因是 `secure: process.env.NODE_ENV === "production"` 导致 HTTP 环境下浏览器拒绝设置 cookie，改为仅在 `HTTPS=true` 时启用 secure；同时 `login`/`register` 请求添加 `credentials: "same-origin"` 确保 cookie 随请求发送；`clearAuthCookie` 同步 secure 标志
+- **修复登录灰屏**：AuthModal 重写，添加 `key` 确保 AnimatePresence 退出动画正确播放；添加 ESC 关闭和状态重置
+- **修复图片预览显示缩略图**：预览层改为 `max-w-[95vw] max-h-[90vh]` 确保全屏展示原图；点击图片本身不关闭预览（stopPropagation）

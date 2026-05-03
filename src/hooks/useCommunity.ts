@@ -47,6 +47,7 @@ export function useCommunity() {
       const res = await fetch(`/api/community/posts/${encodeURIComponent(postId)}/react`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
         body: JSON.stringify({ emoji, userId }),
       });
       const data = await res.json();

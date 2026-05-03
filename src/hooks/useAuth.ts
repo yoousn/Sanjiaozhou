@@ -57,8 +57,13 @@ export function useAuth() {
     const res = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
       body: JSON.stringify({ username, password }),
     });
+    const ct = res.headers.get("content-type") || "";
+    if (!ct.includes("application/json")) {
+      throw new Error("服务端响应异常");
+    }
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "登录失败");
 
@@ -70,8 +75,13 @@ export function useAuth() {
     const res = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
       body: JSON.stringify({ username, password }),
     });
+    const ct = res.headers.get("content-type") || "";
+    if (!ct.includes("application/json")) {
+      throw new Error("服务端响应异常");
+    }
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "注册失败");
 

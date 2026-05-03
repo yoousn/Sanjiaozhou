@@ -279,8 +279,13 @@ export const CommunityPostCard = React.memo(function CommunityPostCard({
         )}
       </div>
       {post.imageUrl && previewImage && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/80 p-4" onClick={() => setPreviewImage(false)}>
-          <img src={post.imageUrl} alt={post.description || "帖子图片"} className="max-h-full max-w-full rounded-2xl object-contain" />
+        <div className="fixed inset-0 z-[120] bg-black/90 flex items-center justify-center" onClick={() => setPreviewImage(false)}>
+          <img
+            src={post.imageUrl}
+            alt={post.description || "帖子图片"}
+            className="max-w-[95vw] max-h-[90vh] rounded-2xl object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
         </div>
       )}
     </div>

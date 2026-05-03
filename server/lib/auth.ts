@@ -29,15 +29,18 @@ export function requireAdmin(req: Request, res: Response, next: NextFunction) {
 }
 
 export function setAuthCookie(res: Response, user: { id: string; username: string; role: string }) {
+  // 仅在真正的 HTTPS 环境下启用 secure，避免 HTTP 部署时 cookie 无法设置
+  const isSecure = process.env.NODE_ENV === "production" && process.env.HTTPS === "true";
   res.cookie("user", user, {
     signed: true,
     httpOnly: true,
     sameSite: "lax",
     maxAge: 1000 * 60 * 60 * 24 * 180,
-    secure: process.env.NODE_ENV === "production",
+    secure: isSecure,
   });
 }
 
 export function clearAuthCookie(res: Response) {
-  res.clearCookie("user", { signed: true, httpOnly: true, sameSite: "lax" });
+  const isSecure = process.env.NODE_ENV === "production" && process.env.HTTPS === "true";
+  res.clearCookie("user", { signed: true, httpOnly: true, sameSite: "lax", secure: isSecure });
 }

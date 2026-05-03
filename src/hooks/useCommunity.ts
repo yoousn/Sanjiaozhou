@@ -13,7 +13,9 @@ export function useCommunity() {
     queryFn: async () => {
       const params = new URLSearchParams({ sort });
       if (activeTag) params.set("tag", activeTag);
-      const res = await fetch(`/api/community/posts?${params.toString()}`);
+      const res = await fetch(`/api/community/posts?${params.toString()}`, {
+        credentials: "same-origin",
+      });
       const ct = res.headers.get("content-type") || "";
       if (!ct.includes("application/json")) {
         throw new Error("服务端响应异常，请稍后重试");
@@ -28,8 +30,13 @@ export function useCommunity() {
   const { data: activity = [] } = useQuery({
     queryKey: ['community_activity'],
     queryFn: async () => {
-      const res = await fetch("/api/community/activity");
-      const data = await res.json();
+      const res = await fetch("/api/community/activity", {
+        credentials: "same-origin",
+      });
+      const ct = res.headers.get("content-type") || "";
+      if (!ct.includes("application/json")) {
+        throw new Error("服务端响应异常，请稍后重试");
+      }
       return Array.isArray(data?.data) ? data.data : [];
     },
     refetchInterval: 15000,
@@ -67,6 +74,7 @@ export function useCommunity() {
     try {
       const res = await fetch(`/api/community/posts/${encodeURIComponent(postId)}`, {
         method: "DELETE",
+        credentials: "same-origin",
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "删除失败");
@@ -80,7 +88,11 @@ export function useCommunity() {
 
   const fetchComments = async (postId: string) => {
     try {
-      const res = await fetch(`/api/community/posts/${encodeURIComponent(postId)}/comments`);
+      const res = await fetch(`/api/community/posts/${encodeURIComponent(postId)}/comments`, {
+        credentials: "same-origin",
+      });
+      const ct = res.headers.get("content-type") || "";
+      if (!ct.includes("application/json")) return;
       const data = await res.json();
       if (res.ok) {
         queryClient.setQueryData(['community_posts', sort, activeTag], (prev: any) => 
@@ -97,6 +109,7 @@ export function useCommunity() {
       const res = await fetch(`/api/community/posts/${encodeURIComponent(postId)}/comments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
         body: JSON.stringify({ content, author }),
       });
       const data = await res.json();
@@ -113,6 +126,7 @@ export function useCommunity() {
     try {
       const res = await fetch(`/api/community/posts/${encodeURIComponent(postId)}/comments/${encodeURIComponent(commentId)}`, {
         method: "DELETE",
+        credentials: "same-origin",
       });
       if (!res.ok) {
         const data = await res.json();

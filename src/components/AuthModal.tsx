@@ -8,9 +8,10 @@ type AuthModalProps = {
   onClose: () => void;
   onLogin: (u: string, p: string) => Promise<any>;
   onRegister: (u: string, p: string) => Promise<any>;
+  showToast?: (msg: string, type?: 'success' | 'warn' | 'error') => void;
 };
 
-export function AuthModal({ isOpen, onClose, onLogin, onRegister }: AuthModalProps) {
+export function AuthModal({ isOpen, onClose, onLogin, onRegister, showToast }: AuthModalProps) {
   const [isRegister, setIsRegister] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -47,7 +48,9 @@ export function AuthModal({ isOpen, onClose, onLogin, onRegister }: AuthModalPro
       }
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : '操作失败');
+      const msg = err instanceof Error ? err.message : '操作失败';
+      setError(msg);
+      showToast?.(msg, 'error');
     } finally {
       setLoading(false);
     }

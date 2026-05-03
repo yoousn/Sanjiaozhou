@@ -578,7 +578,7 @@ export default function App() {
     <>
       <style>{`:root { --color-emerald-500: ${theme.customTheme.themeColor}; --color-emerald-600: ${theme.customTheme.themeColor}; --color-emerald-50: ${theme.customTheme.themeColor}1A; }`}</style>
       <div className="flex min-h-screen bg-[#F8F9FA] dark:bg-[#0b0b0c] selection:bg-zinc-200 dark:selection:bg-zinc-800 transition-colors duration-300" style={{ color: theme.isDarkMode ? theme.customTheme.textColorDark : theme.customTheme.textColorLight, '--user-gun-color': theme.isDarkMode ? theme.customTheme.gunNameColorDark : theme.customTheme.gunNameColorLight } as React.CSSProperties}>
-        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} onOpenSettings={() => setActiveTab('settings')} sidebarWidth={theme.uiPreferences.sidebarWidth} controlRadius={theme.uiPreferences.controlRadius} buttonStyle={theme.uiPreferences.buttonStyle} auth={auth} onOpenAuth={() => setActiveModal('auth')} />
+        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} onOpenSettings={() => setActiveTab('settings')} sidebarWidth={theme.uiPreferences.sidebarWidth} controlRadius={theme.uiPreferences.controlRadius} buttonStyle={theme.uiPreferences.buttonStyle} auth={auth} onOpenAuth={() => setActiveModal('auth')} onLogout={async () => { await auth.logout(); showToast('已退出登录'); }} />
         <main className={cn('flex-1 p-4 md:p-6 lg:p-8 pb-32', sidebarWidthClasses.main)}>
           <div className="md:hidden fixed left-4 bottom-24 z-40 pointer-events-none">
             <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400/90 dark:text-zinc-500/90">{mobileVersionLabel}</span>
@@ -761,7 +761,19 @@ export default function App() {
         />
       )}
       {activeModal === 'auth' && (
-        <AuthModal isOpen={activeModal === 'auth'} onClose={() => setActiveModal('none')} onLogin={auth.login} onRegister={auth.register} />
+        <AuthModal isOpen={activeModal === 'auth'} onClose={() => setActiveModal('none')}
+          onLogin={async (u, p) => {
+            const result = await auth.login(u, p);
+            showToast('登录成功，欢迎回来！');
+            return result;
+          }}
+          onRegister={async (u, p) => {
+            const result = await auth.register(u, p);
+            showToast('注册成功，已自动登录！');
+            return result;
+          }}
+          showToast={showToast}
+        />
       )}
       <AnimatePresence>
         {toast && (

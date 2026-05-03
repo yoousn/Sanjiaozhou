@@ -87,6 +87,10 @@ export function CommunityComposer({
           credentials: "same-origin",
           body: formData,
         });
+        const uploadCt = uploadRes.headers.get("content-type") || "";
+        if (!uploadCt.includes("application/json")) {
+          throw new Error("服务端响应异常，请稍后重试");
+        }
         const uploadData = await uploadRes.json();
         if (!uploadRes.ok) throw new Error(uploadData?.error || "图片上传失败");
         imageUrl = uploadData.url;
@@ -106,6 +110,10 @@ export function CommunityComposer({
           uploader: uploader || undefined,
         }),
       });
+      const postCt = res.headers.get("content-type") || "";
+      if (!postCt.includes("application/json")) {
+        throw new Error("服务端响应异常，请稍后重试");
+      }
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "发布失败");
 

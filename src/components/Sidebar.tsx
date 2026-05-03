@@ -13,6 +13,7 @@ export function Sidebar({
   buttonStyle,
   auth,
   onOpenAuth,
+  onLogout,
 }: {
   activeTab: string,
   setActiveTab: (tab: string) => void,
@@ -22,6 +23,7 @@ export function Sidebar({
   buttonStyle: UiButtonStyle,
   auth: any,
   onOpenAuth: () => void,
+  onLogout?: () => void,
 }) {
   const radiusClass = radiusClassMap[controlRadius];
   const sidebarWidthClasses = sidebarWidthClassMap[sidebarWidth];
@@ -84,7 +86,7 @@ export function Sidebar({
                 </div>
                 <span className="text-[12px] font-bold text-zinc-700 dark:text-zinc-300 truncate">{auth.user?.username}</span>
               </div>
-              <button onClick={auth.logout} className="p-1.5 text-zinc-400 hover:text-red-500 transition-colors" title="退出登录">
+              <button onClick={onLogout || auth.logout} className="p-1.5 text-zinc-400 hover:text-red-500 transition-colors" title="退出登录">
                 <LogOut size={14} />
               </button>
             </div>
@@ -154,7 +156,7 @@ export function Sidebar({
         <div className="w-[1px] h-6 bg-zinc-200 dark:bg-zinc-700 mx-1" />
 
         <button
-          onClick={auth.isAuthenticated ? auth.logout : onOpenAuth}
+          onClick={auth.isAuthenticated ? (onLogout || auth.logout) : onOpenAuth}
           className={cn(
             "flex items-center justify-center px-3 py-2 outline-none transition duration-200 active:scale-95 text-zinc-500 hover:text-zinc-900 dark:hover:text-white",
             radiusClass

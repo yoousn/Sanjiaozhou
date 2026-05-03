@@ -171,3 +171,9 @@ v1.1.5   日期2026.5.4
 - **修复登录后发帖仍提示未登录**：Cookie `secure` 标志改为通过 `x-forwarded-proto` 头动态检测（Cloudflare 自动设置此头），解决了 HTTPS 站点 behind HTTP 容器的 cookie 问题；`setAuthCookie`/`clearAuthCookie` 接收 `req` 参数
 - **修复图片预览覆盖页面而非全屏弹出**：根本原因是 CSS `transform` 动画使 `position: fixed` 相对于动画父元素定位；改用 `createPortal` 将预览层渲染到 `document.body`，z-index 提升到 9999
 - **修复发帖请求缺少 cookie**：`CommunityComposer` 的上传和发帖 fetch 添加 `credentials: "same-origin"`
+
+v1.1.6   日期2026.5.4
+说明
+- **修复发帖 502 / Unexpected token '<'**：`auth.ts` 中 login/register 路由未传 `req` 给 `setAuthCookie`，导致 cookie `secure` 默认 `true`（因 `NODE_ENV=production`），浏览器拒绝在 HTTP 容器上设置 cookie → 所有认证请求 401 → 容器频繁崩溃重启 502
+- **全面补齐 credentials: "same-origin"**：`useCommunity` 中 `deletePost`、`addComment`、`deleteComment`、`fetchComments`、posts/activity 查询全部添加 `credentials: "same-origin"`；`CommunityComposer` 上传和发帖添加 content-type 检查
+- **登录/注册/退出 Toast 提示**：登录成功显示"欢迎回来"、注册成功显示"已自动登录"、退出显示"已退出登录"、登录失败显示错误消息

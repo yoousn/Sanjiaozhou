@@ -19,7 +19,7 @@ router.post("/register", rateLimit(10, 15 * 60 * 1000, "注册请求过于频繁
     }
 
     const user = await createUser(username, password);
-    setAuthCookie(res, { id: user.id, username: user.username, role: user.role || "user" });
+    setAuthCookie(res, { id: user.id, username: user.username, role: user.role || "user" }, req);
     res.json({ success: true, data: { id: user.id, username: user.username, role: user.role || "user" } });
   } catch (e) {
     res.status(400).json({ success: false, error: e instanceof Error ? e.message : "注册失败" });
@@ -44,7 +44,7 @@ router.post("/login", rateLimit(5, 15 * 60 * 1000, "登录请求过于频繁，�
     }
 
     const role = user.role || "user";
-    setAuthCookie(res, { id: user.id, username: user.username, role });
+    setAuthCookie(res, { id: user.id, username: user.username, role }, req);
     res.json({ success: true, data: { id: user.id, username: user.username, role } });
   } catch (e) {
     res.status(500).json({ success: false, error: "登录异常" });

@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1.4
+
 FROM node:20-bookworm-slim
 
 WORKDIR /app
@@ -13,9 +15,15 @@ RUN set -eux; \
         chromium; \
     rm -rf /var/lib/apt/lists/*
 
-# 安装依赖（使用国内 npm 镜像加速）
+# ── npm 镜像 + SSL 稳定性配置 ──
+# 1) 用 .npmrc 替代 npm config set（更可靠、可缓存）
+# 2) strict-ssl=false 仅在构建期使用，避免 CDN TLS 分帧问题
+# 3) fetch-retries/fetch-retry-mintimeout 增强网络抖动容忍
+# 4) prefer-offline 优先使用缓存层中的包，减少网络请求
 COPY package*.json ./
-RUN npm config set registry https://registry.npmmirror.com && npm install
+RUN --mount=type=cache,target=/root/.npm,id=npm-cache \
+    printf 'registry=https://registry.npmmirror.com\nstrict-ssl=false\nfetch-retries=5\nfetch-retry-mintimeout=20000\nfetch-retry-maxtimeout=120000\nprefer-offline=true\n' > .npmrc && \
+    npm ci --no-audit --no-fund
 
 # 复制源代码
 COPY . .

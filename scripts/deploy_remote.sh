@@ -71,7 +71,12 @@ git fetch origin "$DEPLOY_BRANCH"
 git checkout "$DEPLOY_BRANCH"
 git pull --ff-only origin "$DEPLOY_BRANCH"
 
-docker-compose build
+# 启用 BuildKit 以支持 Dockerfile 中的缓存挂载与 .npmrc 构建优化
+export DOCKER_BUILDKIT=1
+export COMPOSE_DOCKER_CLI_BUILD=1
+export BUILDKIT_PROGRESS=plain
+
+docker-compose build --build-arg BUILDKIT_INLINE_CACHE=1
 docker-compose up -d
 
 if [ "$PRUNE_IMAGES" = "true" ]; then

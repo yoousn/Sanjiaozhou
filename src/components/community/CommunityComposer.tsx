@@ -9,10 +9,12 @@ export function CommunityComposer({
   onClose,
   onPosted,
   uploaderName = "",
+  showToast,
 }: {
   onClose: () => void;
   onPosted: () => void;
   uploaderName?: string;
+  showToast?: (msg: string, type?: 'success' | 'warn' | 'error') => void;
 }) {
   const [description, setDescription] = useState("");
   const [tags, setTags] = useState<string[]>([]);
@@ -92,7 +94,10 @@ export function CommunityComposer({
           throw new Error("服务端响应异常，请稍后重试");
         }
         const uploadData = await uploadRes.json();
-        if (!uploadRes.ok) throw new Error(uploadData?.error || "图片上传失败");
+        if (!uploadRes.ok) {
+          showToast?.(uploadData?.error || "图片上传失败", 'error');
+          throw new Error(uploadData?.error || "图片上传失败");
+        }
         imageUrl = uploadData.url;
         thumbUrl = uploadData.thumbUrl || uploadData.url;
       }
@@ -119,7 +124,9 @@ export function CommunityComposer({
 
       onPosted();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "发布失败");
+      const msg = e instanceof Error ? e.message : "发布失败";
+      setError(msg);
+      showToast?.(msg, 'error');
     } finally {
       setUploading(false);
       setPosting(false);

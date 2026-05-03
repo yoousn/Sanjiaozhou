@@ -168,7 +168,7 @@ export function AutoCollectConfigModal({
                 <button
                   onClick={async () => {
                     try {
-                      await fetch('/api/collect/auto/cancel-retry', { method: 'POST' });
+                      await fetch('/api/collect/auto/cancel-retry', { method: 'POST', credentials: 'same-origin' });
                       setConfig(p => ({ ...p, hasRetry: false, retryVideos: [] }));
                     } catch (e) {
                       console.error('Failed to cancel retry', e);
@@ -189,6 +189,7 @@ export function AutoCollectConfigModal({
                           const res = await fetch('/api/collect/auto/cancel-retry', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
+                            credentials: 'same-origin',
                             body: JSON.stringify({ videoId: v.bvid || v.id })
                           });
                           const data = await res.json();

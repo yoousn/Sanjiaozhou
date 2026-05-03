@@ -37,7 +37,8 @@ export function useCommunity() {
       if (!ct.includes("application/json")) {
         throw new Error("服务端响应异常，请稍后重试");
       }
-      return Array.isArray(data?.data) ? data.data : [];
+      const json = await res.json();
+      return Array.isArray(json?.data) ? json.data : [];
     },
     refetchInterval: 15000,
   });

@@ -7,7 +7,7 @@ import { CommunityFeed } from "../components/community/CommunityFeed";
 import { CommunityActivityBar } from "../components/community/CommunityActivityBar";
 import { Loader2, AlertCircle } from "lucide-react";
 
-export function CommunityPage({ auth, onOpenAuth }: { auth: any, onOpenAuth: () => void }) {
+export function CommunityPage({ auth, onOpenAuth, showToast }: { auth: any, onOpenAuth: () => void, showToast: (msg: string, type?: 'success' | 'warn' | 'error') => void }) {
   const community = useCommunity();
   const [showComposer, setShowComposer] = useState(false);
 
@@ -38,8 +38,10 @@ export function CommunityPage({ auth, onOpenAuth }: { auth: any, onOpenAuth: () 
               onPosted={() => {
                 setShowComposer(false);
                 community.fetchPosts();
+                showToast('发帖成功！');
               }}
               uploaderName={auth.isAuthenticated ? auth.user.username : ""}
+              showToast={showToast}
             />
           )}
 
@@ -69,6 +71,7 @@ export function CommunityPage({ auth, onOpenAuth }: { auth: any, onOpenAuth: () 
               onAddComment={community.addComment}
               onDeleteComment={community.deleteComment}
               auth={auth}
+              showToast={showToast}
             />
           )}
         </div>

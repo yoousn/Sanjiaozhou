@@ -51,6 +51,7 @@ export const CommunityPostCard = React.memo(function CommunityPostCard({
   onAddComment,
   onDeleteComment,
   auth,
+  showToast,
 }: {
   post: CommunityPost;
   onReact: (postId: string, emoji: keyof CommunityReactions, userId: string) => void;
@@ -60,9 +61,10 @@ export const CommunityPostCard = React.memo(function CommunityPostCard({
   onAddComment?: (postId: string, content: string, author: string) => Promise<void>;
   onDeleteComment?: (postId: string, commentId: string) => Promise<void>;
   auth: any;
+  showToast?: (msg: string, type?: 'success' | 'warn' | 'error') => void;
 }) {
   const [reacting, setReacting] = useState<string | null>(null);
-  const [showComments, setShowComments] = useState(false);
+  const [showComments, setShowComments] = useState(true);
   const [previewImage, setPreviewImage] = useState(false);
   const [commentContent, setCommentContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -72,12 +74,12 @@ export const CommunityPostCard = React.memo(function CommunityPostCard({
   // 身份逻辑：登录显示用户名，不登录显示匿名用户
   const currentAuthorName = auth.isAuthenticated ? auth.user.username : "匿名用户";
 
-  // 初始化时获取评论
+  // 初始化时自动获取评论
   useEffect(() => {
-    if (showComments && onFetchComments && !post.comments) {
+    if (onFetchComments && !post.comments) {
       void onFetchComments(post.id);
     }
-  }, [post.id, onFetchComments, showComments, post.comments]);
+  }, [post.id, onFetchComments, post.comments]);
 
   const handleReact = async (emoji: keyof CommunityReactions) => {
     if (!auth?.isAuthenticated) {
@@ -115,8 +117,10 @@ export const CommunityPostCard = React.memo(function CommunityPostCard({
     try {
       await onAddComment(post.id, commentContent, currentAuthorName);
       setCommentContent("");
+      showToast?.('评论成功！');
     } catch (err) {
-      alert(err instanceof Error ? err.message : "评论失败");
+      const msg = err instanceof Error ? err.message : "评论失败";
+      showToast?.(msg, 'error');
     } finally {
       setSubmitting(false);
     }
@@ -128,8 +132,10 @@ export const CommunityPostCard = React.memo(function CommunityPostCard({
     setIsDeleting(true);
     try {
       await onDelete(post.id);
+      showToast?.('帖子已删除');
     } catch (err) {
-      alert(err instanceof Error ? err.message : "删除失败");
+      const msg = err instanceof Error ? err.message : "删除失败";
+      showToast?.(msg, 'error');
       setIsDeleting(false);
     }
   };
@@ -139,8 +145,10 @@ export const CommunityPostCard = React.memo(function CommunityPostCard({
     if (!window.confirm("确定要删除这条评论吗？")) return;
     try {
       await onDeleteComment(post.id, commentId);
+      showToast?.('评论已删除');
     } catch (err) {
-      alert(err instanceof Error ? err.message : "删除评论失败");
+      const msg = err instanceof Error ? err.message : "删除评论失败";
+      showToast?.(msg, 'error');
     }
   };
 
@@ -196,7 +204,7 @@ export const CommunityPostCard = React.memo(function CommunityPostCard({
               className={`flex items-center gap-1 px-1.5 py-0.5 rounded-lg text-[11px] font-bold transition hover:bg-zinc-100 dark:hover:bg-zinc-800 ${showComments ? "text-blue-500" : "text-zinc-500"}`}
             >
               <MessageCircle size={14} />
-              <span>{post.comments?.length || ""}</span>
+              <span>{post.comments?.length ?? 0}</span>
             </button>
             {EMOJIS.map(({ key, emoji, label }) => {
               const hasReacted = auth?.isAuthenticated && post.reactedUsers?.[key]?.includes(auth.user.id);

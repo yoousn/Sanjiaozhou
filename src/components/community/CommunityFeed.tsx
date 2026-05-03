@@ -11,6 +11,7 @@ export function CommunityFeed({
   onAddComment,
   onDeleteComment,
   auth,
+  showToast,
 }: {
   posts: CommunityPost[];
   onReact: (postId: string, emoji: keyof CommunityReactions, userId: string) => void;
@@ -20,6 +21,7 @@ export function CommunityFeed({
   onAddComment?: (postId: string, content: string, author: string) => Promise<void>;
   onDeleteComment?: (postId: string, commentId: string) => Promise<void>;
   auth: any;
+  showToast?: (msg: string, type?: 'success' | 'warn' | 'error') => void;
 }) {
   if (posts.length === 0) {
     return (
@@ -49,6 +51,7 @@ export function CommunityFeed({
             onAddComment={onAddComment}
             onDeleteComment={onDeleteComment}
             auth={auth}
+            showToast={showToast}
           />
         </div>
       ))}

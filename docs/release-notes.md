@@ -185,3 +185,11 @@ v1.1.7   日期2026.5.4
 - **修复 Docker volume mount 导致 JSON 文件变目录**：CMD 启动前检查并修复所有持久化 JSON 文件，确保是文件而非目录，解决社区发帖 500 错误
 - **社区接口增加错误日志**：发帖、获取帖子、上传图片的错误现在会记录到容器日志
 - **修复 Docker bind mount EBUSY 崩溃**：`atomicJson.ts` 的 `renameSync` 在 Docker bind mount 上可能返回 `EBUSY`，导致所有 JSON 写入失败→容器反复崩溃 502；现增加 fallback 直接写入
+
+v1.1.8   日期2026.5.4
+说明
+- **修复 admin API 全部 403**：App.tsx 和 AutoCollectConfigModal 中所有 `/api/collect/*`、`/api/builds`、`/api/config/*`、`/api/model/*` 的 POST 请求补齐 `credentials: "same-origin"`，cookie 不再丢失
+- **修复社区动态为空**：`useCommunity` 的 activity 查询引用了未定义变量 `data`，改为 `json`，社区动态恢复正常
+- **评论默认展开**：帖子评论区默认展开，帖子加载时自动获取评论数据
+- **评论数量显示**：评论图标旁始终显示评论数（之前仅在评论加载后才显示）
+- **操作 Toast 提示**：发帖成功/失败、删帖成功/失败、评论成功/失败、删除评论成功/失败、图片上传失败均有 toast 提示

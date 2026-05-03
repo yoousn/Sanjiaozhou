@@ -205,6 +205,7 @@ export default function App() {
       const res = await fetch('/api/collect/providers/fetch-models', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
         body: JSON.stringify({ baseUrl: providerForm.baseUrl, apiKey: providerForm.apiKey }),
       });
       const data = await safeJson(res);
@@ -237,6 +238,7 @@ export default function App() {
       const res = await fetch('/api/collect/providers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
         body: JSON.stringify({
           id: providerForm.id || undefined,
           name: providerForm.name,
@@ -275,6 +277,7 @@ export default function App() {
       const res = await fetch('/api/collect/providers/delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
         body: JSON.stringify({ id: providerForm.id }),
       });
       const data = await safeJson(res);
@@ -296,6 +299,7 @@ export default function App() {
     const res = await fetch('/api/model/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
       body: JSON.stringify({ model, messages }),
     });
     const data = await safeJson(res);
@@ -310,6 +314,7 @@ export default function App() {
       const res = await fetch('/api/model/test', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
         body: JSON.stringify({ model }),
       });
       const data = await safeJson(res);
@@ -336,6 +341,7 @@ export default function App() {
       const res = await fetch('/api/builds', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
         body: JSON.stringify(draftData)
       });
       if (!res.ok) throw new Error('网络请求异常');
@@ -371,7 +377,7 @@ export default function App() {
     const newSavedData = updateFn(savedData);
     setSavedData(newSavedData);
     try {
-      const res = await fetch('/api/builds', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newSavedData) });
+      const res = await fetch('/api/builds', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify(newSavedData) });
       if (!res.ok) throw new Error('网络请求异常');
       const serverData = await safeJson(res);
       setSavedData(Array.isArray(serverData) ? serverData : newSavedData);
@@ -419,7 +425,7 @@ export default function App() {
     setCookieTestResult(null);
     try {
       const content = await file.text();
-      const res = await fetch('/api/config/cookie', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content }) });
+      const res = await fetch('/api/config/cookie', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ content }) });
       const data = await safeJson(res);
       if (!res.ok) throw new Error(data?.message || data?.error || '上传失败');
       setCookieTestResult({ success: Boolean(data.success), message: String(data.message || '测试完成') });
@@ -586,7 +592,7 @@ export default function App() {
           <div className="max-w-[1600px] mx-auto">
             {activeTab === 'community' ? (
               <React.Suspense fallback={<div className="flex flex-col items-center justify-center py-24 animate-fade-in"><Loader2 size={24} className="animate-spin text-zinc-400 mb-4" /><p className="text-[13px] font-bold text-zinc-500">正在加载社区模块...</p></div>}>
-                <CommunityPage auth={auth} onOpenAuth={() => setActiveModal('auth')} />
+                <CommunityPage auth={auth} onOpenAuth={() => setActiveModal('auth')} showToast={showToast} />
               </React.Suspense>
             ) : activeTab === 'settings' ? (
               <React.Suspense fallback={<div className="flex flex-col items-center justify-center py-24 animate-fade-in"><Loader2 size={24} className="animate-spin text-zinc-400 mb-4" /><p className="text-[13px] font-bold text-zinc-500">正在加载设置模块...</p></div>}>
@@ -730,7 +736,7 @@ export default function App() {
           onSave={async () => {
             setIsSavingAuto(true);
             try {
-              const res = await fetch('/api/collect/auto', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ enabled: autoCollectConfig.enabled, model: autoCollectConfig.model, backupModel: autoCollectConfig.backupModel, intervalHours: autoCollectConfig.intervalHours || 1, creatorIds: autoCollectConfig.creatorIds || [] }) });
+              const res = await fetch('/api/collect/auto', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ enabled: autoCollectConfig.enabled, model: autoCollectConfig.model, backupModel: autoCollectConfig.backupModel, intervalHours: autoCollectConfig.intervalHours || 1, creatorIds: autoCollectConfig.creatorIds || [] }) });
               const data = await safeJson(res);
               if (!res.ok) throw new Error(data?.error || '保存配置失败');
               showToast('自动采集配置已保存');

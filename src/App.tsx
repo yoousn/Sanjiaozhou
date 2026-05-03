@@ -22,7 +22,7 @@ import { ModelConfigModal } from './components/ModelConfigModal';
 const CommunityPage = React.lazy(() => import('./pages/CommunityPage').then(m => ({ default: m.CommunityPage })));
 const SettingsPage = React.lazy(() => import('./components/SettingsPage').then(m => ({ default: m.SettingsPage })));
 
-import { useToast } from './components/useToast';
+import { useToast } from './hooks/useToast';
 import { useDailyPassword } from './hooks/useDailyPassword';
 import { useTheme } from './hooks/useTheme';
 import { useAuth } from './hooks/useAuth';

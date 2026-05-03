@@ -3,7 +3,7 @@ import { Sparkles, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { cn, inputClasses } from '../utils';
 import { GunVariant } from '../types';
-import { overlayFade, scaleIn } from './MotionProvider';
+import { overlayFade, scaleIn } from './motionPresets';
 
 export function AddGunModal({ isOpen, onClose, onConfirm }: { isOpen: boolean, onClose: () => void, onConfirm: (name: string, category: string, variant: Omit<GunVariant, 'id'>) => void }) {
   const [name, setName] = useState('');

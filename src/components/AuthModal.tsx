@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { X, Loader2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '../utils';
-import { overlayFade, scaleIn } from './MotionProvider';
+import { overlayFade, scaleIn } from './motionPresets';
 
 type AuthModalProps = {
   isOpen: boolean;

@@ -1,16 +1,3 @@
-v1.1.1   日期2026.5.3
-说明
-- **修复类型声明缺失**：安装 `@types/compression`、`@types/cookie-parser`、`@types/bcryptjs`，补全 `bcryptjs`、`vite-plugin-compression` 运行时依赖，`tsc --noEmit` 零错误通过
-- **P2-4 统一前后端共享类型**：新建 `shared/` 目录，`GunGroup`/`GunVariant`/`CollectConcurrencySettings`/`CollectModelOption`/`CollectCreator` 统一由 `shared/types.ts` 导出，`buildModelOptionValue`/`parseModelOptionValue` 统一由 `shared/modelOption.ts` 导出，消除 `src/types.ts`↔`server/lib/shape.ts`、`src/utils.ts`↔`server/lib/collectSettings.ts` 的重复定义
-
-v1.1.0   日期2026.5.3---1
-说明
-- **动效系统全面升级**：启用 framer-motion，为所有 Modal（新增枪械、登录注册、自动采集、模型配置）添加流畅的进出动画（scale + opacity），Toast 通知滑入滑出，卡片列表 stagger 入场
-- **GPU 加速优化**：CSS 动画改用 translate3d 触发 GPU 合成层，为动画元素添加 will-change 提示
-- **服务端压缩**：Express 启用 compression 中间件（gzip），API 响应体积显著减小
-- **Vite 构建压缩**：新增 brotli 预压缩插件，构建产物自动生成 .br 文件，配合 Nginx 可实现零 CPU 开销的极致压缩传输
-- **清理死依赖**：移除未使用的 motion 独立包，减少 node_modules 体积
-
 v1.0.0   日期2026.4.27---1
 说明
 - 建立正式文档体系与版本记录规则
@@ -144,3 +131,23 @@ v1.0.22   日期2026.5.2---1
 说明
 - **模型密钥保存修复**：编辑已有模型源时，API Key 留空会继续沿用旧 Key，避免再次保存后接口失效。
 - **密钥显示优化**：浏览器不回显真实 API Key，已保存密钥时仅显示占位提示，降低前端泄露风险。
+
+v1.1.0   日期2026.5.3---1
+说明
+- **动效系统全面升级**：启用 framer-motion，为所有 Modal（新增枪械、登录注册、自动采集、模型配置）添加流畅的进出动画（scale + opacity），Toast 通知滑入滑出，卡片列表 stagger 入场
+- **GPU 加速优化**：CSS 动画改用 translate3d 触发 GPU 合成层，为动画元素添加 will-change 提示
+- **服务端压缩**：Express 启用 compression 中间件（gzip），API 响应体积显著减小
+- **Vite 构建压缩**：新增 brotli 预压缩插件，构建产物自动生成 .br 文件，配合 Nginx 可实现零 CPU 开销的极致压缩传输
+- **清理死依赖**：移除未使用的 motion 独立包，减少 node_modules 体积
+
+v1.1.1   日期2026.5.3
+说明
+- **修复类型声明缺失**：安装 `@types/compression`、`@types/cookie-parser`、`@types/bcryptjs`，补全 `bcryptjs`、`vite-plugin-compression` 运行时依赖，`tsc --noEmit` 零错误通过
+- **P2-4 统一前后端共享类型**：新建 `shared/` 目录，`GunGroup`/`GunVariant`/`CollectConcurrencySettings`/`CollectModelOption`/`CollectCreator` 统一由 `shared/types.ts` 导出，`buildModelOptionValue`/`parseModelOptionValue` 统一由 `shared/modelOption.ts` 导出，消除 `src/types.ts`↔`server/lib/shape.ts`、`src/utils.ts`↔`server/lib/collectSettings.ts` 的重复定义
+
+v1.1.2   日期2026.5.3
+说明
+- **修复 Dockerfile 缺失 shared 目录**：添加 `COPY shared ./shared`，修复服务器启动报错 `Cannot find module '/app/shared/modelOption.js'`
+- **P2-3 清理死依赖**：移除 `openai` 包（全项目无任何 import，节省 22 个传递依赖）
+- **P2-11 命名/位置修补**：`useToast.ts` 从 `components/` 迁至 `hooks/`；`MotionProvider.tsx` 更名为 `motionPresets.ts`（文件内容为动画常量而非 Provider）；删除根目录 Cloudflare 验证文件 `23366171d0bc95587ccd61d43e8d880b.txt`
+- **P2-2 will-change 审查**：确认仅 `index.css` 的 `@keyframes fadeInUp` 中使用，动画结束自动释放，符合最佳实践，无需修改

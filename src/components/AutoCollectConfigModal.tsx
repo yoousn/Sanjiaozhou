@@ -3,7 +3,7 @@ import { X, Loader2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '../utils';
 import { CollectMeta } from '../types';
-import { overlayFade, scaleIn } from './MotionProvider';
+import { overlayFade, scaleIn } from './motionPresets';
 
 export type AutoCollectConfig = {
   enabled: boolean;

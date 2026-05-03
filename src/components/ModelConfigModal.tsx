@@ -3,7 +3,7 @@ import { Bot, Check, Loader2, MessageSquare, Plus, RefreshCw, Save, Search, Send
 import { AnimatePresence, motion } from 'framer-motion';
 import { cn, inputClasses, parseModelOptionValue, buildModelOptionValue } from '../utils';
 import type { CollectMeta, CollectModelProviderInput, ModelTestResult } from '../types';
-import { overlayFade, scaleIn } from './MotionProvider';
+import { overlayFade, scaleIn } from './motionPresets';
 
 type ChatMessage = {
   role: 'user' | 'assistant';

@@ -38,6 +38,7 @@ RUN --mount=type=cache,target=/root/.npm,id=npm-cache \
 # 复制构建产物与运行时代码
 COPY --from=builder /app/dist ./dist
 COPY server ./server
+COPY shared ./shared
 COPY server.ts ./
 COPY scripts ./scripts
 COPY src ./src

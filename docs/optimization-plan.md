@@ -414,16 +414,16 @@ Cache-Control: public, max-age=31536000, immutable
 10. P2-1 图片 CDN / 长期缓存策略 ✔（dist/assets/ 带 hash 文件设置 1 年长期缓存，index.html 保持 0）。
 11. P2-3 清理死依赖 ✔（移除 `@google/genai`、`rss-parser`、`autoprefixer`、`@types/sharp` 共 4 个死依赖）。
 12. P2-4 统一前后端共享类型 / 工具 ✔（新建 `shared/` 目录，`GunGroup`/`GunVariant`/`CollectConcurrencySettings`/`CollectModelOption`/`CollectCreator` 统一由 `shared/types.ts` 导出；`buildModelOptionValue`/`parseModelOptionValue` 统一由 `shared/modelOption.ts` 导出；`src/types.ts`、`server/lib/shape.ts`、`server/lib/collectSettings.ts`、`server/lib/merge.ts` 全部改为从 shared 引入，删除各处重复副本）。
-13. P2-5 Dockerfile 多阶段 + 镜像瘦身 ✔（builder 阶段构建 dist，runner 阶段仅保留生产依赖与运行代码）。
+13. P2-5 Dockerfile 多阶段 + 镜像瘦身 ✔（builder 阶段构建 dist，runner 阶段仅保留生产依赖与运行代码，补充 COPY shared）。
 14. P2-6 docker-compose 健康检查 + 日志轮转 ✔（健康检查探测 /api/builds，日志限制 10m×3 份）。
 15. P2-7 CI 去除空跑 build（无 `.github/workflows`，跳过）。
 16. P2-8 Python 依赖锁定 ✔（`requirements.txt` 固定 requests/yt-dlp/playwright 版本，Dockerfile 改为 `-r requirements.txt` 安装）。
 17. P2-9 结构化日志 ✔（后端 console.* 全部替换为 JSON 格式 logger，含 time/level/msg 字段）。
 18. P2-10 热接口 ETag ✔（builds、community/posts、collect/meta 已接入 mtime 基础 ETag + 304 返回）。
-19. P2-11 命名 / 位置 / 小修补。
+19. P2-11 命名 / 位置 / 小修补 ✔（`useToast.ts` 迁至 `src/hooks/`；`MotionProvider.tsx` 更名为 `motionPresets.ts`；删除根目录 Cloudflare 验证文件 `23366171d0bc95587ccd61d43e8d880b.txt`）。
 20. P2-12 自动化测试（Vitest + Playwright + ESLint）。
-21. P2-2 `will-change` 审查（体量很小，作为最后 sanity check）。
-22. 完成后执行类型检查、`npm run lint`、构建验证。
+21. P2-2 `will-change` 审查 ✔（仅 `index.css` 的 `@keyframes fadeInUp` 中使用，动画结束自动释放，符合最佳实践）。
+22. P2-3 清理死依赖 ✔（移除 `openai`、`@google/genai`、`rss-parser`、`autoprefixer`、`@types/sharp` 共 5 个死依赖）。
 
 ## 验收标准
 

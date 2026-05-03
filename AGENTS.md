@@ -11,7 +11,7 @@
 6. [docs/optimization-plan.md](docs/optimization-plan.md)（涉及性能、图片、分页、CDN、压缩、安全配置时阅读）
 
 ## 强制规则
-- 正式版本说明统一写入 [docs/release-notes.md](docs/release-notes.md)
+- 正式版本说明统一写入 [docs/release-notes.md](docs/release-notes.md)每次必须放到最后一行
 - 版本规则统一以 [docs/versioning.md](docs/versioning.md) 为准
 - 部署必须遵守 [docs/deployment.md](docs/deployment.md) 的平滑更新顺序，严禁先 `docker-compose down`
 - 运行态数据必须保留在服务器 `runtime/`，禁止用代码发布覆盖真实运行态数据

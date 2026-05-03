@@ -177,3 +177,10 @@ v1.1.6   日期2026.5.4
 - **修复发帖 502 / Unexpected token '<'**：`auth.ts` 中 login/register 路由未传 `req` 给 `setAuthCookie`，导致 cookie `secure` 默认 `true`（因 `NODE_ENV=production`），浏览器拒绝在 HTTP 容器上设置 cookie → 所有认证请求 401 → 容器频繁崩溃重启 502
 - **全面补齐 credentials: "same-origin"**：`useCommunity` 中 `deletePost`、`addComment`、`deleteComment`、`fetchComments`、posts/activity 查询全部添加 `credentials: "same-origin"`；`CommunityComposer` 上传和发帖添加 content-type 检查
 - **登录/注册/退出 Toast 提示**：登录成功显示"欢迎回来"、注册成功显示"已自动登录"、退出显示"已退出登录"、登录失败显示错误消息
+
+v1.1.7   日期2026.5.4
+说明
+- **第一个注册用户自动成为管理员**：`createUser` 判断 `users.length === 0` 时 role 设为 `"admin"`，解决"权限不足，需要管理员权限"问题
+- **修复每日密码 403**：前端自动同步不再调用 admin-only 的 `/refresh` 接口，仅轮询 GET 端点等待服务端定时任务刷新；手动刷新 403 时提示"权限不足，需要管理员权限"
+- **修复 Docker volume mount 导致 JSON 文件变目录**：CMD 启动前检查并修复所有持久化 JSON 文件，确保是文件而非目录，解决社区发帖 500 错误
+- **社区接口增加错误日志**：发帖、获取帖子、上传图片的错误现在会记录到容器日志

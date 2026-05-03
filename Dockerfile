@@ -53,4 +53,6 @@ RUN mkdir -p src scripts && \
     touch src/data.json src/daily_pwd.json scripts/collect_settings.json scripts/auto_processed_videos.json scripts/auto_logs.json scripts/daily_pwd_logs.json scripts/users.json scripts/community_posts.json scripts/community_activity.json scripts/community_comments.json
 
 EXPOSE 3000
-CMD ["npx", "tsx", "server.ts"]
+# Docker volume mount 时，如果宿主机文件不存在会创建目录而非文件，导致 JSON 写入失败
+# 启动前先确保所有需要持久化的 JSON 文件是文件而非目录
+CMD ["sh", "-c", "for f in src/data.json src/daily_pwd.json scripts/collect_settings.json scripts/auto_processed_videos.json scripts/auto_logs.json scripts/daily_pwd_logs.json scripts/users.json scripts/community_posts.json scripts/community_activity.json scripts/community_comments.json; do if [ -d \"/app/$f\" ]; then rm -rf \"/app/$f\"; fi; if [ ! -f \"/app/$f\" ]; then echo '[]' > \"/app/$f\"; fi; done && exec npx tsx server.ts"]

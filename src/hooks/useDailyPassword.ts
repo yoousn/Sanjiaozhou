@@ -51,7 +51,7 @@ export function useDailyPassword(showToast: (msg: string, type?: 'success' | 'wa
   }, []);
 
   const fetchDailyPwdLogs = useCallback(() => {
-    fetch('/api/daily-password/logs')
+    fetch('/api/daily-password/logs', { credentials: 'same-origin' })
       .then(safeJson)
       .then(data => setDailyPwdLogs(Array.isArray(data?.logs) ? data.logs : []))
       .catch(console.error);
@@ -69,7 +69,7 @@ export function useDailyPassword(showToast: (msg: string, type?: 'success' | 'wa
     dailyPwdRequestInFlightRef.current = true;
 
     try {
-      const res = await fetch('/api/daily-password');
+      const res = await fetch('/api/daily-password', { credentials: 'same-origin' });
       const data = await safeJson(res);
       const applied = res.ok && applyDailyPwd(data);
       const needsRefresh = forceRefreshToday || !applied || shouldRefreshDailyPwd(data);
@@ -79,30 +79,18 @@ export function useDailyPassword(showToast: (msg: string, type?: 'success' | 'wa
         return;
       }
 
-      const refreshRes = await fetch('/api/daily-password/refresh', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ manual: false }),
-      });
-      const refreshData = await safeJson(refreshRes);
-      if (refreshRes.ok) {
-        const payload = refreshData.data ?? refreshData;
-        const refreshApplied = applyDailyPwd(payload);
-        if (refreshApplied && isDailyPwdForToday(dailyPwdLatestRef.current)) {
-          stopDailyPwdPolling();
-          fetchDailyPwdLogs();
-          return;
-        }
+      // 非管理员不自动调用 refresh（需要 admin 权限），仅轮询等待服务端定时任务刷新
+      if (!applied || shouldRefreshDailyPwd(data)) {
+        stopDailyPwdPolling();
+        dailyPwdPollTimerRef.current = window.setTimeout(() => {
+          dailyPwdPollTimerRef.current = null;
+          void syncDailyPwd({ forceRefreshToday: true });
+        }, 2 * 60 * 1000);
+        fetchDailyPwdLogs();
+        return;
       }
 
-      // Schedule polling if still not refreshed
       stopDailyPwdPolling();
-      dailyPwdPollTimerRef.current = window.setTimeout(() => {
-        dailyPwdPollTimerRef.current = null;
-        void syncDailyPwd({ forceRefreshToday: true });
-      }, 2 * 60 * 1000);
-      
-      fetchDailyPwdLogs();
     } catch (error) {
       console.error(error);
       stopDailyPwdPolling();
@@ -122,10 +110,14 @@ export function useDailyPassword(showToast: (msg: string, type?: 'success' | 'wa
       const res = await fetch('/api/daily-password/refresh', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
         body: JSON.stringify({ manual: true }),
       });
       const data = await safeJson(res);
-      if (!res.ok) throw new Error(data?.error || '获取每日密码失败');
+      if (!res.ok) {
+        if (res.status === 403) throw new Error('权限不足，需要管理员权限');
+        throw new Error(data?.error || '获取每日密码失败');
+      }
       applyDailyPwd(data?.data ?? data);
       stopDailyPwdPolling();
       fetchDailyPwdLogs();

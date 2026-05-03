@@ -6,6 +6,7 @@ import { getRecentActivity } from "../lib/communityActivity.js";
 import { parseUploadFile, uploadToCF, deleteFromCF } from "../lib/communityUpload.js";
 import { getCommentsByPostId, addComment, deleteComment, getCommentById } from "../lib/commentStore.js";
 import { setFileETag } from "../lib/etag.js";
+import { logger } from "../lib/logger.js";
 
 const router = Router();
 
@@ -18,6 +19,7 @@ router.get("/posts", setFileETag("scripts/community_posts.json", (req) => `${req
     const posts = queryPosts(sort, tag);
     res.json({ success: true, data: posts });
   } catch (e) {
+    logger.error("API COMMUNITY GET POSTS Error", { error: e instanceof Error ? e.message : String(e) });
     res.status(500).json({ success: false, error: "获取社区帖子失败" });
   }
 });
@@ -40,6 +42,7 @@ router.post("/posts", requireAuth, rateLimit(20, 60 * 60 * 1000, "发帖请求�
     const post = createPost({ imageUrl, thumbUrl: thumbUrl || imageUrl, description, tags, uploader });
     res.json({ success: true, data: post });
   } catch (e) {
+    logger.error("API COMMUNITY CREATE POST Error", { error: e instanceof Error ? e.message : String(e) });
     res.status(500).json({ success: false, error: "发帖失败" });
   }
 });
@@ -85,6 +88,7 @@ router.post("/upload", requireAuth, rateLimit(10, 60 * 60 * 1000, "上传请求�
     res.json({ success: true, url: result.url, thumbUrl: result.thumbUrl });
   } catch (e) {
     const message = e instanceof Error ? e.message : "图片上传异常";
+    logger.error("API COMMUNITY UPLOAD Error", { error: message });
     res.status(500).json({ success: false, error: message });
   }
 });

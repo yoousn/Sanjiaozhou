@@ -38,12 +38,15 @@ export async function createUser(username: string, password: string): Promise<Us
   const salt = await bcrypt.genSalt(10);
   const passwordHash = await bcrypt.hash(password, salt);
 
+  // 第一个注册的用户自动成为管理员
+  const role = users.length === 0 ? "admin" : "user";
+
   const newUser: User = {
     id: `u_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
     username,
     passwordHash,
     createdAt: new Date().toISOString(),
-    role: "user",
+    role,
   };
 
   users.push(newUser);

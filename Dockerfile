@@ -43,7 +43,8 @@ COPY server.ts ./
 COPY scripts ./scripts
 COPY src ./src
 
-# 安装 Python 依赖
+# 安装 Python 依赖（playwright 使用系统 Chromium，跳过浏览器下载节省约 200MB）
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 COPY requirements.txt ./
 RUN pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple && \
     pip3 install --no-cache-dir -r requirements.txt --break-system-packages

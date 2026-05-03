@@ -165,3 +165,9 @@ v1.1.4   日期2026.5.4
 - **修复登录无法完成**：根本原因是 `secure: process.env.NODE_ENV === "production"` 导致 HTTP 环境下浏览器拒绝设置 cookie，改为仅在 `HTTPS=true` 时启用 secure；同时 `login`/`register` 请求添加 `credentials: "same-origin"` 确保 cookie 随请求发送；`clearAuthCookie` 同步 secure 标志
 - **修复登录灰屏**：AuthModal 重写，添加 `key` 确保 AnimatePresence 退出动画正确播放；添加 ESC 关闭和状态重置
 - **修复图片预览显示缩略图**：预览层改为 `max-w-[95vw] max-h-[90vh]` 确保全屏展示原图；点击图片本身不关闭预览（stopPropagation）
+
+v1.1.5   日期2026.5.4
+说明
+- **修复登录后发帖仍提示未登录**：Cookie `secure` 标志改为通过 `x-forwarded-proto` 头动态检测（Cloudflare 自动设置此头），解决了 HTTPS 站点 behind HTTP 容器的 cookie 问题；`setAuthCookie`/`clearAuthCookie` 接收 `req` 参数
+- **修复图片预览覆盖页面而非全屏弹出**：根本原因是 CSS `transform` 动画使 `position: fixed` 相对于动画父元素定位；改用 `createPortal` 将预览层渲染到 `document.body`，z-index 提升到 9999
+- **修复发帖请求缺少 cookie**：`CommunityComposer` 的上传和发帖 fetch 添加 `credentials: "same-origin"`

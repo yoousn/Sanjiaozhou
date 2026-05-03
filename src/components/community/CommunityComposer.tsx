@@ -84,6 +84,7 @@ export function CommunityComposer({
         formData.append("file", blob, "upload.png");
         const uploadRes = await fetch("/api/community/upload", {
           method: "POST",
+          credentials: "same-origin",
           body: formData,
         });
         const uploadData = await uploadRes.json();
@@ -96,6 +97,7 @@ export function CommunityComposer({
       const res = await fetch("/api/community/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
         body: JSON.stringify({
           imageUrl,
           thumbUrl,

@@ -7,6 +7,20 @@ export const SESSION_SECRET = process.env.SESSION_SECRET || (() => {
   return val;
 })();
 
+/**
+ * 判断客户端是否通过 HTTPS 访问。
+ * Cloudflare 等 CDN 会设置 x-forwarded-proto 头，
+ * 即使容器内部是 HTTP，客户端实际是 HTTPS 时也应设置 Secure cookie。
+ */
+function isSecureRequest(req: Request): boolean {
+  // 直接 HTTPS
+  if (req.secure) return true;
+  // 反向代理标记
+  const proto = req.headers["x-forwarded-proto"];
+  if (proto === "https" || proto === "https,http") return true;
+  return false;
+}
+
 export function requireAuth(req: Request, res: Response, next: NextFunction) {
   const user = req.signedCookies?.user;
   if (!user || !user.id) {
@@ -28,19 +42,19 @@ export function requireAdmin(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
-export function setAuthCookie(res: Response, user: { id: string; username: string; role: string }) {
-  // 仅在真正的 HTTPS 环境下启用 secure，避免 HTTP 部署时 cookie 无法设置
-  const isSecure = process.env.NODE_ENV === "production" && process.env.HTTPS === "true";
+export function setAuthCookie(res: Response, user: { id: string; username: string; role: string }, req?: Request) {
+  // 客户端是 HTTPS 时设置 Secure 标志，否则浏览器会拒绝
+  const secure = req ? isSecureRequest(req) : process.env.NODE_ENV === "production";
   res.cookie("user", user, {
     signed: true,
     httpOnly: true,
     sameSite: "lax",
     maxAge: 1000 * 60 * 60 * 24 * 180,
-    secure: isSecure,
+    secure,
   });
 }
 
-export function clearAuthCookie(res: Response) {
-  const isSecure = process.env.NODE_ENV === "production" && process.env.HTTPS === "true";
-  res.clearCookie("user", { signed: true, httpOnly: true, sameSite: "lax", secure: isSecure });
+export function clearAuthCookie(res: Response, req?: Request) {
+  const secure = req ? isSecureRequest(req) : process.env.NODE_ENV === "production";
+  res.clearCookie("user", { signed: true, httpOnly: true, sameSite: "lax", secure });
 }

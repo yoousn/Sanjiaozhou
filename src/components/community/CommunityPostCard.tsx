@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { cn } from "../../utils";
 import type { CommunityPost, CommunityReactions } from "../../types";
 import { Trash2, MessageCircle, ChevronDown, ChevronUp, Send, Loader2 } from "lucide-react";
@@ -278,15 +279,16 @@ export const CommunityPostCard = React.memo(function CommunityPostCard({
           </div>
         )}
       </div>
-      {post.imageUrl && previewImage && (
-        <div className="fixed inset-0 z-[120] bg-black/90 flex items-center justify-center" onClick={() => setPreviewImage(false)}>
+      {post.imageUrl && previewImage && createPortal(
+        <div className="fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center" onClick={() => setPreviewImage(false)}>
           <img
             src={post.imageUrl}
             alt={post.description || "帖子图片"}
             className="max-w-[95vw] max-h-[90vh] rounded-2xl object-contain"
             onClick={(e) => e.stopPropagation()}
           />
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

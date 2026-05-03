@@ -59,8 +59,8 @@ router.get("/me", (req, res) => {
   res.json({ success: true, data: user });
 });
 
-router.post("/logout", (_req, res) => {
-  clearAuthCookie(res);
+router.post("/logout", (req, res) => {
+  clearAuthCookie(res, req);
   res.json({ success: true });
 });
 

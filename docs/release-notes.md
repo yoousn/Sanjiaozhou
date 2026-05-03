@@ -184,3 +184,4 @@ v1.1.7   日期2026.5.4
 - **修复每日密码 403**：前端自动同步不再调用 admin-only 的 `/refresh` 接口，仅轮询 GET 端点等待服务端定时任务刷新；手动刷新 403 时提示"权限不足，需要管理员权限"
 - **修复 Docker volume mount 导致 JSON 文件变目录**：CMD 启动前检查并修复所有持久化 JSON 文件，确保是文件而非目录，解决社区发帖 500 错误
 - **社区接口增加错误日志**：发帖、获取帖子、上传图片的错误现在会记录到容器日志
+- **修复 Docker bind mount EBUSY 崩溃**：`atomicJson.ts` 的 `renameSync` 在 Docker bind mount 上可能返回 `EBUSY`，导致所有 JSON 写入失败→容器反复崩溃 502；现增加 fallback 直接写入

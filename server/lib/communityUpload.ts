@@ -12,6 +12,7 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 export type UploadResult = {
   success: boolean;
   url?: string;
+  thumbUrl?: string;
   error?: string;
 };
 
@@ -79,21 +80,25 @@ export async function uploadToCF(buffer: Buffer, filename: string): Promise<Uplo
   }
 
   try {
-    // 压缩逻辑：如果是 GIF，尝试保留动画（sharp 对 GIF 压缩较弱）；其他格式一律压成 WebP，限制最大宽度 1920
+    // 压缩逻辑：如果是 GIF，尝试保留动画；其他格式压成 WebP，限制最大宽度 1920
     const isGif = filename.toLowerCase().endsWith(".gif");
     let processedBuffer = buffer;
     let finalExt = isGif ? "gif" : "webp";
 
     if (!isGif) {
       processedBuffer = await sharp(buffer)
-        .resize({ width: 1920, withoutEnlargement: true }) // 限制最大宽度 1920px，不放大原图
-        .webp({ quality: 80 }) // 80% 质量的 WebP
+        .resize({ width: 1920, withoutEnlargement: true })
+        .webp({ quality: 80 })
         .toBuffer();
     }
 
-    const key = `community_${Date.now()}.${finalExt}`;
-    const url = `${CF_UPLOAD_URL.replace(/\/+$/, "")}/${key}`;
+    const ts = Date.now();
+    const key = `community_${ts}.${finalExt}`;
+    const thumbKey = `community_${ts}_thumb.webp`;
+    const baseUrl = CF_UPLOAD_URL.replace(/\/+$/, "");
+    const url = `${baseUrl}/${key}`;
 
+    // 上传原图
     const res = await fetch(url, {
       method: "PUT",
       headers: {
@@ -106,7 +111,32 @@ export async function uploadToCF(buffer: Buffer, filename: string): Promise<Uplo
       const text = await res.text().catch(() => "");
       return { success: false, error: `上传失败 (${res.status}): ${text.slice(0, 200)}` };
     }
-    return { success: true, url };
+
+    // 生成并上传缩略图（非 GIF：320px 宽 WebP q70；GIF 不生成缩略图）
+    let thumbUrl = url; // 默认缩略图 = 原图
+    if (!isGif) {
+      try {
+        const thumbBuffer = await sharp(buffer)
+          .resize({ width: 480, withoutEnlargement: true })
+          .webp({ quality: 70 })
+          .toBuffer();
+        const thumbRes = await fetch(`${baseUrl}/${thumbKey}`, {
+          method: "PUT",
+          headers: {
+            Authorization: CF_AUTH_TOKEN,
+            "Content-Type": "application/octet-stream",
+          },
+          body: new Uint8Array(thumbBuffer),
+        });
+        if (thumbRes.ok) {
+          thumbUrl = `${baseUrl}/${thumbKey}`;
+        }
+      } catch {
+        // 缩略图生成失败不影响主流程
+      }
+    }
+
+    return { success: true, url, thumbUrl };
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : "图床上传异常" };
   }

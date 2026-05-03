@@ -18,6 +18,7 @@ type CommunityReactions = {
 export type CommunityPost = {
   id: string;
   imageUrl: string;
+  thumbUrl: string;
   description: string;
   tags: string[];
   createdAt: string;
@@ -45,6 +46,7 @@ function normalizePost(raw: Partial<CommunityPost>): CommunityPost {
   return {
     id: String(raw.id || ""),
     imageUrl: String(raw.imageUrl || "").trim(),
+    thumbUrl: String(raw.thumbUrl || "").trim() || String(raw.imageUrl || "").trim(),
     description: String(raw.description || "").trim().slice(0, 500),
     tags: Array.isArray(raw.tags)
       ? [...new Set(raw.tags.map((t) => String(t).trim().slice(0, 30)).filter(Boolean))].slice(0, 10)
@@ -82,6 +84,7 @@ export function getPostById(id: string): CommunityPost | undefined {
 
 export function createPost(data: {
   imageUrl: string;
+  thumbUrl: string;
   description: string;
   tags: string[];
   uploader: string;

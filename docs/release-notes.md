@@ -151,3 +151,11 @@ v1.1.2   日期2026.5.3
 - **P2-3 清理死依赖**：移除 `openai` 包（全项目无任何 import，节省 22 个传递依赖）
 - **P2-11 命名/位置修补**：`useToast.ts` 从 `components/` 迁至 `hooks/`；`MotionProvider.tsx` 更名为 `motionPresets.ts`（文件内容为动画常量而非 Provider）；删除根目录 Cloudflare 验证文件 `23366171d0bc95587ccd61d43e8d880b.txt`
 - **P2-2 will-change 审查**：确认仅 `index.css` 的 `@keyframes fadeInUp` 中使用，动画结束自动释放，符合最佳实践，无需修改
+
+v1.1.3   日期2026.5.3
+说明
+- **修复首页分页**：`GROUPS_PER_PAGE` 从 24 改为 12，符合优化方案 P1-2 要求
+- **修复登录灰屏**：`AuthModal` 移除 `if (!isOpen) return null` 提前返回（与 `AnimatePresence` exit 动画冲突），遮罩层增加 `onClick={onClose}`；`useAuth` 中 `/api/auth/me` 增加 content-type 检查，防止 HTML 响应导致 `.json()` 解析崩溃
+- **修复社区 JSON 解析报错**：服务端 catch-all 路由 `/api/*` 路径未匹配时返回 JSON 而非 HTML，启动失败时 API 路径也返回 JSON，彻底消除 `Unexpected token '<'` 报错；`useCommunity` 查询增加 content-type 检查
+- **社区帖子图片优化**：上传时自动生成 480px 缩略图存到 R2，帖子新增 `thumbUrl` 字段；列表卡片加载缩略图（快），点击预览加载原图（大图）；旧帖子 `thumbUrl` 兜底为 `imageUrl`；删除帖子时同时清理缩略图
+- **社区标签防御**：`post.tags.map` 改为 `(post.tags || []).map`，防止旧数据无 tags 字段时崩溃

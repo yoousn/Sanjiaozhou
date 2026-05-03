@@ -528,7 +528,7 @@ export default function App() {
   const sidebarWidthClasses = sidebarWidthClassMap[theme.uiPreferences.sidebarWidth];
   const gridClassName = cn('grid grid-cols-1 md:grid-cols-2 relative', theme.uiPreferences.gridColumns === 3 ? 'xl:grid-cols-3 2xl:grid-cols-3' : 'xl:grid-cols-3 2xl:grid-cols-4', gridGapClassMap[theme.uiPreferences.gridGap]);
 
-  const GROUPS_PER_PAGE = 24;
+  const GROUPS_PER_PAGE = 12;
   const [currentPage, setCurrentPage] = useState(0);
   useEffect(() => {
     setCurrentPage(0);

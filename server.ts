@@ -91,6 +91,10 @@ async function startServer() {
         })
       );
       app.get("*", (req, res) => {
+        // API 路径未匹配时返回 JSON 而非 HTML，避免前端 .json() 解析报错
+        if (req.path.startsWith("/api/")) {
+          return res.status(404).json({ error: "Not Found" });
+        }
         res.sendFile(path.join(distPath, "index.html"));
       });
     }
@@ -100,6 +104,9 @@ async function startServer() {
 
   } catch (err) {
     logger.error("CRITICAL STARTUP ERROR", { error: err instanceof Error ? err.message : String(err) });
+    app.all("/api/*", (req, res) => {
+      res.status(500).json({ error: "Server Startup Error", detail: err instanceof Error ? err.message : String(err) });
+    });
     app.all("*", (req, res) => {
       res.status(500).send(`
         <h1>Server Startup Error</h1>

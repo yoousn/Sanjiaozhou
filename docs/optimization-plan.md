@@ -406,7 +406,7 @@ Cache-Control: public, max-age=31536000, immutable
 **P1（下一阶段）**
 5. P1-1 响应式图片三档生成（**延后**：当前 R2+Worker 不支持动态缩图，需先升级 Worker；已做的部分：`LazyImage` 已有 `loading="lazy"`/`decoding="async"`/aspect-ratio 防 CLS，上传端已用 `sharp` 压成 `webp@1920px@q80`）。
 6. P1-5 `React.memo` / `useMemo` / `useCallback` 基础优化 ✔（`GunCard`、`SortableGunCard`、`CommunityPostCard`、`LazyImage` 已 memo；`viewData` 已 useMemo）。
-7. P1-2 首页枪械分页 ✔（每页 24 张，编辑模式下不分页避免与拖拽冲突，切换分类/搜索/排序时自动回到首页）。
+7. P1-2 首页枪械分页 ✔（每页 12 张，编辑模式下不分页避免与拖拽冲突，切换分类/搜索/排序时自动回到首页）。
 8. P1-4 拆分 `App.tsx` 为专用 hooks（**延后到 P2**：729 行高度耦合，纯重构无功能收益且风险高）。
 9. P1-3 接入 `express-static-gzip` ✔（生产环境优先 Brotli，开启 ETag）。
 

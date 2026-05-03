@@ -26,6 +26,7 @@ router.post("/posts", requireAuth, rateLimit(20, 60 * 60 * 1000, "发帖请求�
   try {
     const body = req.body || {};
     const imageUrl = String(body.imageUrl || "").trim();
+    const thumbUrl = String(body.thumbUrl || "").trim();
     const description = String(body.description || "").trim();
     const tags = Array.isArray(body.tags) ? body.tags.map(String) : [];
     const user = (req as any).authUser;
@@ -36,7 +37,7 @@ router.post("/posts", requireAuth, rateLimit(20, 60 * 60 * 1000, "发帖请求�
       return res.status(400).json({ success: false, error: "图片或内容至少填写一项" });
     }
 
-    const post = createPost({ imageUrl, description, tags, uploader });
+    const post = createPost({ imageUrl, thumbUrl: thumbUrl || imageUrl, description, tags, uploader });
     res.json({ success: true, data: post });
   } catch (e) {
     res.status(500).json({ success: false, error: "发帖失败" });
@@ -58,6 +59,9 @@ router.delete("/posts/:id", requireAuth, async (req, res) => {
     if (deletedPost?.imageUrl) {
       await deleteFromCF(deletedPost.imageUrl);
     }
+    if (deletedPost?.thumbUrl && deletedPost.thumbUrl !== deletedPost.imageUrl) {
+      await deleteFromCF(deletedPost.thumbUrl);
+    }
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ success: false, error: "删除失败" });
@@ -78,7 +82,7 @@ router.post("/upload", requireAuth, rateLimit(10, 60 * 60 * 1000, "上传请求�
       return res.status(500).json({ success: false, error: result.error || "上传失败" });
     }
 
-    res.json({ success: true, url: result.url });
+    res.json({ success: true, url: result.url, thumbUrl: result.thumbUrl });
   } catch (e) {
     const message = e instanceof Error ? e.message : "图片上传异常";
     res.status(500).json({ success: false, error: message });

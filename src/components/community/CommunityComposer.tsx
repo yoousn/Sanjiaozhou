@@ -76,6 +76,7 @@ export function CommunityComposer({
     try {
       // Step 1: Upload image from preview
       let imageUrl = "";
+      let thumbUrl = "";
       if (clipboard.previewUrl) {
         setUploading(true);
         const blob = await fetch(clipboard.previewUrl).then((r) => r.blob());
@@ -88,6 +89,7 @@ export function CommunityComposer({
         const uploadData = await uploadRes.json();
         if (!uploadRes.ok) throw new Error(uploadData?.error || "图片上传失败");
         imageUrl = uploadData.url;
+        thumbUrl = uploadData.thumbUrl || uploadData.url;
       }
 
       // Step 2: Create post
@@ -96,6 +98,7 @@ export function CommunityComposer({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           imageUrl,
+          thumbUrl,
           description,
           tags,
           uploader: uploader || undefined,

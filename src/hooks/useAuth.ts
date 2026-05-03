@@ -25,9 +25,16 @@ export function useAuth() {
 
   useEffect(() => {
     fetch("/api/auth/me", { credentials: "same-origin" })
-      .then((res) => res.json())
+      .then((res) => {
+        const ct = res.headers.get("content-type") || "";
+        if (!ct.includes("application/json")) {
+          // 非 JSON 响应（如 HTML 错误页），静默忽略
+          return null;
+        }
+        return res.json();
+      })
       .then((data) => {
-        if (data.success && data.data) {
+        if (data?.success && data.data) {
           setUser(data.data);
           localStorage.setItem("auth_user", JSON.stringify({ user: data.data, expiry: Date.now() + 180 * 24 * 60 * 60 * 1000 }));
         } else {

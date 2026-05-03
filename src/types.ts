@@ -128,6 +128,7 @@ export type CommunityComment = {
 export type CommunityPost = {
   id: string;
   imageUrl: string;
+  thumbUrl: string;
   description: string;
   tags: string[];
   createdAt: string;

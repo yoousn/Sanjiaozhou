@@ -18,8 +18,6 @@ export function AuthModal({ isOpen, onClose, onLogin, onRegister }: AuthModalPro
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (!isOpen) return null;
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -48,6 +46,7 @@ export function AuthModal({ isOpen, onClose, onLogin, onRegister }: AuthModalPro
           initial="hidden"
           animate="visible"
           exit="exit"
+          onClick={onClose}
         />
         <motion.div
           className="bg-white dark:bg-[#121214] w-full max-w-sm rounded-[2rem] shadow-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800"

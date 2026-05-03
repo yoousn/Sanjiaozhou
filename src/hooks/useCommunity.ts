@@ -14,11 +14,15 @@ export function useCommunity() {
       const params = new URLSearchParams({ sort });
       if (activeTag) params.set("tag", activeTag);
       const res = await fetch(`/api/community/posts?${params.toString()}`);
+      const ct = res.headers.get("content-type") || "";
+      if (!ct.includes("application/json")) {
+        throw new Error("服务端响应异常，请稍后重试");
+      }
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "加载失败");
       return Array.isArray(data?.data) ? data.data : [] as CommunityPost[];
     },
-    refetchInterval: 10000, // 10秒自动刷新，实现近乎实时的更新
+    refetchInterval: 10000,
   });
 
   const { data: activity = [] } = useQuery({

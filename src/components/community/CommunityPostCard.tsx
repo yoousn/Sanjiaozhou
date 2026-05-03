@@ -159,7 +159,7 @@ export const CommunityPostCard = React.memo(function CommunityPostCard({
       {post.imageUrl && (
         <button type="button" onClick={() => setPreviewImage(true)} className="block w-full">
           <LazyImage
-            src={post.imageUrl}
+            src={post.thumbUrl || post.imageUrl}
             alt={post.description || "帖子图片"}
             className="w-full aspect-[4/3]"
           />
@@ -173,7 +173,7 @@ export const CommunityPostCard = React.memo(function CommunityPostCard({
           </p>
         )}
         <div className="flex flex-wrap gap-1.5 mb-3">
-          {post.tags.map((tag) => (
+          {(post.tags || []).map((tag) => (
             <button
               key={tag}
               onClick={() => onTagClick(tag)}

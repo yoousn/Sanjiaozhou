@@ -10,16 +10,17 @@
 @keyframes fadeInUp {
   0% { 
     opacity: 0; 
-    transform: translateY(16px); 
+    transform: translate3d(0, 16px, 0); 
   }
   100% { 
     opacity: 1; 
-    transform: translateY(0); 
+    transform: translate3d(0, 0, 0); 
   }
 }
 
 .animate-fade-in {
   opacity: 0;
+  will-change: transform, opacity;
   animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 

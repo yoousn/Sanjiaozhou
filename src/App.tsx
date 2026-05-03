@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { AlertCircle, Loader2, Sparkles, CheckCircle2, Home, Crosshair, Target } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { arrayMove } from '@dnd-kit/sortable';
 import {
   GunGroup,
@@ -543,9 +544,9 @@ export default function App() {
         return <SortableGunCard key={`${activeTab}-${group.id}`} group={group} idx={idx} isEditing={isEditing} activeTab={activeTab} onUpdateGroup={handleUpdateGroup} onDeleteGroup={handleDeleteGroup} onUpdateVariant={handleUpdateVariant} onDeleteVariant={handleDeleteVariant} onAddVariant={handleAddVariant} onReorderVariants={handleReorderVariants} onTogglePin={handleTogglePin} cardSize={theme.uiPreferences.cardSize} cardMinHeight={theme.uiPreferences.cardMinHeight} variantsPerPage={theme.uiPreferences.variantsPerPage} controlRadius={theme.uiPreferences.controlRadius} buttonStyle={theme.uiPreferences.buttonStyle} />;
       }
       return (
-        <div key={`${activeTab}-${group.id}`} className="self-start animate-fade-in w-full shadow-sm hover:shadow-md transition-shadow rounded-2xl" style={{ animationDelay: `${idx * 0.04}s` }}>
+        <motion.div key={`${activeTab}-${group.id}`} className="self-start w-full shadow-sm hover:shadow-md transition-shadow rounded-2xl" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1], delay: idx * 0.04 }}>
           <GunCard group={group} isEditing={isEditing} onUpdateGroup={handleUpdateGroup} onDeleteGroup={handleDeleteGroup} onUpdateVariant={handleUpdateVariant} onDeleteVariant={handleDeleteVariant} onAddVariant={handleAddVariant} onReorderVariants={handleReorderVariants} onTogglePin={handleTogglePin} cardSize={theme.uiPreferences.cardSize} cardMinHeight={theme.uiPreferences.cardMinHeight} variantsPerPage={theme.uiPreferences.variantsPerPage} controlRadius={theme.uiPreferences.controlRadius} buttonStyle={theme.uiPreferences.buttonStyle} />
-        </div>
+        </motion.div>
       );
     });
 
@@ -707,12 +708,21 @@ export default function App() {
       {activeModal === 'auth' && (
         <AuthModal isOpen={activeModal === 'auth'} onClose={() => setActiveModal('none')} onLogin={auth.login} onRegister={auth.register} />
       )}
-      {toast && (
-        <div className="fixed bottom-24 md:bottom-10 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-2 px-5 py-3 rounded-xl shadow-[0_12px_44px_rgba(0,0,0,0.12)] pointer-events-none animate-fade-in" style={{ backgroundColor: toast.type === 'success' ? '#18181B' : toast.type === 'error' ? '#B91C1C' : '#DC2626' }}>
-          {toast.type === 'success' ? <CheckCircle2 size={16} className="text-emerald-400" strokeWidth={2.5} /> : <AlertCircle size={16} className="text-white" strokeWidth={2.5} />}
-          <span className="text-white font-bold text-[13px] tracking-wide">{toast.msg}</span>
-        </div>
-      )}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            className="fixed bottom-24 md:bottom-10 left-1/2 z-[9999] flex items-center gap-2 px-5 py-3 rounded-xl shadow-[0_12px_44px_rgba(0,0,0,0.12)] pointer-events-none"
+            style={{ backgroundColor: toast.type === 'success' ? '#18181B' : toast.type === 'error' ? '#B91C1C' : '#DC2626' }}
+            initial={{ opacity: 0, y: 20, x: '-50%' }}
+            animate={{ opacity: 1, y: 0, x: '-50%' }}
+            exit={{ opacity: 0, y: 10, x: '-50%' }}
+            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+          >
+            {toast.type === 'success' ? <CheckCircle2 size={16} className="text-emerald-400" strokeWidth={2.5} /> : <AlertCircle size={16} className="text-white" strokeWidth={2.5} />}
+            <span className="text-white font-bold text-[13px] tracking-wide">{toast.msg}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }

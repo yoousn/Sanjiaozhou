@@ -1,3 +1,11 @@
+v1.1.0   日期2026.5.3---1
+说明
+- **动效系统全面升级**：启用 framer-motion，为所有 Modal（新增枪械、登录注册、自动采集、模型配置）添加流畅的进出动画（scale + opacity），Toast 通知滑入滑出，卡片列表 stagger 入场
+- **GPU 加速优化**：CSS 动画改用 translate3d 触发 GPU 合成层，为动画元素添加 will-change 提示
+- **服务端压缩**：Express 启用 compression 中间件（gzip），API 响应体积显著减小
+- **Vite 构建压缩**：新增 brotli 预压缩插件，构建产物自动生成 .br 文件，配合 Nginx 可实现零 CPU 开销的极致压缩传输
+- **清理死依赖**：移除未使用的 motion 独立包，减少 node_modules 体积
+
 v1.0.0   日期2026.4.27---1
 说明
 - 建立正式文档体系与版本记录规则

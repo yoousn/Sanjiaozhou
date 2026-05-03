@@ -1,7 +1,9 @@
 import React from 'react';
 import { X, Loader2 } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '../utils';
 import { CollectMeta } from '../types';
+import { overlayFade, scaleIn } from './MotionProvider';
 
 export type AutoCollectConfig = {
   enabled: boolean;
@@ -32,9 +34,23 @@ export function AutoCollectConfigModal({
   onSave,
 }: AutoCollectConfigModalProps) {
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden p-4 overscroll-contain" onWheel={(event) => event.stopPropagation()}>
-      <div className="absolute inset-0 bg-zinc-900/60" onClick={onClose} />
-      <div className="bg-white dark:bg-[#121214] rounded-3xl p-6 md:p-8 relative z-10 w-full max-w-2xl flex flex-col gap-5 shadow-2xl animate-fade-in">
+    <AnimatePresence>
+      <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden p-4 overscroll-contain" onWheel={(event) => event.stopPropagation()}>
+        <motion.div
+          className="absolute inset-0 bg-zinc-900/60"
+          onClick={onClose}
+          variants={overlayFade}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+        />
+        <motion.div
+          className="bg-white dark:bg-[#121214] rounded-3xl p-6 md:p-8 relative z-10 w-full max-w-2xl flex flex-col gap-5 shadow-2xl"
+          variants={scaleIn}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+        >
         <div className="flex justify-between items-center">
           <div>
             <h3 className="text-xl font-black text-zinc-900 dark:text-white">自动采集设置</h3>
@@ -208,7 +224,8 @@ export function AutoCollectConfigModal({
             )}
           </div>
         </div>
+        </motion.div>
       </div>
-    </div>
+    </AnimatePresence>
   );
 }

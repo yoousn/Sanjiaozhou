@@ -1,7 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { Bot, Check, Loader2, MessageSquare, Plus, RefreshCw, Save, Search, Send, TestTube2, Trash2, X } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { cn, inputClasses, parseModelOptionValue, buildModelOptionValue } from '../utils';
 import type { CollectMeta, CollectModelProviderInput, ModelTestResult } from '../types';
+import { overlayFade, scaleIn } from './MotionProvider';
 
 type ChatMessage = {
   role: 'user' | 'assistant';
@@ -113,9 +115,23 @@ export function ModelConfigModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden p-4 overscroll-contain" onWheel={(event) => event.stopPropagation()}>
-      <div className="absolute inset-0 bg-zinc-900/60" onClick={onClose} />
-      <div className="relative z-10 flex h-[86vh] w-full max-w-6xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl dark:bg-[#121214]">
+    <AnimatePresence>
+      <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden p-4 overscroll-contain" onWheel={(event) => event.stopPropagation()}>
+        <motion.div
+          className="absolute inset-0 bg-zinc-900/60"
+          onClick={onClose}
+          variants={overlayFade}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+        />
+        <motion.div
+          className="relative z-10 flex h-[86vh] w-full max-w-6xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl dark:bg-[#121214]"
+          variants={scaleIn}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+        >
         <div className="flex items-center justify-between border-b border-zinc-200 px-6 py-4 dark:border-zinc-800">
           <div>
             <h3 className="text-xl font-black text-zinc-900 dark:text-white">模型配置</h3>
@@ -274,7 +290,8 @@ export function ModelConfigModal({
             </form>
           </aside>
         </div>
+        </motion.div>
       </div>
-    </div>
+    </AnimatePresence>
   );
 }

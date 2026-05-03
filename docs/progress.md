@@ -2,6 +2,24 @@
 
 > 本文档记录详细施工过程与历史节点，不等同于正式版本说明。正式版本摘要请看 [release-notes.md](release-notes.md)。
 
+## [当前节点] v1.1.0 全面性能与动效优化
+:**时间：** 2026年5月3日
+:**编号：** 2026.5.3-1
+:**状态：**
+1. **动效系统升级**：启用已安装但未使用的 framer-motion，创建 MotionProvider.tsx 动画变体预设中心（fadeInUp、scaleIn、overlayFade、slideInBottom、staggerContainer 等）。
+2. **Modal 进出动画**：为 AddGunModal、AuthModal、AutoCollectConfigModal、ModelConfigModal 全部添加 framer-motion AnimatePresence + motion.div 进出动画（scale + opacity），修复 AuthModal 中无效的 animate-scale-up class。
+3. **Toast 动画**：App.tsx 中 Toast 通知改用 AnimatePresence + motion.div 滑入滑出动画。
+4. **卡片列表动画**：首页卡片列表入场从 CSS animate-fade-in + animationDelay 替换为 framer-motion motion.div stagger 效果；社区页面入场改用 motion.div。
+5. **GPU 加速**：CSS fadeInUp 动画改用 translate3d 替代 translateY，.animate-fade-in 添加 will-change: transform, opacity。
+6. **服务端压缩**：安装并启用 Express compression 中间件（gzip）。
+7. **Vite 构建压缩**：安装 vite-plugin-compression 并配置 brotliCompress 算法，构建产物自动生成 .br 预压缩文件。
+8. **清理死依赖**：移除未使用的 motion 独立包（framer-motion 已内置 motion 核心）。
+9. 版本号升至 1.1.0。
+
+更新编号：2026.5.3-1
+
+---
+
 ## [当前节点] 修复自动采集死循环与异常重试机制
 **时间：** 2026年5月2日
 **编号：** 2026.5.2-1

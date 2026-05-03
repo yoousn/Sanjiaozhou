@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Sparkles, X } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { cn, inputClasses } from '../utils';
 import { GunVariant } from '../types';
+import { overlayFade, scaleIn } from './MotionProvider';
 
 export function AddGunModal({ isOpen, onClose, onConfirm }: { isOpen: boolean, onClose: () => void, onConfirm: (name: string, category: string, variant: Omit<GunVariant, 'id'>) => void }) {
   const [name, setName] = useState('');
@@ -32,15 +34,25 @@ export function AddGunModal({ isOpen, onClose, onConfirm }: { isOpen: boolean, o
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden p-4 overscroll-contain" onWheel={(event) => event.stopPropagation()}>
-      <div
-        className="absolute inset-0 bg-zinc-900/60"
-        onClick={onClose}
-      />
+    <AnimatePresence>
+      {isOpen && (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden p-4 overscroll-contain" onWheel={(event) => event.stopPropagation()}>
+        <motion.div
+          className="absolute inset-0 bg-zinc-900/60"
+          onClick={onClose}
+          variants={overlayFade}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+        />
 
-      <div
-        className="w-full max-w-md bg-white dark:bg-[#121214] rounded-3xl shadow-2xl p-6 md:p-8 relative z-10 border border-white/20 dark:border-zinc-800 transition-all"
-      >
+        <motion.div
+          className="w-full max-w-md bg-white dark:bg-[#121214] rounded-3xl shadow-2xl p-6 md:p-8 relative z-10 border border-white/20 dark:border-zinc-800"
+          variants={scaleIn}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+        >
         <button type="button" onClick={onClose} className="absolute right-6 top-6 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-full p-2 outline-none focus:ring-2 focus:ring-zinc-900/20">
           <X size={18} strokeWidth={2.5}/>
         </button>
@@ -109,10 +121,12 @@ export function AddGunModal({ isOpen, onClose, onConfirm }: { isOpen: boolean, o
           </div>
 
           <button type="submit" className="mt-4 w-full py-4 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-black tracking-widest uppercase hover:bg-zinc-800 dark:hover:bg-zinc-100 hover:scale-[1.02] transition-all focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:outline-none shadow-xl shadow-zinc-900/10">
-            完成添加
-          </button>
+          完成添加
+        </button>
         </form>
+        </motion.div>
       </div>
-    </div>
+      )}
+    </AnimatePresence>
   );
 }

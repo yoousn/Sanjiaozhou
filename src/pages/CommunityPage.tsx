@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { useCommunity } from "../hooks/useCommunity";
 import { CommunityToolbar } from "../components/community/CommunityToolbar";
 import { CommunityComposer } from "../components/community/CommunityComposer";
@@ -11,7 +12,7 @@ export function CommunityPage({ auth, onOpenAuth }: { auth: any, onOpenAuth: () 
   const [showComposer, setShowComposer] = useState(false);
 
   return (
-    <div className="animate-fade-in mt-4 relative min-h-[calc(100vh-100px)]">
+    <motion.div className="mt-4 relative min-h-[calc(100vh-100px)]" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}>
       <div className="flex flex-col lg:flex-row gap-6">
         <div className="flex-1 min-w-0">
           <h2 className="text-3xl font-black tracking-tighter mb-2 text-zinc-900 dark:text-white">
@@ -74,6 +75,6 @@ export function CommunityPage({ auth, onOpenAuth }: { auth: any, onOpenAuth: () 
 
         <CommunityActivityBar activities={community.activity} />
       </div>
-    </div>
+    </motion.div>
   );
 }

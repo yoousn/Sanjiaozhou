@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { X, Loader2 } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '../utils';
+import { overlayFade, scaleIn } from './MotionProvider';
 
 type AuthModalProps = {
   isOpen: boolean;
@@ -37,8 +39,23 @@ export function AuthModal({ isOpen, onClose, onLogin, onRegister }: AuthModalPro
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center overflow-hidden p-4 bg-black/60 backdrop-blur-sm animate-fade-in overscroll-contain" onWheel={(event) => event.stopPropagation()}>
-      <div className="bg-white dark:bg-[#121214] w-full max-w-sm rounded-[2rem] shadow-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 animate-scale-up">
+    <AnimatePresence>
+      {isOpen && (
+      <div className="fixed inset-0 z-[200] flex items-center justify-center overflow-hidden p-4 overscroll-contain" onWheel={(event) => event.stopPropagation()}>
+        <motion.div
+          className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+          variants={overlayFade}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+        />
+        <motion.div
+          className="bg-white dark:bg-[#121214] w-full max-w-sm rounded-[2rem] shadow-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800"
+          variants={scaleIn}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+        >
         <div className="px-8 pt-8 pb-4 flex items-center justify-between">
           <h2 className="text-2xl font-black tracking-tighter text-zinc-900 dark:text-white">
             {isRegister ? '加入社区' : '欢迎回来'}
@@ -94,7 +111,9 @@ export function AuthModal({ isOpen, onClose, onLogin, onRegister }: AuthModalPro
             </button>
           </div>
         </form>
+        </motion.div>
       </div>
-    </div>
+      )}
+    </AnimatePresence>
   );
 }

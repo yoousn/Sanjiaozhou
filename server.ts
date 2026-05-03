@@ -1,4 +1,5 @@
 import express from "express";
+import compression from "compression";
 import { createServer as createViteServer } from "vite";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -10,6 +11,7 @@ const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
 async function startServer() {
   const app = express();
   app.use(express.json());
+  app.use(compression());
 
   try {
     const buildsRouter = (await import("./server/routes/builds.js")).default;

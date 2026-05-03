@@ -1,10 +1,24 @@
 # syntax=docker/dockerfile:1.4
 
-FROM node:20-bookworm-slim
-
+# ── Builder：构建前端产物 ──
+FROM node:20-bookworm-slim AS builder
 WORKDIR /app
 
-# 切换 Debian / pip / npm 到国内镜像源并安装 Python 3、pip 与系统 Chromium
+RUN --mount=type=cache,target=/root/.npm,id=npm-cache \
+    printf 'registry=https://registry.npmmirror.com\nstrict-ssl=false\nfetch-retries=5\nfetch-retry-mintimeout=20000\nfetch-retry-maxtimeout=120000\nprefer-offline=true\n' > .npmrc
+
+COPY package*.json ./
+RUN --mount=type=cache,target=/root/.npm,id=npm-cache \
+    npm ci --no-audit --no-fund
+
+COPY . .
+RUN npm run build
+
+# ── Runner：精简运行镜像 ──
+FROM node:20-bookworm-slim
+WORKDIR /app
+
+# 切换 Debian / pip 到国内镜像源，安装 Python 3、pip、Chromium
 RUN set -eux; \
     printf 'Types: deb\nURIs: http://mirrors.tuna.tsinghua.edu.cn/debian\nSuites: bookworm bookworm-updates\nComponents: main\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n\nTypes: deb\nURIs: http://mirrors.tuna.tsinghua.edu.cn/debian-security\nSuites: bookworm-security\nComponents: main\nSigned-By: /usr/share/keyrings/debian-archive-keyring.gpg\n' > /etc/apt/sources.list.d/debian.sources; \
     apt-get update; \
@@ -15,32 +29,27 @@ RUN set -eux; \
         chromium; \
     rm -rf /var/lib/apt/lists/*
 
-# ── npm 镜像 + SSL 稳定性配置 ──
-# 1) 用 .npmrc 替代 npm config set（更可靠、可缓存）
-# 2) strict-ssl=false 仅在构建期使用，避免 CDN TLS 分帧问题
-# 3) fetch-retries/fetch-retry-mintimeout 增强网络抖动容忍
-# 4) prefer-offline 优先使用缓存层中的包，减少网络请求
+# 仅安装生产 npm 依赖
 COPY package*.json ./
 RUN --mount=type=cache,target=/root/.npm,id=npm-cache \
     printf 'registry=https://registry.npmmirror.com\nstrict-ssl=false\nfetch-retries=5\nfetch-retry-mintimeout=20000\nfetch-retry-maxtimeout=120000\nprefer-offline=true\n' > .npmrc && \
-    npm ci --no-audit --no-fund
+    npm ci --omit=dev --no-audit --no-fund
 
-# 复制源代码
-COPY . .
+# 复制构建产物与运行时代码
+COPY --from=builder /app/dist ./dist
+COPY server ./server
+COPY server.ts ./
+COPY scripts ./scripts
+COPY src ./src
 
-# 构建生产版本
-RUN npm run build
-
-# 安装 Python 爬虫依赖
+# 安装 Python 依赖
+COPY requirements.txt ./
 RUN pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple && \
-    pip3 install --no-cache-dir requests yt-dlp playwright --break-system-packages
+    pip3 install --no-cache-dir -r requirements.txt --break-system-packages
 
 # 确保所有需要持久化保存的 JSON 文件存在且可写
 RUN mkdir -p src scripts && \
     touch src/data.json src/daily_pwd.json scripts/collect_settings.json scripts/auto_processed_videos.json scripts/auto_logs.json scripts/daily_pwd_logs.json scripts/users.json scripts/community_posts.json scripts/community_activity.json scripts/community_comments.json
 
-# 暴露端口
 EXPOSE 3000
-
-# 启动命令 - 用 tsx 运行 server.ts
 CMD ["npx", "tsx", "server.ts"]

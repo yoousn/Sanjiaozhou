@@ -22,3 +22,23 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
+      - SESSION_SECRET=${SESSION_SECRET}
+      - CF_UPLOAD_URL=${CF_UPLOAD_URL}
+      - CF_AUTH_TOKEN=${CF_AUTH_TOKEN}
+      - DEFAULT_PROVIDER_BASE_URL=${DEFAULT_PROVIDER_BASE_URL:-https://api.yousn.me/v1}
+      - DEFAULT_PROVIDER_API_KEY=${DEFAULT_PROVIDER_API_KEY}
+      - OPENAI_BASE_URL=${OPENAI_BASE_URL:-https://api.yousn.me/v1}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=${OPENAI_MODEL:-openai/gpt-oss-120b}
+      - COLLECT_WRITE_DEBUG_FILES=${COLLECT_WRITE_DEBUG_FILES:-false}
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3000/api/builds', (r)=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))\""]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

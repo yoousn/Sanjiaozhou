@@ -3,6 +3,7 @@ import { useState, useCallback, useEffect } from "react";
 export type AuthUser = {
   id: string;
   username: string;
+  role?: string;
 };
 
 export function useAuth() {
@@ -22,6 +23,23 @@ export function useAuth() {
     }
   });
 
+  useEffect(() => {
+    fetch("/api/auth/me", { credentials: "same-origin" })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.data) {
+          setUser(data.data);
+          localStorage.setItem("auth_user", JSON.stringify({ user: data.data, expiry: Date.now() + 180 * 24 * 60 * 60 * 1000 }));
+        } else {
+          setUser(null);
+          localStorage.removeItem("auth_user");
+        }
+      })
+      .catch(() => {
+        // 静默失败，保持 localStorage 中的缓存
+      });
+  }, []);
+
   const saveAuth = (userData: AuthUser) => {
     const expiry = Date.now() + 180 * 24 * 60 * 60 * 1000; // 6个月
     localStorage.setItem("auth_user", JSON.stringify({ user: userData, expiry }));
@@ -36,7 +54,7 @@ export function useAuth() {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "登录失败");
-    
+
     saveAuth(data.data);
     return data.data;
   }, []);
@@ -49,12 +67,17 @@ export function useAuth() {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "注册失败");
-    
+
     saveAuth(data.data);
     return data.data;
   }, []);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST", credentials: "same-origin" });
+    } catch {
+      // 静默失败
+    }
     setUser(null);
     localStorage.removeItem("auth_user");
   }, []);
@@ -65,5 +88,6 @@ export function useAuth() {
     register,
     logout,
     isAuthenticated: !!user,
+    isAdmin: user?.role === "admin",
   };
 }

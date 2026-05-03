@@ -1,9 +1,10 @@
 import busboy from "busboy";
 import type { IncomingMessage } from "http";
 import sharp from "sharp";
+import { logger } from "./logger.js";
 
-const CF_UPLOAD_URL = process.env.CF_UPLOAD_URL || "https://img.yousn.me/";
-const CF_AUTH_TOKEN = process.env.CF_AUTH_TOKEN || "lrhlol666";
+const CF_UPLOAD_URL = process.env.CF_UPLOAD_URL;
+const CF_AUTH_TOKEN = process.env.CF_AUTH_TOKEN;
 
 const ALLOWED_TYPES = ["image/png", "image/jpeg", "image/gif", "image/webp"];
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -73,7 +74,7 @@ export function parseUploadFile(req: IncomingMessage): Promise<{ buffer: Buffer;
 }
 
 export async function uploadToCF(buffer: Buffer, filename: string): Promise<UploadResult> {
-  if (!CF_AUTH_TOKEN) {
+  if (!CF_UPLOAD_URL || !CF_AUTH_TOKEN) {
     return { success: false, error: "图床服务未配置" };
   }
 
@@ -125,7 +126,7 @@ export async function deleteFromCF(imageUrl: string): Promise<boolean> {
     });
     return res.ok;
   } catch (e) {
-    console.error("图床图片删除异常:", e);
+    logger.error("图床图片删除异常", { error: e instanceof Error ? e.message : String(e) });
     return false;
   }
 }

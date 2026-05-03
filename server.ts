@@ -1,8 +1,12 @@
 import express from "express";
 import compression from "compression";
+import cookieParser from "cookie-parser";
+import expressStaticGzip from "express-static-gzip";
 import { createServer as createViteServer } from "vite";
 import path from "path";
 import { fileURLToPath } from "url";
+import { SESSION_SECRET } from "./server/lib/auth.js";
+import { logger } from "./server/lib/logger.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -11,6 +15,7 @@ const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
 async function startServer() {
   const app = express();
   app.use(express.json());
+  app.use(cookieParser(SESSION_SECRET));
   app.use(compression());
 
   try {
@@ -37,7 +42,7 @@ async function startServer() {
         const result = await testModel(String(body.model || settings.defaultModel));
         res.json(result);
       } catch (e) {
-        console.error("API MODEL TEST Error:", e);
+        logger.error("API MODEL TEST Error", { error: e instanceof Error ? e.message : String(e) });
         res.status(500).json({ error: e instanceof Error ? e.message : "Model test failed" });
       }
     });
@@ -57,7 +62,7 @@ async function startServer() {
         const result = await chatWithModel(String(body.model || settings.defaultModel), messages);
         res.json(result);
       } catch (e) {
-        console.error("API MODEL CHAT Error:", e);
+        logger.error("API MODEL CHAT Error", { error: e instanceof Error ? e.message : String(e) });
         res.status(500).json({ error: e instanceof Error ? e.message : "Model chat failed" });
       }
     });
@@ -70,7 +75,21 @@ async function startServer() {
       app.use(vite.middlewares);
     } else {
       const distPath = path.join(process.cwd(), "dist");
-      app.use(express.static(distPath));
+      app.use(
+        expressStaticGzip(distPath, {
+          enableBrotli: true,
+          orderPreference: ["br"],
+          serveStatic: {
+            maxAge: 0,
+            etag: true,
+            setHeaders: (res, filePath) => {
+              if (filePath.includes("/assets/")) {
+                res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+              }
+            },
+          } as any,
+        })
+      );
       app.get("*", (req, res) => {
         res.sendFile(path.join(distPath, "index.html"));
       });
@@ -80,7 +99,7 @@ async function startServer() {
     startAutoCollectJob();
 
   } catch (err) {
-    console.error("CRITICAL STARTUP ERROR:", err);
+    logger.error("CRITICAL STARTUP ERROR", { error: err instanceof Error ? err.message : String(err) });
     app.all("*", (req, res) => {
       res.status(500).send(`
         <h1>Server Startup Error</h1>
@@ -92,7 +111,7 @@ ${err instanceof Error ? err.stack : String(err)}
   }
 
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    logger.info(`Server running on http://localhost:${PORT}`);
   });
 }
 

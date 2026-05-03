@@ -1,3 +1,8 @@
+v1.1.1   日期2026.5.3
+说明
+- **修复类型声明缺失**：安装 `@types/compression`、`@types/cookie-parser`、`@types/bcryptjs`，补全 `bcryptjs`、`vite-plugin-compression` 运行时依赖，`tsc --noEmit` 零错误通过
+- **P2-4 统一前后端共享类型**：新建 `shared/` 目录，`GunGroup`/`GunVariant`/`CollectConcurrencySettings`/`CollectModelOption`/`CollectCreator` 统一由 `shared/types.ts` 导出，`buildModelOptionValue`/`parseModelOptionValue` 统一由 `shared/modelOption.ts` 导出，消除 `src/types.ts`↔`server/lib/shape.ts`、`src/utils.ts`↔`server/lib/collectSettings.ts` 的重复定义
+
 v1.1.0   日期2026.5.3---1
 说明
 - **动效系统全面升级**：启用 framer-motion，为所有 Modal（新增枪械、登录注册、自动采集、模型配置）添加流畅的进出动画（scale + opacity），Toast 通知滑入滑出，卡片列表 stagger 入场

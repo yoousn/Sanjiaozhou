@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { writeJsonAtomic } from "./atomicJson.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -24,11 +25,15 @@ export function readComments(): Comment[] {
 }
 
 export function writeComments(comments: Comment[]) {
-  fs.writeFileSync(COMMENTS_FILE, JSON.stringify(comments, null, 2), "utf-8");
+  writeJsonAtomic(COMMENTS_FILE, comments);
 }
 
 export function getCommentsByPostId(postId: string): Comment[] {
   return readComments().filter((c) => c.postId === postId);
+}
+
+export function getCommentById(id: string): Comment | undefined {
+  return readComments().find((c) => c.id === id);
 }
 
 export function addComment(postId: string, content: string, author: string): Comment {

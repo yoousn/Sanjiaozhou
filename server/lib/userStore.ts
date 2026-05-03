@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import bcrypt from "bcryptjs";
+import { writeJsonAtomic } from "./atomicJson.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -12,6 +13,7 @@ export type User = {
   username: string;
   passwordHash: string;
   createdAt: string;
+  role?: string; // "admin" | "user"
 };
 
 export function readUsers(): User[] {
@@ -24,7 +26,7 @@ export function readUsers(): User[] {
 }
 
 export function writeUsers(users: User[]) {
-  fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2), "utf-8");
+  writeJsonAtomic(USERS_FILE, users);
 }
 
 export async function createUser(username: string, password: string): Promise<User> {
@@ -41,6 +43,7 @@ export async function createUser(username: string, password: string): Promise<Us
     username,
     passwordHash,
     createdAt: new Date().toISOString(),
+    role: "user",
   };
 
   users.push(newUser);

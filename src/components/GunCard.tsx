@@ -98,7 +98,7 @@ const SortableVariant: React.FC<{
   );
 }
 
-export function GunCard({
+export const GunCard = React.memo(function GunCard({
   group,
   isEditing,
   onUpdateGroup,
@@ -405,4 +405,4 @@ export function GunCard({
       </div>
     </div>
   );
-}
+});

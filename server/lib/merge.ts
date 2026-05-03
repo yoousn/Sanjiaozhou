@@ -1,4 +1,4 @@
-import { GunGroup, GunVariant } from "../../src/types.js";
+import type { GunGroup, GunVariant } from "../../shared/types.js";
 import { ensureVariantShape, ensureGroupShape, normalizeGunName, trimUniqueStrings } from "./shape.js";
 import { MAX_VARIANTS_PER_GUN } from "./collectSettings.js";
 

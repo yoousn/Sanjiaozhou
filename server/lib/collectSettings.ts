@@ -1,12 +1,16 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { 
-  CollectConcurrencySettings, 
-  CollectModelOption, 
-  CollectCreator 
-} from "../../src/types.js";
+import { writeJsonAtomic } from "./atomicJson.js";
 import { trimUniqueStrings } from "./shape.js";
+import type {
+  CollectConcurrencySettings,
+  CollectModelOption,
+  CollectCreator,
+} from "../../shared/types.js";
+import { buildModelOptionValue, parseModelOptionValue } from "../../shared/modelOption.js";
+
+export { buildModelOptionValue, parseModelOptionValue };
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -28,10 +32,10 @@ export const DEFAULT_PROVIDER_ID = "builtin-default";
 export const BUILTIN_PROVIDER: BackendCollectModelProvider = {
   id: DEFAULT_PROVIDER_ID,
   name: "yousn.me 接口",
-  baseUrl: "https://api.yousn.me/v1",
-  apiKey: "sk-88AqJeSQhfrmVTDcSAOTZDb6NqEbG3X8C3na3WqolNdasdpb",
+  baseUrl: process.env.DEFAULT_PROVIDER_BASE_URL || "https://api.yousn.me/v1",
+  apiKey: process.env.DEFAULT_PROVIDER_API_KEY || "",
   models: ["glm-5", "openai/gpt-oss-20b", "openai/gpt-oss-120b", "stepfun-ai/step-3.5-flash"],
-  hasApiKey: true
+  hasApiKey: Boolean(process.env.DEFAULT_PROVIDER_API_KEY),
 };
 export const DEFAULT_MODEL_VALUE = `${DEFAULT_PROVIDER_ID}::openai/gpt-oss-120b`;
 export const CREATOR_OPTIONS: CollectCreator[] = [
@@ -63,18 +67,6 @@ export type CollectModelProviderMeta = {
   models: string[];
   hasApiKey: boolean;
 };
-
-export function buildModelOptionValue(providerId: string, model: string) {
-  return `${providerId}::${model}`;
-}
-
-export function parseModelOptionValue(value?: string) {
-  const [providerId = "", ...modelParts] = String(value || "").split("::");
-  return {
-    providerId,
-    model: modelParts.join("::"),
-  };
-}
 
 export function sanitizeProvider(provider: Partial<BackendCollectModelProvider>, fallbackId?: string): BackendCollectModelProvider {
   const id = String(provider.id || fallbackId || `provider_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`).trim();
@@ -174,7 +166,7 @@ export function writeCollectSettings(settings: CollectSettings) {
     }
   };
 
-  fs.writeFileSync(COLLECT_SETTINGS_FILE, JSON.stringify(nextSettings, null, 2), "utf-8");
+  writeJsonAtomic(COLLECT_SETTINGS_FILE, nextSettings);
 }
 
 export function buildProviderMeta(provider: BackendCollectModelProvider): CollectModelProviderMeta {

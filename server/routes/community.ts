@@ -1,14 +1,17 @@
 import { Router } from "express";
-import { queryPosts, createPost, addReaction, deletePost } from "../lib/communityStore.js";
+import { requireAuth } from "../lib/auth.js";
+import { rateLimit } from "../lib/rateLimiter.js";
+import { queryPosts, createPost, addReaction, deletePost, getPostById } from "../lib/communityStore.js";
 import { getRecentActivity } from "../lib/communityActivity.js";
 import { parseUploadFile, uploadToCF, deleteFromCF } from "../lib/communityUpload.js";
-import { getCommentsByPostId, addComment, deleteComment } from "../lib/commentStore.js";
+import { getCommentsByPostId, addComment, deleteComment, getCommentById } from "../lib/commentStore.js";
+import { setFileETag } from "../lib/etag.js";
 
 const router = Router();
 
 const VALID_EMOJIS = ["fire", "money", "skull"] as const;
 
-router.get("/posts", (req, res) => {
+router.get("/posts", setFileETag("scripts/community_posts.json", (req) => `${req.query.sort || "new"}-${req.query.tag || ""}`), (req, res) => {
   try {
     const sort = req.query.sort === "hot" ? "hot" : "new";
     const tag = typeof req.query.tag === "string" ? req.query.tag.trim() : undefined;
@@ -19,13 +22,14 @@ router.get("/posts", (req, res) => {
   }
 });
 
-router.post("/posts", (req, res) => {
+router.post("/posts", requireAuth, rateLimit(20, 60 * 60 * 1000, "发帖请求过于频繁，请 1 小时后再试"), (req, res) => {
   try {
     const body = req.body || {};
     const imageUrl = String(body.imageUrl || "").trim();
     const description = String(body.description || "").trim();
     const tags = Array.isArray(body.tags) ? body.tags.map(String) : [];
-    const uploader = String(body.uploader || "匿名").trim();
+    const user = (req as any).authUser;
+    const uploader = user?.username || "匿名";
 
     // 1.4 允许无图片发帖，但至少要有描述
     if (!imageUrl && !description) {
@@ -39,26 +43,28 @@ router.post("/posts", (req, res) => {
   }
 });
 
-router.delete("/posts/:id", async (req, res) => {
+router.delete("/posts/:id", requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    const deletedPost = deletePost(id);
-    if (!deletedPost) {
+    const post = getPostById(id);
+    if (!post) {
       return res.status(404).json({ success: false, error: "帖子不存在" });
     }
-    
-    // 如果有图片，尝试从图床删除
-    if (deletedPost.imageUrl) {
+    const user = (req as any).authUser;
+    if (post.uploader !== user.username && user.role !== "admin") {
+      return res.status(403).json({ success: false, error: "无权删除他人帖子" });
+    }
+    const deletedPost = deletePost(id);
+    if (deletedPost?.imageUrl) {
       await deleteFromCF(deletedPost.imageUrl);
     }
-
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ success: false, error: "删除失败" });
   }
 });
 
-router.post("/upload", async (req, res) => {
+router.post("/upload", requireAuth, rateLimit(10, 60 * 60 * 1000, "上传请求过于频繁，请 1 小时后再试"), async (req, res) => {
   try {
     const ct = req.headers["content-type"] || "";
     if (!ct.includes("multipart/form-data")) {
@@ -79,11 +85,12 @@ router.post("/upload", async (req, res) => {
   }
 });
 
-router.post("/posts/:id/react", (req, res) => {
+router.post("/posts/:id/react", requireAuth, (req, res) => {
   try {
     const postId = req.params.id;
     const emoji = req.body?.emoji;
-    const userId = req.body?.userId;
+    const user = (req as any).authUser;
+    const userId = user?.id;
 
     if (!userId) {
       return res.status(401).json({ success: false, error: "请先登录才能进行互动" });
@@ -126,23 +133,32 @@ router.get("/posts/:id/comments", (req, res) => {
   }
 });
 
-router.post("/posts/:id/comments", (req, res) => {
+router.post("/posts/:id/comments", requireAuth, (req, res) => {
   try {
     const postId = req.params.id;
-    const { content, author } = req.body || {};
-    if (!content || !author) {
-      return res.status(400).json({ error: "内容与昵称不能为空" });
+    const { content } = req.body || {};
+    const user = (req as any).authUser;
+    if (!content || !user?.username) {
+      return res.status(400).json({ error: "内容不能为空" });
     }
-    const newComment = addComment(postId, String(content), String(author));
+    const newComment = addComment(postId, String(content), user.username);
     res.json({ success: true, data: newComment });
   } catch (e) {
     res.status(500).json({ error: "添加评论失败" });
   }
 });
 
-router.delete("/posts/:id/comments/:commentId", (req, res) => {
+router.delete("/posts/:id/comments/:commentId", requireAuth, (req, res) => {
   try {
     const { commentId } = req.params;
+    const comment = getCommentById(commentId);
+    if (!comment) {
+      return res.status(404).json({ success: false, error: "评论不存在" });
+    }
+    const user = (req as any).authUser;
+    if (comment.author !== user.username && user.role !== "admin") {
+      return res.status(403).json({ success: false, error: "无权删除他人评论" });
+    }
     deleteComment(commentId);
     res.json({ success: true });
   } catch (e) {

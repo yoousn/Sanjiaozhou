@@ -76,14 +76,4 @@ export function getButtonClassName(style: UiButtonStyle, tone: 'default' | 'prim
   return palette[tone][style];
 }
 
-export function buildModelOptionValue(providerId: string, model: string) {
-  return `${providerId}::${model}`;
-}
-
-export function parseModelOptionValue(value: string) {
-  const [providerId = '', ...modelParts] = (value || '').split('::');
-  return {
-    providerId,
-    model: modelParts.join('::'),
-  };
-}
+export { buildModelOptionValue, parseModelOptionValue } from '../shared/modelOption';

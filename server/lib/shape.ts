@@ -1,22 +1,6 @@
-export type GunVariant = {
-  id: string;
-  tier: string;
-  price: string;
-  buildType: string;
-  code: string;
-  date: string;
-  author?: string;
-  sourceUrl?: string;
-  locked?: boolean;
-};
+import type { GunVariant, GunGroup } from "../../shared/types.js";
 
-export type GunGroup = {
-  id: string;
-  name: string;
-  category: string;
-  variants: GunVariant[];
-  pinned?: boolean;
-};
+export type { GunVariant, GunGroup };
 
 export function ensureVariantShape(variant: Partial<GunVariant>): GunVariant {
   return {

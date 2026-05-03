@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { AlertCircle, Loader2, Sparkles, CheckCircle2, Home, Crosshair, Target } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { arrayMove } from '@dnd-kit/sortable';
@@ -499,35 +499,52 @@ export default function App() {
     localStorage.setItem('sortBy', val);
   };
   const sourceData = isEditing ? draftData : savedData;
-  const viewData = sourceData.filter(g => {
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      return g.name.toLowerCase().includes(q) || g.variants.some(v => (v.buildType || '').toLowerCase().includes(q) || (v.code || '').toLowerCase().includes(q));
-    }
-    return activeTab === 'home' ? true : g.category === activeTab;
-  }).sort((a, b) => {
-    const pinA = a.pinned ? 1 : 0; const pinB = b.pinned ? 1 : 0;
-    if (pinA !== pinB) return pinB - pinA;
-    if (sortBy === 'name') return a.name.localeCompare(b.name, 'zh-CN');
-    if (sortBy === 'date') {
-      const dateA = a.variants.length > 0 ? a.variants.reduce((max, v) => v.date > max ? v.date : max, a.variants[0].date) : '';
-      const dateB = b.variants.length > 0 ? b.variants.reduce((max, v) => v.date > max ? v.date : max, b.variants[0].date) : '';
-      return dateB.localeCompare(dateA);
-    }
-    if (sortBy === 'price') {
-      const parsePrice = (s: string) => { let n = parseFloat(s.replace(/[^0-9.]/g, '')) || 0; if (s.toLowerCase().includes('w')) n *= 10000; return n; };
-      const priceA = a.variants.length > 0 ? Math.max(...a.variants.map(v => parsePrice(v.price))) : 0;
-      const priceB = b.variants.length > 0 ? Math.max(...b.variants.map(v => parsePrice(v.price))) : 0;
-      return priceB - priceA;
-    }
-    return 0;
-  });
+  const viewData = useMemo(() => {
+    return sourceData.filter(g => {
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        return g.name.toLowerCase().includes(q) || g.variants.some(v => (v.buildType || '').toLowerCase().includes(q) || (v.code || '').toLowerCase().includes(q));
+      }
+      return activeTab === 'home' ? true : g.category === activeTab;
+    }).sort((a, b) => {
+      const pinA = a.pinned ? 1 : 0; const pinB = b.pinned ? 1 : 0;
+      if (pinA !== pinB) return pinB - pinA;
+      if (sortBy === 'name') return a.name.localeCompare(b.name, 'zh-CN');
+      if (sortBy === 'date') {
+        const dateA = a.variants.length > 0 ? a.variants.reduce((max, v) => v.date > max ? v.date : max, a.variants[0].date) : '';
+        const dateB = b.variants.length > 0 ? b.variants.reduce((max, v) => v.date > max ? v.date : max, b.variants[0].date) : '';
+        return dateB.localeCompare(dateA);
+      }
+      if (sortBy === 'price') {
+        const parsePrice = (s: string) => { let n = parseFloat(s.replace(/[^0-9.]/g, '')) || 0; if (s.toLowerCase().includes('w')) n *= 10000; return n; };
+        const priceA = a.variants.length > 0 ? Math.max(...a.variants.map(v => parsePrice(v.price))) : 0;
+        const priceB = b.variants.length > 0 ? Math.max(...b.variants.map(v => parsePrice(v.price))) : 0;
+        return priceB - priceA;
+      }
+      return 0;
+    });
+  }, [sourceData, searchQuery, activeTab, sortBy]);
 
   const sidebarWidthClasses = sidebarWidthClassMap[theme.uiPreferences.sidebarWidth];
   const gridClassName = cn('grid grid-cols-1 md:grid-cols-2 relative', theme.uiPreferences.gridColumns === 3 ? 'xl:grid-cols-3 2xl:grid-cols-3' : 'xl:grid-cols-3 2xl:grid-cols-4', gridGapClassMap[theme.uiPreferences.gridGap]);
 
+  const GROUPS_PER_PAGE = 24;
+  const [currentPage, setCurrentPage] = useState(0);
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [activeTab, searchQuery, sortBy]);
+  // 编辑模式或拖拽排序时不分页，避免冲突
+  const shouldPaginate = !isEditing && viewData.length > GROUPS_PER_PAGE;
+  const totalPages = shouldPaginate ? Math.ceil(viewData.length / GROUPS_PER_PAGE) : 1;
+  const pagedViewData = useMemo(() => {
+    if (!shouldPaginate) return viewData;
+    const start = currentPage * GROUPS_PER_PAGE;
+    return viewData.slice(start, start + GROUPS_PER_PAGE);
+  }, [viewData, shouldPaginate, currentPage]);
+
   const renderGridElements = (useSortableWrapper: boolean) => {
-    const widgetIdx = Math.min(theme.uiPreferences.categoryWidgetIndex || 0, viewData.length);
+    const dataToRender = pagedViewData;
+    const widgetIdx = Math.min(theme.uiPreferences.categoryWidgetIndex || 0, dataToRender.length);
     const widget = (
       <SortableCategoryWidget
         key="category-widget"
@@ -539,7 +556,7 @@ export default function App() {
       />
     );
 
-    const elements = viewData.map((group, idx) => {
+    const elements = dataToRender.map((group, idx) => {
       if (useSortableWrapper) {
         return <SortableGunCard key={`${activeTab}-${group.id}`} group={group} idx={idx} isEditing={isEditing} activeTab={activeTab} onUpdateGroup={handleUpdateGroup} onDeleteGroup={handleDeleteGroup} onUpdateVariant={handleUpdateVariant} onDeleteVariant={handleDeleteVariant} onAddVariant={handleAddVariant} onReorderVariants={handleReorderVariants} onTogglePin={handleTogglePin} cardSize={theme.uiPreferences.cardSize} cardMinHeight={theme.uiPreferences.cardMinHeight} variantsPerPage={theme.uiPreferences.variantsPerPage} controlRadius={theme.uiPreferences.controlRadius} buttonStyle={theme.uiPreferences.buttonStyle} />;
       }
@@ -654,6 +671,44 @@ export default function App() {
                     )}
                     {viewData.length === 0 && (
                       <div className="col-span-full py-24 flex flex-col items-center justify-center text-zinc-400 animate-fade-in"><div className="w-16 h-16 bg-white shadow-sm border border-zinc-200/50 rounded-2xl flex items-center justify-center mb-4"><Sparkles size={24} className="text-zinc-300" /></div><p className="font-bold text-xs tracking-widest uppercase text-zinc-500">该分类下暂无任何条目</p></div>
+                    )}
+                    {shouldPaginate && totalPages > 1 && (
+                      <div className="mt-8 flex items-center justify-center gap-2 flex-wrap">
+                        <button
+                          type="button"
+                          onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
+                          disabled={currentPage === 0}
+                          className="px-3 py-1.5 text-[12px] font-bold rounded-lg bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-900 hover:text-white hover:border-zinc-900 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                        >
+                          上一页
+                        </button>
+                        {Array.from({ length: totalPages }).map((_, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => setCurrentPage(i)}
+                            className={cn(
+                              'min-w-[32px] h-8 text-[12px] font-bold rounded-lg transition',
+                              i === currentPage
+                                ? 'bg-zinc-900 text-white'
+                                : 'bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-100'
+                            )}
+                          >
+                            {i + 1}
+                          </button>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() => setCurrentPage(p => Math.min(totalPages - 1, p + 1))}
+                          disabled={currentPage >= totalPages - 1}
+                          className="px-3 py-1.5 text-[12px] font-bold rounded-lg bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-900 hover:text-white hover:border-zinc-900 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                        >
+                          下一页
+                        </button>
+                        <span className="ml-2 text-[11px] font-medium text-zinc-400">
+                          共 {viewData.length} 条
+                        </span>
+                      </div>
                     )}
                   </>
                 )}

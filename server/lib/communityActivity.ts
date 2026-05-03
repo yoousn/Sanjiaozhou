@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { readPosts } from "./communityStore.js";
+import { writeJsonAtomic } from "./atomicJson.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -37,7 +38,7 @@ function readActivities(): CommunityActivity[] {
 }
 
 function writeActivities(activities: CommunityActivity[]) {
-  fs.writeFileSync(ACTIVITY_FILE, JSON.stringify(activities, null, 2), "utf-8");
+  writeJsonAtomic(ACTIVITY_FILE, activities);
 }
 
 export function getRecentActivity(limit = 20): CommunityActivity[] {

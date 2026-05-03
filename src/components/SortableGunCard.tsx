@@ -8,7 +8,7 @@ type SortableGunCardProps = React.ComponentProps<typeof GunCard> & {
   activeTab: string;
 };
 
-export function SortableGunCard({ group, idx, isEditing, activeTab, ...props }: SortableGunCardProps) {
+export const SortableGunCard = React.memo(function SortableGunCard({ group, idx, isEditing, activeTab, ...props }: SortableGunCardProps) {
   const {
     attributes,
     listeners,
@@ -47,4 +47,4 @@ export function SortableGunCard({ group, idx, isEditing, activeTab, ...props }: 
       />
     </div>
   );
-}
+});

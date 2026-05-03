@@ -23,7 +23,10 @@ COOKIES_FILE = SCRIPTS_DIR / "cookies.txt"
 AUTO_PROCESSED_VIDEOS_FILE = SCRIPTS_DIR / "auto_processed_videos.json"
 HEADER_STRING_FILES = sorted(SCRIPTS_DIR.glob("*header_string*.txt"))
 AI_BASE_URL = os.getenv("OPENAI_BASE_URL", "https://api.yousn.me/v1")
-AI_API_KEY = os.getenv("OPENAI_API_KEY", "sk-88AqJeSQhfrmVTDcSAOTZDb6NqEbG3X8C3na3WqolNdasdpb")
+AI_API_KEY = os.getenv("OPENAI_API_KEY")
+if not AI_API_KEY:
+    print("错误：未配置 OPENAI_API_KEY 环境变量", file=sys.stderr)
+    sys.exit(1)
 DEFAULT_AI_MODEL = os.getenv("OPENAI_MODEL", "openai/gpt-oss-120b")
 WRITE_DEBUG_FILES = os.getenv("COLLECT_WRITE_DEBUG_FILES", "false").lower() == "true"
 DEFAULT_TARGET_GUNS = ["M14", "M250"]

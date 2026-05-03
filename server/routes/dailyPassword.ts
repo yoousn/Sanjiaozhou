@@ -5,6 +5,9 @@ import { fileURLToPath } from "url";
 import { execFile } from "child_process";
 import { promisify } from "util";
 import { readDailyPwdLogs, addDailyPwdLog } from "../lib/logs.js";
+import { writeJsonAtomic } from "../lib/atomicJson.js";
+import { requireAdmin } from "../lib/auth.js";
+import { logger } from "../lib/logger.js";
 
 const execFileAsync = promisify(execFile);
 const __filename = fileURLToPath(import.meta.url);
@@ -33,7 +36,7 @@ router.get("/", (req, res) => {
   }
 });
 
-router.post("/refresh", async (req, res) => {
+router.post("/refresh", requireAdmin, async (req, res) => {
   const isManual = Boolean(req.body?.manual);
   const sourceLabel = isManual ? "手动刷新" : "自动刷新";
   try {
@@ -48,7 +51,7 @@ router.post("/refresh", async (req, res) => {
     }
     const beijingDate = new Date().toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai' });
     const payload = { date: beijingDate, data: parsed };
-    fs.writeFileSync(DAILY_PWD_FILE, JSON.stringify(payload, null, 2), "utf-8");
+    writeJsonAtomic(DAILY_PWD_FILE, payload);
     if (isManual) {
       addDailyPwdLog(`手动刷新成功：已获取 ${beijingDate} 的每日密码`, true);
     }
@@ -56,7 +59,7 @@ router.post("/refresh", async (req, res) => {
   } catch (e) {
     const message = e instanceof Error ? e.message : "获取密码失败，请检查脚本";
     addDailyPwdLog(`${sourceLabel}失败：${message}`, false);
-    console.error("API PASSWORD REFRESH Error:", e);
+    logger.error("API PASSWORD REFRESH Error", { error: e instanceof Error ? e.message : String(e) });
     res.status(500).json({ error: message });
   }
 });
@@ -86,10 +89,10 @@ export function startDailyPwdJob() {
           const hasData = Object.values(parsed).some(v => v !== "未发现数据");
           if (hasData) {
             const payload = { date: currentDay, data: parsed };
-            fs.writeFileSync(DAILY_PWD_FILE, JSON.stringify(payload, null, 2), "utf-8");
+            writeJsonAtomic(DAILY_PWD_FILE, payload);
             lastSuccessfulPwdDate = currentDay;
             addDailyPwdLog(`自动抓取成功：已获取 ${currentDay} 的每日密码`, true);
-            console.log(`[每日密码] 成功获取 ${currentDay} 的密码`);
+            logger.info(`成功获取 ${currentDay} 的每日密码`);
           } else {
             addDailyPwdLog(`自动抓取未命中：${currentDay} 暂无有效密码`, false);
           }
@@ -99,7 +102,7 @@ export function startDailyPwdJob() {
       } catch (e) {
         const message = e instanceof Error ? e.message : String(e);
         addDailyPwdLog(`自动抓取异常：${message}`, false);
-        console.error("[每日密码] 自动获取失败:", e);
+        logger.error("自动获取每日密码失败", { error: e instanceof Error ? e.message : String(e) });
       }
     }
   }, 1000 * 60 * 10);

@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { writeJsonAtomic } from "./atomicJson.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -31,7 +32,7 @@ export function addLog(filePath: string, message: string, success: boolean) {
   const logs = readLogs(filePath);
   logs.unshift({ time: getBeijingTimeString(), message, success });
   if (logs.length > 100) logs.length = 100;
-  fs.writeFileSync(filePath, JSON.stringify(logs, null, 2), "utf-8");
+  writeJsonAtomic(filePath, logs);
 }
 
 export function readAutoLogs(): AutoLog[] {

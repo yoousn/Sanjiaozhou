@@ -24,7 +24,7 @@ function formatTime(iso: string) {
   }
 }
 
-function LazyImage({ src, alt, className }: { src: string, alt: string, className: string }) {
+const LazyImage = React.memo(function LazyImage({ src, alt, className }: { src: string, alt: string, className: string }) {
   const [loaded, setLoaded] = useState(false);
   return (
     <div className={cn("relative bg-zinc-100 dark:bg-zinc-800 overflow-hidden", className)}>
@@ -39,9 +39,9 @@ function LazyImage({ src, alt, className }: { src: string, alt: string, classNam
       />
     </div>
   );
-}
+});
 
-export function CommunityPostCard({
+export const CommunityPostCard = React.memo(function CommunityPostCard({
   post,
   onReact,
   onTagClick,
@@ -285,4 +285,4 @@ export function CommunityPostCard({
       )}
     </div>
   );
-}
+});

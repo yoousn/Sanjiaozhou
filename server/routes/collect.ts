@@ -8,6 +8,7 @@ import {
   buildModelOptionValue,
   parseModelOptionValue
 } from "../lib/collectSettings.js";
+import { setFileETag } from "../lib/etag.js";
 import { 
   fetchModelsFromProvider, 
   searchCollectVideos, 
@@ -23,14 +24,16 @@ import { trimUniqueStrings, ensureGroupShape } from "../lib/shape.js";
 import { uniqueTrimmed, mergeCollectedGroups } from "../lib/merge.js";
 import { readBuilds, writeBuilds } from "./builds.js";
 import { readAutoLogs, addAutoLog } from "../lib/logs.js";
+import { requireAdmin } from "../lib/auth.js";
+import { logger } from "../lib/logger.js";
 
 const router = Router();
 
-router.get("/meta", (req, res) => {
+router.get("/meta", setFileETag("scripts/collect_settings.json"), (req, res) => {
   res.json(buildCollectMeta(readCollectSettings()));
 });
 
-router.post("/preset-guns", (req, res) => {
+router.post("/preset-guns", requireAdmin, (req, res) => {
   try {
     const body = req.body || {};
     const settings = readCollectSettings();
@@ -42,7 +45,7 @@ router.post("/preset-guns", (req, res) => {
   }
 });
 
-router.post("/providers/fetch-models", async (req, res) => {
+router.post("/providers/fetch-models", requireAdmin, async (req, res) => {
   try {
     const body = req.body || {};
     const baseUrl = String(body.baseUrl || "").trim();
@@ -59,7 +62,7 @@ router.post("/providers/fetch-models", async (req, res) => {
   }
 });
 
-router.post("/providers", (req, res) => {
+router.post("/providers", requireAdmin, (req, res) => {
   try {
     const body = req.body || {};
     const settings = readCollectSettings();
@@ -92,7 +95,7 @@ router.post("/providers", (req, res) => {
   }
 });
 
-router.post("/providers/delete", (req, res) => {
+router.post("/providers/delete", requireAdmin, (req, res) => {
   try {
     const body = req.body || {};
     const providerId = String(body.id || "").trim();
@@ -113,7 +116,7 @@ router.post("/providers/delete", (req, res) => {
   }
 });
 
-router.post("/concurrency", (req, res) => {
+router.post("/concurrency", requireAdmin, (req, res) => {
   try {
     const body = req.body || {};
     const settings = readCollectSettings();
@@ -128,7 +131,7 @@ router.post("/concurrency", (req, res) => {
   }
 });
 
-router.post("/search", async (req, res) => {
+router.post("/search", requireAdmin, async (req, res) => {
   try {
     const body = req.body || {};
     const settings = readCollectSettings();
@@ -137,12 +140,12 @@ router.post("/search", async (req, res) => {
     const result = await searchCollectVideos(guns, creatorIds, Boolean(body.concurrent), Number(body.maxVideos) || 5);
     res.json(result);
   } catch (e) {
-    console.error("API COLLECT SEARCH Error:", e);
+    logger.error("API COLLECT SEARCH Error", { error: e instanceof Error ? e.message : String(e) });
     res.status(500).json({ error: e instanceof Error ? e.message : "Collect search failed" });
   }
 });
 
-router.post("/search/start", async (req, res) => {
+router.post("/search/start", requireAdmin, async (req, res) => {
   try {
     const body = req.body || {};
     const settings = readCollectSettings();
@@ -152,7 +155,7 @@ router.post("/search/start", async (req, res) => {
     await runSearchCollectorStream(requestId, guns, creatorIds, Boolean(body.concurrent), Number(body.maxVideos) || 5);
     res.json({ success: true, requestId, guns, creatorIds });
   } catch (e) {
-    console.error("API COLLECT SEARCH START Error:", e);
+    logger.error("API COLLECT SEARCH START Error", { error: e instanceof Error ? e.message : String(e) });
     res.status(500).json({ error: e instanceof Error ? e.message : "Collect search start failed" });
   }
 });
@@ -170,7 +173,7 @@ router.get("/search/status/:requestId", (req, res) => {
   });
 });
 
-router.post("/search/cancel/:requestId", (req, res) => {
+router.post("/search/cancel/:requestId", requireAdmin, (req, res) => {
   const state = searchStreams.get(req.params.requestId || "");
   if (state && state.process && !state.done) {
     state.process.kill("SIGTERM");
@@ -182,7 +185,7 @@ router.post("/search/cancel/:requestId", (req, res) => {
   res.status(404).json({ error: "任务不存在或已结束" });
 });
 
-router.post("/preview", async (req, res) => {
+router.post("/preview", requireAdmin, async (req, res) => {
   try {
     const body = req.body || {};
     const settings = readCollectSettings();
@@ -202,12 +205,12 @@ router.post("/preview", async (req, res) => {
     );
     res.json(preview);
   } catch (e) {
-    console.error("API COLLECT PREVIEW Error:", e);
+    logger.error("API COLLECT PREVIEW Error", { error: e instanceof Error ? e.message : String(e) });
     res.status(500).json({ error: e instanceof Error ? e.message : "Collect preview failed" });
   }
 });
 
-router.post("/apply", (req, res) => {
+router.post("/apply", requireAdmin, (req, res) => {
   try {
     const groups = Array.isArray(req.body?.groups) ? req.body.groups.map(ensureGroupShape) : [];
     const currentData = readBuilds();
@@ -215,7 +218,7 @@ router.post("/apply", (req, res) => {
     writeBuilds(nextData);
     res.json({ success: true, data: nextData });
   } catch (e) {
-    console.error("API COLLECT APPLY Error:", e);
+    logger.error("API COLLECT APPLY Error", { error: e instanceof Error ? e.message : String(e) });
     res.status(500).json({ error: e instanceof Error ? e.message : "Apply failed" });
   }
 });
@@ -235,7 +238,7 @@ router.get("/auto", (req, res) => {
   });
 });
 
-router.post("/auto", (req, res) => {
+router.post("/auto", requireAdmin, (req, res) => {
   try {
     const settings = readCollectSettings();
     settings.autoCollect = {
@@ -293,7 +296,7 @@ async function runAutoCollectAttempt(modelValue: string, creatorIds: string[], v
 let lastAutoCollectTime = 0;
 let retryState: AutoCollectRetryState | null = null;
 
-router.post("/auto/cancel-retry", (req, res) => {
+router.post("/auto/cancel-retry", requireAdmin, (req, res) => {
   const videoId = req.body?.videoId;
   if (retryState) {
     if (videoId) {

@@ -42,6 +42,7 @@ COPY shared ./shared
 COPY server.ts ./
 COPY scripts ./scripts
 COPY src ./src
+COPY 爬取每日密码.py ./
 
 # 安装 Python 依赖（playwright 使用系统 Chromium，跳过浏览器下载节省约 200MB）
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1

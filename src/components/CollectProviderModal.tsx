@@ -28,12 +28,12 @@ export function CollectProviderModal({
         <div className="flex items-center justify-between gap-3">
           <div>
             <div className="text-lg font-black text-zinc-900">模型源配置</div>
-            <div className="mt-1 text-[12px] font-medium text-zinc-400">支持自定义接口、API Key、获取模型列表</div>
+            <div className="mt-1 text-[12px] font-medium text-muted">支持自定义接口、API Key、获取模型列表</div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full bg-zinc-100 p-2 text-zinc-400 transition-colors hover:bg-zinc-200 hover:text-zinc-900"
+            className="rounded-full bg-zinc-100 p-2 text-muted transition-colors hover:bg-zinc-200 hover:text-zinc-900"
           >
             <X size={18} strokeWidth={2.5} />
           </button>
@@ -42,31 +42,31 @@ export function CollectProviderModal({
         <div className="mt-5 space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-zinc-500">名称</label>
+              <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted">名称</label>
               <input
                 value={providerForm.name}
                 onChange={(e) => onProviderFormChange((prev) => ({ ...prev, name: e.target.value }))}
-                className={cn(inputClasses, 'border border-zinc-200 bg-white py-2 text-[13px] font-bold shadow-sm')}
+                className={cn(inputClasses,'border border-zinc-200 bg-white py-2 text-[13px] font-bold shadow-sm')}
                 placeholder="我的接口"
               />
             </div>
             <div>
-              <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-zinc-500">接口地址</label>
+              <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted">接口地址</label>
               <input
                 value={providerForm.baseUrl}
                 onChange={(e) => onProviderFormChange((prev) => ({ ...prev, baseUrl: e.target.value }))}
-                className={cn(inputClasses, 'border border-zinc-200 bg-white py-2 text-[13px] font-bold shadow-sm')}
+                className={cn(inputClasses,'border border-zinc-200 bg-white py-2 text-[13px] font-bold shadow-sm')}
                 placeholder="https://api.example.com/v1"
               />
             </div>
           </div>
 
           <div>
-            <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-zinc-500">API Key</label>
+            <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted">API Key</label>
             <input
               value={providerForm.apiKey}
               onChange={(e) => onProviderFormChange((prev) => ({ ...prev, apiKey: e.target.value }))}
-              className={cn(inputClasses, 'border border-zinc-200 bg-white py-2 text-[13px] font-bold shadow-sm')}
+              className={cn(inputClasses,'border border-zinc-200 bg-white py-2 text-[13px] font-bold shadow-sm')}
               placeholder="sk-..."
             />
           </div>
@@ -75,7 +75,7 @@ export function CollectProviderModal({
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <div className="text-[12px] font-black text-zinc-900">模型列表</div>
-                <div className="mt-1 text-[11px] font-medium text-zinc-400">先获取，再选择默认模型</div>
+                <div className="mt-1 text-[11px] font-medium text-muted">先获取，再选择默认模型</div>
               </div>
               <button
                 type="button"
@@ -92,7 +92,7 @@ export function CollectProviderModal({
               <select
                 value={providerForm.selectedModel || ''}
                 onChange={(e) => onProviderFormChange((prev) => ({ ...prev, selectedModel: e.target.value }))}
-                className={cn(inputClasses, 'border border-zinc-200 bg-white py-2 text-[13px] font-bold shadow-sm')}
+                className={cn(inputClasses,'border border-zinc-200 bg-white py-2 text-[13px] font-bold shadow-sm')}
               >
                 <option value="">请选择模型</option>
                 {providerForm.models.map((model) => (

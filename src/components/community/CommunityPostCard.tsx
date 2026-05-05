@@ -33,7 +33,7 @@ const LazyImage = React.memo(function LazyImage({ src, alt, className }: { src: 
       <img
         src={src}
         alt={alt}
-        className={cn("w-full h-full object-cover transition-opacity duration-500", loaded ? "opacity-100" : "opacity-0")}
+        className={cn("w-full h-full object-cover transition-opacity duration-500", loaded ?"opacity-100":"opacity-0")}
         loading="lazy"
         decoding="async"
         onLoad={() => setLoaded(true)}
@@ -216,14 +216,14 @@ export const CommunityPostCard = React.memo(function CommunityPostCard({
             <button
               key={tag}
               onClick={() => onTagClick(tag)}
-              className="px-2 py-0.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-[11px] font-bold text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition"
+              className="px-2 py-0.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-[11px] font-bold text-muted hover:text-zinc-700 dark:hover:text-zinc-200 transition"
             >
               #{tag}
             </button>
           ))}
         </div>
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-[11px] text-zinc-400">
+          <div className="flex items-center gap-2 text-[11px] text-muted">
             <span className="font-bold">{post.uploader}</span>
             <span>·</span>
             <span>{formatTime(post.createdAt)}</span>
@@ -231,7 +231,7 @@ export const CommunityPostCard = React.memo(function CommunityPostCard({
           <div className="flex items-center gap-1">
             <button
               onClick={toggleComments}
-              className={`flex items-center gap-1 px-1.5 py-0.5 rounded-lg text-[11px] font-bold transition hover:bg-zinc-100 dark:hover:bg-zinc-800 ${showComments ? "text-blue-500" : "text-zinc-500"}`}
+              className={`flex items-center gap-1 px-1.5 py-0.5 rounded-lg text-[11px] font-bold transition hover:bg-zinc-100 dark:hover:bg-zinc-800 ${showComments ? "text-blue-500" : "text-muted"}`}
             >
               <MessageCircle size={14} />
               <span>{post.comments?.length ?? 0}</span>
@@ -247,7 +247,7 @@ export const CommunityPostCard = React.memo(function CommunityPostCard({
                   title={label}
                 >
                   <span>{emoji}</span>
-                  <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                  <span className="text-[11px] text-muted">
                     {post.reactions[key]}
                   </span>
                 </button>
@@ -262,7 +262,7 @@ export const CommunityPostCard = React.memo(function CommunityPostCard({
             <div className="flex flex-col gap-3 mb-4">
               {loadingComments ? (
                 <div className="flex justify-center py-4">
-                  <Loader2 size={16} className="animate-spin text-zinc-400" />
+                  <Loader2 size={16} className="animate-spin text-muted" />
                 </div>
               ) : post.comments && post.comments.length > 0 ? (
                 post.comments.map((comment) => (
@@ -272,26 +272,26 @@ export const CommunityPostCard = React.memo(function CommunityPostCard({
                         <span className="text-[11px] font-black text-zinc-700 dark:text-zinc-300">
                           {comment.author}
                         </span>
-                        <span className="text-[10px] text-zinc-400">
+                        <span className="text-[10px] text-muted">
                           {formatTime(comment.createdAt)}
                         </span>
                       </div>
                       {onDeleteComment && (
                         <button
                           onClick={() => handleDeleteComment(comment.id)}
-                          className="opacity-0 group-hover:opacity-100 p-1 text-zinc-400 hover:text-red-500 transition-opacity"
+                          className="opacity-0 group-hover:opacity-100 p-1 text-muted hover:text-red-500 transition-opacity"
                         >
                           <Trash2 size={12} />
                         </button>
                       )}
                     </div>
-                    <p className="text-[12px] text-zinc-600 dark:text-zinc-400 leading-normal bg-zinc-50 dark:bg-white/[0.02] p-2 rounded-lg">
+                    <p className="text-[12px] text-zinc-600 leading-normal bg-zinc-50 dark:bg-white/[0.02] p-2 rounded-lg">
                       {comment.content}
                     </p>
                   </div>
                 ))
               ) : (
-                <p className="text-[11px] text-zinc-400 text-center py-2">暂无评论</p>
+                <p className="text-[11px] text-muted text-center py-2">暂无评论</p>
               )}
             </div>
 
@@ -308,7 +308,7 @@ export const CommunityPostCard = React.memo(function CommunityPostCard({
                 <button
                   type="submit"
                   disabled={submitting || !commentContent.trim()}
-                  className="absolute right-2 bottom-2 p-1.5 text-zinc-400 hover:text-zinc-900 dark:hover:text-white disabled:opacity-30 transition-colors"
+                  className="absolute right-2 bottom-2 p-1.5 text-muted hover:text-zinc-900 dark:hover:text-white disabled:opacity-30 transition-colors"
                 >
                   {submitting ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
                 </button>

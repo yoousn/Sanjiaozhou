@@ -25,7 +25,7 @@ export function CommunityToolbar({
     <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
       <div className="flex items-center gap-2 flex-wrap">
         <div className="relative w-full sm:w-56">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
           <input
             value={searchQuery}
             onChange={(event) => onSearchChange(event.target.value)}
@@ -33,30 +33,22 @@ export function CommunityToolbar({
             className="w-full rounded-xl border border-zinc-200 bg-white py-2 pl-9 pr-8 text-[12px] font-bold outline-none focus:border-zinc-300 dark:border-zinc-800 dark:bg-[#18181b] dark:text-white"
           />
           {searchQuery && (
-            <button onClick={() => onSearchChange("")} className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-zinc-400 hover:text-zinc-700 dark:hover:text-white">
+            <button onClick={() => onSearchChange("")} className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted hover:text-zinc-700 dark:hover:text-white">
               <X size={13} />
             </button>
           )}
         </div>
         <button
           onClick={() => onSortChange("new")}
-          className={cn(
-            "px-4 py-2 rounded-xl text-[13px] font-bold transition",
-            sort === "new"
-              ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900"
-              : "bg-white dark:bg-[#18181b] border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300"
-          )}
+          className={cn("px-4 py-2 rounded-xl text-[13px] font-bold transition",
+            sort ==="new"?"bg-zinc-900 text-white dark:bg-white dark:text-zinc-900":"bg-white dark:bg-[#18181b] border border-zinc-200 dark:border-zinc-800 text-zinc-600  hover:border-zinc-300")}
         >
           最新
         </button>
         <button
           onClick={() => onSortChange("hot")}
-          className={cn(
-            "px-4 py-2 rounded-xl text-[13px] font-bold transition",
-            sort === "hot"
-              ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900"
-              : "bg-white dark:bg-[#18181b] border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300"
-          )}
+          className={cn("px-4 py-2 rounded-xl text-[13px] font-bold transition",
+            sort ==="hot"?"bg-zinc-900 text-white dark:bg-white dark:text-zinc-900":"bg-white dark:bg-[#18181b] border border-zinc-200 dark:border-zinc-800 text-zinc-600  hover:border-zinc-300")}
         >
           热门
         </button>
@@ -65,18 +57,15 @@ export function CommunityToolbar({
           <button
             key={tag}
             onClick={() => onTagChange(tag === activeTag ? null : tag)}
-            className={cn(
-              "px-3 py-1.5 rounded-xl text-[12px] font-bold transition border",
+            className={cn("px-3 py-1.5 rounded-xl text-[12px] font-bold transition border",
               activeTag === tag
-                ? "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-500 text-emerald-700 dark:text-emerald-400"
-                : "bg-white dark:bg-[#18181b] border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:border-zinc-300"
-            )}
+                ?"bg-emerald-50 dark:bg-emerald-500/10 border-emerald-500 text-emerald-700 dark:text-emerald-400":"bg-white dark:bg-[#18181b] border-zinc-200 dark:border-zinc-800 text-muted hover:border-zinc-300")}
           >
             #{tag}
           </button>
         ))}
         {(activeTag || searchQuery) && (
-          <button onClick={() => { onTagChange(null); onSearchChange(""); }} className="px-3 py-1.5 rounded-xl text-[12px] font-bold border border-zinc-200 bg-white text-zinc-500 hover:border-zinc-300 dark:border-zinc-800 dark:bg-[#18181b]">
+          <button onClick={() => { onTagChange(null); onSearchChange(""); }} className="px-3 py-1.5 rounded-xl text-[12px] font-bold border border-zinc-200 bg-white text-muted hover:border-zinc-300 dark:border-zinc-800 dark:bg-[#18181b]">
             清除筛选
           </button>
         )}

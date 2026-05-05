@@ -48,7 +48,7 @@ export function CollectSearchPanel({
     <div className="space-y-5">
       <div>
         <div className="mb-2 flex items-center justify-between gap-3">
-          <label className="block text-xs font-bold uppercase tracking-widest text-zinc-500">目标枪械过滤 (可选)</label>
+          <label className="block text-xs font-bold uppercase tracking-widest text-muted">目标枪械过滤 (可选)</label>
           <div className="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-[11px] font-bold text-zinc-600">
             已选择 {selectedGuns.length} 个
           </div>
@@ -61,10 +61,8 @@ export function CollectSearchPanel({
                 key={gun}
                 type="button"
                 onClick={() => onToggleGun(gun)}
-                className={cn(
-                  'rounded-full border px-3 py-1.5 text-[12px] font-bold transition',
-                  active ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300'
-                )}
+                className={cn('rounded-full border px-3 py-1.5 text-[12px] font-bold transition',
+                  active ?'border-emerald-500 bg-emerald-500 text-white':'border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300')}
               >
                 {gun}
               </button>
@@ -83,10 +81,10 @@ export function CollectSearchPanel({
           onChange={(e) => onPresetGunInputChange(e.target.value)}
           placeholder="M4A1, AKM, SCAR-L"
           rows={4}
-          className={cn(inputClasses, 'resize-none border border-zinc-200 bg-white py-3 text-sm font-bold shadow-sm')}
+          className={cn(inputClasses,'resize-none border border-zinc-200 bg-white py-3 text-sm font-bold shadow-sm')}
         />
         <div className="mt-3 flex items-center justify-between gap-3">
-          <p className="text-[11px] font-medium text-zinc-400">逗号、空格、换行都能分隔</p>
+          <p className="text-[11px] font-medium text-muted">逗号、空格、换行都能分隔</p>
           <button
             type="button"
             onClick={onSavePresetGuns}
@@ -100,7 +98,7 @@ export function CollectSearchPanel({
       </div>
 
       <div>
-        <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-zinc-500">选择博主</label>
+        <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted">选择博主</label>
         <div className="space-y-2">
           {meta.creators.map((creator) => {
             const active = selectedCreatorIds.includes(creator.id);
@@ -109,13 +107,11 @@ export function CollectSearchPanel({
                 key={creator.id}
                 type="button"
                 onClick={() => onToggleCreator(creator.id)}
-                className={cn(
-                  'flex w-full items-center justify-between rounded-2xl border px-3 py-2 text-left transition',
-                  active ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300'
-                )}
+                className={cn('flex w-full items-center justify-between rounded-2xl border px-3 py-2 text-left transition',
+                  active ?'border-emerald-500 bg-emerald-50 text-emerald-700':'border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300')}
               >
                 <span className="text-[13px] font-bold">{creator.name}</span>
-                <span className={cn('h-4 w-4 rounded border', active ? 'border-emerald-500 bg-emerald-500' : 'border-zinc-300 bg-white')} />
+                <span className={cn('h-4 w-4 rounded border', active ?'border-emerald-500 bg-emerald-500':'border-zinc-300 bg-white')} />
               </button>
             );
           })}
@@ -123,7 +119,7 @@ export function CollectSearchPanel({
       </div>
 
       <div className="rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3">
-        <label className="mb-3 block text-[11px] font-bold uppercase tracking-widest text-zinc-500">主页抓取数量</label>
+        <label className="mb-3 block text-[11px] font-bold uppercase tracking-widest text-muted">主页抓取数量</label>
         <div className="flex items-center gap-4">
           <input
             type="range"
@@ -138,7 +134,7 @@ export function CollectSearchPanel({
       </div>
 
       <div className="rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3">
-        <div className="mb-3 text-[11px] font-bold uppercase tracking-widest text-zinc-500">模式</div>
+        <div className="mb-3 text-[11px] font-bold uppercase tracking-widest text-muted">模式</div>
         <div className="space-y-3">
           <label className="flex items-center justify-between gap-3 text-[12px] font-bold text-zinc-700">
             <span>搜索多线程模式</span>

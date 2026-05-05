@@ -23,19 +23,19 @@ export function CommunityActivityBar({
     <aside className="hidden xl:block w-52 shrink-0">
       <div className="sticky top-8">
         <div className="bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 shadow-sm">
-          <h4 className="text-[11px] font-black text-zinc-400 uppercase tracking-widest mb-3">
+          <h4 className="text-[11px] font-black text-muted uppercase tracking-widest mb-3">
             社区动态
           </h4>
           <div className="flex flex-col gap-2.5 max-h-[500px] overflow-y-auto">
             {activities.length === 0 ? (
-              <p className="text-[11px] text-zinc-400 font-medium">暂无动态</p>
+              <p className="text-[11px] text-muted font-medium">暂无动态</p>
             ) : (
               activities.slice(0, 15).map((act) => (
                 <div key={act.id} className="flex items-start gap-2 text-[11px]">
                   <span className="font-bold text-zinc-700 dark:text-zinc-300 shrink-0">
                     {act.uploader}
                   </span>
-                  <span className="text-zinc-400 leading-relaxed">{act.action}</span>
+                  <span className="text-muted leading-relaxed">{act.action}</span>
                   <span className="text-zinc-300 dark:text-zinc-600 shrink-0 ml-auto text-[10px]">
                     {shortTime(act.time)}
                   </span>

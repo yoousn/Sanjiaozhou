@@ -173,7 +173,7 @@ export function CommunityComposer({
               />
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 text-[13px] font-bold text-zinc-600 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-700 transition bg-white dark:bg-[#18181b]"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 text-[13px] font-bold text-zinc-600 hover:border-zinc-300 dark:hover:border-zinc-700 transition bg-white dark:bg-[#18181b]"
               >
                 <Image size={16} strokeWidth={2} />
                 选择本地图片
@@ -182,7 +182,7 @@ export function CommunityComposer({
                 <button
                   onClick={() => clipboard.readClipboard()}
                   disabled={clipboard.reading}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 text-[13px] font-bold text-zinc-600 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-700 transition bg-white dark:bg-[#18181b] disabled:opacity-60"
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 text-[13px] font-bold text-zinc-600 hover:border-zinc-300 dark:hover:border-zinc-700 transition bg-white dark:bg-[#18181b] disabled:opacity-60"
                 >
                   {clipboard.reading ? (
                     <Loader2 size={16} strokeWidth={2} className="animate-spin" />
@@ -191,7 +191,7 @@ export function CommunityComposer({
                   )}
                   {clipboard.reading ? "读取中..." : "读取剪切板图片"}
                 </button>
-                <span className="text-[11px] text-zinc-400 font-medium">Ctrl+v可识别图片</span>
+                <span className="text-[11px] text-muted font-medium">Ctrl+v可识别图片</span>
               </div>
             </div>
           </div>
@@ -208,16 +208,16 @@ export function CommunityComposer({
           onChange={(e) => setDescription(e.target.value.slice(0, 500))}
           placeholder="说说这个配置..."
           rows={3}
-          className="w-full border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#18181b] rounded-2xl p-3 text-[13px] font-medium text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 outline-none focus:ring-4 focus:ring-zinc-900/10 resize-none"
+          className="w-full border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#18181b] rounded-2xl p-3 text-[13px] font-medium text-zinc-900 dark:text-zinc-100 placeholder:text-muted outline-none focus:ring-4 focus:ring-zinc-900/10 resize-none"
         />
-        <span className="text-[11px] text-zinc-400 font-bold mt-1 block text-right">
+        <span className="text-[11px] text-muted font-bold mt-1 block text-right">
           {description.length}/500
         </span>
       </div>
 
       {/* Tags */}
       <div className="mb-4">
-        <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">
+        <label className="block text-[12px] font-bold text-muted uppercase tracking-widest mb-2">
           标签
         </label>
         <div className="flex flex-wrap gap-2">
@@ -225,12 +225,9 @@ export function CommunityComposer({
             <button
               key={tag}
               onClick={() => toggleTag(tag)}
-              className={cn(
-                "px-3 py-1.5 rounded-xl text-[12px] font-bold transition border",
+              className={cn("px-3 py-1.5 rounded-xl text-[12px] font-bold transition border",
                 tags.includes(tag)
-                  ? "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-500 text-emerald-700 dark:text-emerald-400"
-                  : "bg-white dark:bg-[#18181b] border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:border-zinc-300"
-              )}
+                  ?"bg-emerald-50 dark:bg-emerald-500/10 border-emerald-500 text-emerald-700 dark:text-emerald-400":"bg-white dark:bg-[#18181b] border-zinc-200 dark:border-zinc-800 text-muted hover:border-zinc-300")}
             >
               #{tag}
             </button>

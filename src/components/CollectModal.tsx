@@ -161,12 +161,12 @@ export function CollectModal({
               <Radio size={18} className="text-emerald-500" strokeWidth={2.5} />
               <h2 className="text-xl font-black">手动采集改枪码</h2>
             </div>
-            <p className="mt-1 text-[12px] font-medium text-zinc-500">选枪、选博主、搜视频、多选确认后直接加入卡片</p>
+            <p className="mt-1 text-[12px] font-medium text-muted">选枪、选博主、搜视频、多选确认后直接加入卡片</p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full bg-zinc-100 p-2 text-zinc-400 transition-colors hover:bg-zinc-200 hover:text-zinc-900"
+            className="rounded-full bg-zinc-100 p-2 text-muted transition-colors hover:bg-zinc-200 hover:text-zinc-900"
           >
             <X size={18} strokeWidth={2.5} />
           </button>

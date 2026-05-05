@@ -29,7 +29,7 @@ export function ModeSelectModal({
           >
             <div className="flex flex-col items-start gap-1">
               <span className="text-[14px]">手动采集</span>
-              <span className="text-[11px] font-medium text-zinc-500">自己搜索并勾选视频加入网站</span>
+              <span className="text-[11px] font-medium text-muted">自己搜索并勾选视频加入网站</span>
             </div>
             <Radio size={18} strokeWidth={2.5} />
           </button>
@@ -39,7 +39,7 @@ export function ModeSelectModal({
           >
             <div className="flex flex-col items-start gap-1">
               <span className="text-[14px]">自动采集配置</span>
-              <span className="text-[11px] font-medium text-zinc-500">每小时自动获取博主最新视频</span>
+              <span className="text-[11px] font-medium text-muted">每小时自动获取博主最新视频</span>
             </div>
             <Sparkles size={18} strokeWidth={2.5} />
           </button>

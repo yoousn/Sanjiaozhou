@@ -39,43 +39,38 @@ export function Sidebar({
           </div>
           <div className="hidden lg:flex flex-col">
             <span className="font-black text-[14px] tracking-tight text-zinc-900 dark:text-zinc-100 leading-tight">Arsenal</span>
-            <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Base</span>
+            <span className="text-[10px] font-bold text-muted uppercase tracking-widest">Base</span>
           </div>
         </div>
         
         <div className="flex flex-col gap-1 w-full shrink-0">
           <div className="px-3 mb-2 hidden lg:block">
-            <span className="text-[9px] font-black text-zinc-400 uppercase tracking-wider">Navigation</span>
+            <span className="text-[9px] font-black text-muted uppercase tracking-wider">Navigation</span>
           </div>
           
           <button
             onClick={() => setActiveTab('home')}
-            className={cn(
-              "flex items-center lg:justify-start justify-center gap-3 px-3 py-2.5 transition duration-200 outline-none focus:ring-2 focus:ring-zinc-900/10 active:scale-95 group w-full",
+            className={cn("flex items-center lg:justify-start justify-center gap-3 px-3 py-2.5 transition duration-200 outline-none focus:ring-2 focus:ring-zinc-900/10 active:scale-95 group w-full",
               radiusClass,
-              activeTab === 'home'
-                ? cn(getButtonClassName(buttonStyle === 'outline' ? 'solid' : buttonStyle, 'default'), 'dark:bg-zinc-100 dark:text-zinc-900')
-                : "text-zinc-500 font-semibold hover:bg-black/5 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white"
-            )}
+              activeTab ==='home'? cn(getButtonClassName(buttonStyle ==='outline'?'solid': buttonStyle,'default'),'dark:bg-zinc-100 dark:text-zinc-900')
+                :"text-muted font-semibold hover:bg-black/5 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white")}
           >
-            <Home size={16} className={cn("transition-transform duration-300", activeTab === 'home' && "scale-110")} strokeWidth={activeTab === 'home' ? 2.5 : 2} />
-            <span className={cn("hidden lg:block whitespace-nowrap text-[13px]", activeTab === 'home' ? "font-bold" : "font-semibold")}>
+            <Home size={16} className={cn("transition-transform duration-300", activeTab ==='home'&&"scale-110")} strokeWidth={activeTab === 'home' ? 2.5 : 2} />
+            <span className={cn("hidden lg:block whitespace-nowrap text-[13px]", activeTab ==='home'?"font-bold":"font-semibold")}>
               首页/改枪码
             </span>
           </button>
 
           <button
             onClick={() => setActiveTab('community')}
-            className={cn(
-              "flex items-center lg:justify-start justify-center gap-3 px-3 py-2.5 transition duration-200 outline-none hover:bg-black/5 dark:hover:bg-white/5 w-full group mb-1",
+            className={cn("flex items-center lg:justify-start justify-center gap-3 px-3 py-2.5 transition duration-200 outline-none hover:bg-black/5 dark:hover:bg-white/5 w-full group mb-1",
               radiusClass,
-              activeTab === 'community'
-                ? cn(getButtonClassName(buttonStyle === 'outline' ? 'solid' : buttonStyle, 'default'), 'dark:bg-zinc-100 dark:text-zinc-900 text-zinc-900')
-                : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white",
+              activeTab ==='community'? cn(getButtonClassName(buttonStyle ==='outline'?'solid': buttonStyle,'default'),'dark:bg-zinc-100 dark:text-zinc-900 text-zinc-900')
+                :"text-muted hover:text-zinc-900 dark:hover:text-white",
             )}
           >
-            <Users size={16} strokeWidth={activeTab === 'community' ? 2.5 : 2} className={cn("transition-transform duration-300", activeTab === 'community' && "scale-110")} />
-            <span className={cn("hidden lg:block text-[13px]", activeTab === 'community' ? "font-bold" : "font-semibold")}>社区</span>
+            <Users size={16} strokeWidth={activeTab === 'community' ? 2.5 : 2} className={cn("transition-transform duration-300", activeTab ==='community'&&"scale-110")} />
+            <span className={cn("hidden lg:block text-[13px]", activeTab ==='community'?"font-bold":"font-semibold")}>社区</span>
           </button>
         </div>
 
@@ -88,15 +83,14 @@ export function Sidebar({
                 </div>
                 <span className="text-[12px] font-bold text-zinc-700 dark:text-zinc-300 truncate">{auth.user?.username}</span>
               </div>
-              <button onClick={onLogout || auth.logout} className="p-1.5 text-zinc-400 hover:text-red-500 transition-colors" title="退出登录">
+              <button onClick={onLogout || auth.logout} className="p-1.5 text-muted hover:text-red-500 transition-colors" title="退出登录">
                 <LogOut size={14} />
               </button>
             </div>
           ) : (
             <button
               onClick={onOpenAuth}
-              className={cn(
-                "flex items-center lg:justify-start justify-center gap-3 px-3 py-2.5 transition duration-200 outline-none hover:bg-black/5 dark:hover:bg-white/5 text-zinc-500 hover:text-zinc-900 dark:hover:text-white w-full group mb-2",
+              className={cn("flex items-center lg:justify-start justify-center gap-3 px-3 py-2.5 transition duration-200 outline-none hover:bg-black/5 dark:hover:bg-white/5 text-muted hover:text-zinc-900 dark:hover:text-white w-full group mb-2",
                 radiusClass
               )}
             >
@@ -107,22 +101,18 @@ export function Sidebar({
 
           <button
             onClick={onOpenAppearance}
-            className={cn(
-              "flex items-center lg:justify-start justify-center gap-3 px-3 py-2.5 transition duration-200 outline-none hover:bg-black/5 dark:hover:bg-white/5 w-full group",
+            className={cn("flex items-center lg:justify-start justify-center gap-3 px-3 py-2.5 transition duration-200 outline-none hover:bg-black/5 dark:hover:bg-white/5 w-full group",
               radiusClass,
-              activeTab === 'appearance'
-                ? cn(getButtonClassName(buttonStyle === 'outline' ? 'solid' : buttonStyle, 'default'), 'dark:bg-zinc-100 dark:text-zinc-900 text-zinc-900')
-                : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
-            )}
+              activeTab ==='appearance'? cn(getButtonClassName(buttonStyle ==='outline'?'solid': buttonStyle,'default'),'dark:bg-zinc-100 dark:text-zinc-900 text-zinc-900')
+                :"text-muted hover:text-zinc-900 dark:hover:text-white")}
           >
-            <Palette size={16} strokeWidth={activeTab === 'appearance' ? 2.5 : 2} className={cn("transition-transform duration-300", activeTab === 'appearance' && "scale-110")} />
-            <span className={cn("hidden lg:block text-[13px]", activeTab === 'appearance' ? "font-bold" : "font-semibold")}>外观设置</span>
+            <Palette size={16} strokeWidth={activeTab === 'appearance' ? 2.5 : 2} className={cn("transition-transform duration-300", activeTab ==='appearance'&&"scale-110")} />
+            <span className={cn("hidden lg:block text-[13px]", activeTab ==='appearance'?"font-bold":"font-semibold")}>外观设置</span>
           </button>
 
           <button
             onClick={onOpenSettings}
-            className={cn(
-              "flex items-center lg:justify-start justify-center gap-3 px-3 py-2.5 transition duration-200 outline-none hover:bg-black/5 dark:hover:bg-white/5 text-zinc-500 hover:text-zinc-900 dark:hover:text-white w-full group",
+            className={cn("flex items-center lg:justify-start justify-center gap-3 px-3 py-2.5 transition duration-200 outline-none hover:bg-black/5 dark:hover:bg-white/5 text-muted hover:text-zinc-900 dark:hover:text-white w-full group",
               radiusClass
             )}
           >
@@ -130,7 +120,7 @@ export function Sidebar({
             <span className="hidden lg:block text-[13px] font-bold">系统设置</span>
           </button>
           <div className="mt-3 px-3 hidden lg:block">
-            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400 dark:text-zinc-500">
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted">
               {APP_VERSION}
             </span>
           </div>
@@ -141,11 +131,9 @@ export function Sidebar({
       <nav className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-[400px] h-14 rounded-full border border-zinc-200/80 bg-white/95 dark:bg-[#18181b]/95 backdrop-blur-md z-50 px-2 flex items-center justify-around shadow-[0_8px_30px_rgba(0,0,0,0.08)]">
         <button
           onClick={() => setActiveTab('home')}
-          className={cn(
-            "flex items-center justify-center gap-1.5 px-3 py-2 outline-none transition duration-200 active:scale-95",
+          className={cn("flex items-center justify-center gap-1.5 px-3 py-2 outline-none transition duration-200 active:scale-95",
             radiusClass,
-            activeTab === 'home' ? cn(getButtonClassName(buttonStyle === 'outline' ? 'solid' : buttonStyle, 'default'), 'shadow-sm') : "text-zinc-500"
-          )}
+            activeTab ==='home'? cn(getButtonClassName(buttonStyle ==='outline'?'solid': buttonStyle,'default'),'shadow-sm') :"text-muted")}
         >
           <Home size={16} strokeWidth={activeTab === 'home' ? 2.5 : 2} />
           {activeTab === 'home' && (
@@ -157,9 +145,8 @@ export function Sidebar({
 
         <button
           onClick={() => setActiveTab('community')}
-          className={cn(
-            "flex items-center justify-center px-3 py-2 outline-none transition duration-200 active:scale-95",
-            activeTab === 'community' ? cn(getButtonClassName(buttonStyle === 'outline' ? 'solid' : buttonStyle, 'default'), 'shadow-sm') : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white",
+          className={cn("flex items-center justify-center px-3 py-2 outline-none transition duration-200 active:scale-95",
+            activeTab ==='community'? cn(getButtonClassName(buttonStyle ==='outline'?'solid': buttonStyle,'default'),'shadow-sm') :"text-muted hover:text-zinc-900 dark:hover:text-white",
             radiusClass
           )}
         >
@@ -173,8 +160,7 @@ export function Sidebar({
 
         <button
           onClick={auth.isAuthenticated ? (onLogout || auth.logout) : onOpenAuth}
-          className={cn(
-            "flex items-center justify-center px-3 py-2 outline-none transition duration-200 active:scale-95 text-zinc-500 hover:text-zinc-900 dark:hover:text-white",
+          className={cn("flex items-center justify-center px-3 py-2 outline-none transition duration-200 active:scale-95 text-muted hover:text-zinc-900 dark:hover:text-white",
             radiusClass
           )}
         >

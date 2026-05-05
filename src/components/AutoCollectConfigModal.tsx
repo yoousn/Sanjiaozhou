@@ -83,7 +83,7 @@ export function AutoCollectConfigModal({
         <div className="flex justify-between items-center">
           <div>
             <h3 className="text-xl font-black text-zinc-900 dark:text-white">自动采集设置</h3>
-            <p className="text-[12px] font-medium text-zinc-500 dark:text-zinc-400 mt-1">后台智能比对记录，自动过滤重复视频并加入新卡片</p>
+            <p className="text-[12px] font-medium text-muted mt-1">后台智能比对记录，自动过滤重复视频并加入新卡片</p>
           </div>
           <button onClick={onClose} className="p-2 bg-zinc-100 dark:bg-zinc-800 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-700">
             <X size={16} strokeWidth={2.5} />
@@ -104,7 +104,7 @@ export function AutoCollectConfigModal({
         </div>
 
         <div className="flex flex-col gap-2">
-          <label className="text-[12px] font-bold uppercase tracking-widest text-zinc-500">监听博主 (多选)</label>
+          <label className="text-[12px] font-bold uppercase tracking-widest text-muted">监听博主 (多选)</label>
           <div className="flex flex-wrap gap-2">
             {meta.creators.map((creator) => {
               const active = config.creatorIds.includes(creator.id);
@@ -119,12 +119,9 @@ export function AutoCollectConfigModal({
                         : [...p.creatorIds, creator.id],
                     }))
                   }
-                  className={cn(
-                    "px-3 py-1.5 rounded-xl border text-[12px] font-bold transition",
+                  className={cn("px-3 py-1.5 rounded-xl border text-[12px] font-bold transition",
                     active
-                      ? "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-500 text-emerald-700 dark:text-emerald-400"
-                      : "bg-white dark:bg-[#18181b] border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300"
-                  )}
+                      ?"bg-emerald-50 dark:bg-emerald-500/10 border-emerald-500 text-emerald-700 dark:text-emerald-400":"bg-white dark:bg-[#18181b] border-zinc-200 dark:border-zinc-800 text-zinc-600  hover:border-zinc-300")}
                 >
                   {creator.name}
                 </button>
@@ -134,7 +131,7 @@ export function AutoCollectConfigModal({
         </div>
 
         <div className="flex flex-col gap-2">
-          <label className="text-[12px] font-bold uppercase tracking-widest text-zinc-500">执行频率</label>
+          <label className="text-[12px] font-bold uppercase tracking-widest text-muted">执行频率</label>
           <select
             value={config.intervalHours}
             onChange={(e) => setConfig((p) => ({ ...p, intervalHours: Number(e.target.value) }))}
@@ -151,7 +148,7 @@ export function AutoCollectConfigModal({
 
         <div className="grid gap-4 md:grid-cols-2">
           <div className="flex flex-col gap-2">
-            <label className="text-[12px] font-bold uppercase tracking-widest text-zinc-500">主提取模型</label>
+            <label className="text-[12px] font-bold uppercase tracking-widest text-muted">主提取模型</label>
             <select
               value={config.model}
               onChange={(e) => setConfig((p) => ({ ...p, model: e.target.value }))}
@@ -165,7 +162,7 @@ export function AutoCollectConfigModal({
           </div>
 
           <div className="flex flex-col gap-2">
-            <label className="text-[12px] font-bold uppercase tracking-widest text-zinc-500">备用提取模型</label>
+            <label className="text-[12px] font-bold uppercase tracking-widest text-muted">备用提取模型</label>
             <select
               value={config.backupModel}
               onChange={(e) => setConfig((p) => ({ ...p, backupModel: e.target.value }))}
@@ -229,7 +226,7 @@ export function AutoCollectConfigModal({
                           console.error('Failed to cancel specific retry', e);
                         }
                       }}
-                      className="text-[10px] px-2.5 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
+                      className="text-[10px] px-2.5 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
                     >
                       单独取消
                     </button>
@@ -240,11 +237,11 @@ export function AutoCollectConfigModal({
           )}
 
           <div className="flex justify-between items-center mt-1">
-            <h4 className="text-[12px] font-bold uppercase tracking-widest text-zinc-500">运行日志 (仅存最近100条)</h4>
+            <h4 className="text-[12px] font-bold uppercase tracking-widest text-muted">运行日志 (仅存最近100条)</h4>
             {config.logs.length > 0 && (
               <button
                 onClick={() => { setShowClearDialog(true); setClearTarget(null); }}
-                className="flex items-center gap-1 text-[11px] font-bold text-zinc-500 hover:text-red-500 transition px-2 py-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10"
+                className="flex items-center gap-1 text-[11px] font-bold text-muted hover:text-red-500 transition px-2 py-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10"
               >
                 <Trash2 size={12} />
                 清空日志
@@ -257,7 +254,7 @@ export function AutoCollectConfigModal({
             ) : (
               config.logs.map((log, i) => (
                 <div key={i} className={log.success ? "text-emerald-400" : "text-red-400"}>
-                  <span className="text-zinc-500">[{log.time}]</span> {log.message}
+                  <span className="text-muted">[{log.time}]</span> {log.message}
                 </div>
               ))
             )}
@@ -269,18 +266,15 @@ export function AutoCollectConfigModal({
             <div className="absolute inset-0 bg-black/40 backdrop-blur-sm rounded-3xl" onClick={() => { setShowClearDialog(false); setClearTarget(null); }} />
             <div className="relative bg-white dark:bg-[#18181b] rounded-2xl p-5 w-full max-w-sm mx-4 shadow-2xl border border-zinc-200 dark:border-zinc-800">
               <h4 className="text-[14px] font-black text-zinc-900 dark:text-white mb-1">清空运行日志</h4>
-              <p className="text-[12px] text-zinc-500 mb-4">选择需要清理的时间范围</p>
+              <p className="text-[12px] text-muted mb-4">选择需要清理的时间范围</p>
               <div className="grid grid-cols-5 gap-2 mb-4">
                 {clearOptions.map((opt) => (
                   <button
                     key={opt.value}
                     onClick={() => setClearTarget(opt.value)}
-                    className={cn(
-                      "py-1.5 px-1 rounded-xl text-[11px] font-bold transition border",
+                    className={cn("py-1.5 px-1 rounded-xl text-[11px] font-bold transition border",
                       clearTarget === opt.value
-                        ? "bg-red-50 dark:bg-red-500/10 border-red-500 text-red-600 dark:text-red-400"
-                        : "bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300"
-                    )}
+                        ?"bg-red-50 dark:bg-red-500/10 border-red-500 text-red-600 dark:text-red-400":"bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-600  hover:border-zinc-300")}
                   >
                     {opt.label}
                   </button>
@@ -295,7 +289,7 @@ export function AutoCollectConfigModal({
               <div className="flex gap-2">
                 <button
                   onClick={() => { setShowClearDialog(false); setClearTarget(null); }}
-                  className="flex-1 py-2 rounded-xl text-[12px] font-bold text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
+                  className="flex-1 py-2 rounded-xl text-[12px] font-bold text-zinc-600 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
                 >
                   取消
                 </button>

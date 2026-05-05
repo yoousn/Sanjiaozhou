@@ -55,9 +55,9 @@ export function VariantItem({
     return (
       <div className="flex flex-col gap-2 p-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/40 border-2 border-emerald-500/20 shadow-sm transition group/edit">
         <div className="flex gap-1.5 items-center">
-          <input className={cn(inputClasses, "py-1 px-1.5 w-9 text-[11px] font-bold text-center bg-white border border-zinc-200")} defaultValue={variant.tier} onBlur={e => handleBlur(e, 'tier')} placeholder="T1" />
-          <input className={cn(inputClasses, "py-1 px-1.5 w-14 text-[11px] font-bold bg-white border border-zinc-200")} defaultValue={variant.price} onBlur={e => handleBlur(e, 'price')} placeholder="金额" />
-          <select className={cn(inputClasses, "py-1 px-1.5 flex-1 text-[11px] font-bold bg-white border border-zinc-200 cursor-pointer")} defaultValue={variant.buildType} onBlur={e => handleBlur(e, 'buildType')}>
+          <input className={cn(inputClasses,"py-1 px-1.5 w-9 text-[11px] font-bold text-center bg-white border border-zinc-200")} defaultValue={variant.tier} onBlur={e => handleBlur(e, 'tier')} placeholder="T1" />
+          <input className={cn(inputClasses,"py-1 px-1.5 w-14 text-[11px] font-bold bg-white border border-zinc-200")} defaultValue={variant.price} onBlur={e => handleBlur(e, 'price')} placeholder="金额" />
+          <select className={cn(inputClasses,"py-1 px-1.5 flex-1 text-[11px] font-bold bg-white border border-zinc-200 cursor-pointer")} defaultValue={variant.buildType} onBlur={e => handleBlur(e, 'buildType')}>
             <option value="满改">满改</option>
             <option value="半改">半改</option>
             <option value="丐版">丐版</option>
@@ -66,12 +66,10 @@ export function VariantItem({
           <button
             type="button"
             onClick={() => onUpdateVariant(variant.id, 'locked', !variant.locked)}
-            className={cn(
-              'shrink-0 p-1.5 transition duration-200 active:scale-90 outline-none border',
+            className={cn('shrink-0 p-1.5 transition duration-200 active:scale-90 outline-none border',
               radiusClass,
               variant.locked
-                ? 'text-amber-700 bg-amber-50 border-amber-200'
-                : cn(getButtonClassName(softOrSolidButtonStyle, 'default'), 'shadow-none text-zinc-500 hover:text-zinc-700')
+                ?'text-amber-700 bg-amber-50 border-amber-200': cn(getButtonClassName(softOrSolidButtonStyle,'default'),'shadow-none text-muted hover:text-zinc-700')
             )}
             title={variant.locked ? '已锁定' : '未锁定'}
           >
@@ -80,10 +78,9 @@ export function VariantItem({
           <button
             type="button"
             onClick={() => onDeleteVariant(variant.id)}
-            className={cn(
-              "shrink-0 p-1.5 border border-transparent hover:border-red-200 transition duration-200 active:scale-90 outline-none",
+            className={cn("shrink-0 p-1.5 border border-transparent hover:border-red-200 transition duration-200 active:scale-90 outline-none",
               radiusClass,
-              getButtonClassName(softOrSolidButtonStyle, 'danger')
+              getButtonClassName(softOrSolidButtonStyle,'danger')
             )}
             title="删除此配置"
           >
@@ -91,11 +88,11 @@ export function VariantItem({
           </button>
         </div>
         <div className="relative flex items-center">
-          <input className={cn(inputClasses, "w-full text-[12px] font-mono font-bold tracking-tight py-1.5 bg-white border border-zinc-200")} defaultValue={variant.code} onBlur={e => handleBlur(e, 'code')} placeholder="改枪代码..." />
+          <input className={cn(inputClasses,"w-full text-[12px] font-mono font-bold tracking-tight py-1.5 bg-white border border-zinc-200")} defaultValue={variant.code} onBlur={e => handleBlur(e, 'code')} placeholder="改枪代码..." />
         </div>
         <div className="grid grid-cols-2 gap-2">
-          <input className={cn(inputClasses, "py-1.5 text-[11px] bg-white border border-zinc-200")} defaultValue={variant.author || ''} onBlur={e => handleBlur(e, 'author')} placeholder="来源作者" />
-          <input className={cn(inputClasses, "py-1.5 text-[11px] bg-white border border-zinc-200")} defaultValue={variant.sourceUrl || ''} onBlur={e => handleBlur(e, 'sourceUrl')} placeholder="来源链接" />
+          <input className={cn(inputClasses,"py-1.5 text-[11px] bg-white border border-zinc-200")} defaultValue={variant.author || ''} onBlur={e => handleBlur(e, 'author')} placeholder="来源作者" />
+          <input className={cn(inputClasses,"py-1.5 text-[11px] bg-white border border-zinc-200")} defaultValue={variant.sourceUrl || ''} onBlur={e => handleBlur(e, 'sourceUrl')} placeholder="来源链接" />
         </div>
       </div>
     );
@@ -124,7 +121,7 @@ export function VariantItem({
               已锁定
             </div>
           )}
-            <div className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 px-1.5 py-0.5 rounded-full whitespace-nowrap leading-none">
+            <div className="text-[9px] font-bold text-muted uppercase tracking-widest bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 px-1.5 py-0.5 rounded-full whitespace-nowrap leading-none">
               {addedDate}
             </div>
         </div>
@@ -133,7 +130,7 @@ export function VariantItem({
       <div className="mt-0.5 flex flex-col gap-1.5">
         <div className="flex items-center gap-1.5">
           <div className="flex-1 px-2.5 py-2 rounded-lg bg-white dark:bg-[#0b0b0c] border border-zinc-200/80 dark:border-zinc-800 flex items-center overflow-hidden shadow-[inset_0_1px_2px_rgba(0,0,0,0.01)]">
-            <code className="text-[11px] text-zinc-600 dark:text-zinc-400 group-hover/variant:text-zinc-900 dark:group-hover/variant:text-zinc-200 font-mono tracking-wide font-bold text-left truncate transition-colors" style={{ color: 'var(--gun-code-color)' }}>
+            <code className="text-[11px] text-zinc-600 group-hover/variant:text-zinc-900 dark:group-hover/variant:text-zinc-200 font-mono tracking-wide font-bold text-left truncate transition-colors" style={{ color: 'var(--gun-code-color)' }}>
               {variant.code || '暂无代码'}
             </code>
           </div>
@@ -141,12 +138,10 @@ export function VariantItem({
             <button
               type="button"
               onClick={() => handleCopy(variant.code, variant.id)}
-              className={cn(
-                "shrink-0 p-2 border border-zinc-200 shadow-sm cursor-pointer transition duration-200 focus:outline-none focus:ring-4 focus:ring-zinc-900/10 active:scale-95 group/btn relative overflow-hidden",
+              className={cn("shrink-0 p-2 border border-zinc-200 shadow-sm cursor-pointer transition duration-200 focus:outline-none focus:ring-4 focus:ring-zinc-900/10 active:scale-95 group/btn relative overflow-hidden",
                 radiusClass,
                 copiedId === variant.id
-                  ? "bg-emerald-500 text-white border-emerald-600 shadow-[inset_0_1px_rgba(255,255,255,0.4)]"
-                  : getButtonClassName(softOrSolidButtonStyle, 'default')
+                  ?"bg-emerald-500 text-white border-emerald-600 shadow-[inset_0_1px_rgba(255,255,255,0.4)]": getButtonClassName(softOrSolidButtonStyle,'default')
               )}
               title="复制代码"
             >
@@ -162,10 +157,10 @@ export function VariantItem({
           </div>
         </div>
 
-        <div className="text-[10px] text-zinc-400 font-medium px-1 flex items-center justify-between gap-2" style={{ color: 'var(--gun-source-color)' }}>
+        <div className="text-[10px] text-muted font-medium px-1 flex items-center justify-between gap-2" style={{ color: 'var(--gun-source-color)' }}>
           <span className="truncate">来源: {variant.author || '未知来源'} · 视频日期: {variant.date || '未知日期'}</span>
           {variant.sourceUrl && /^https?:\/\//i.test(variant.sourceUrl) && (
-            <a href={variant.sourceUrl} target="_blank" rel="noreferrer" className="shrink-0 inline-flex items-center gap-1 text-zinc-500 hover:text-zinc-900 transition-colors" style={{ color: 'var(--gun-source-color)' }}>
+            <a href={variant.sourceUrl} target="_blank" rel="noreferrer" className="shrink-0 inline-flex items-center gap-1 text-muted hover:text-zinc-900 transition-colors" style={{ color: 'var(--gun-source-color)' }}>
               <ExternalLink size={11} strokeWidth={2.5} />
               原视频
             </a>

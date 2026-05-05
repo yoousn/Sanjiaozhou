@@ -53,7 +53,7 @@ export function AddGunModal({ isOpen, onClose, onConfirm }: { isOpen: boolean, o
           animate="visible"
           exit="exit"
         >
-        <button type="button" onClick={onClose} className="absolute right-6 top-6 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-full p-2 outline-none focus:ring-2 focus:ring-zinc-900/20">
+        <button type="button" onClick={onClose} className="absolute right-6 top-6 text-muted hover:text-zinc-900 dark:hover:text-white transition-colors bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-full p-2 outline-none focus:ring-2 focus:ring-zinc-900/20">
           <X size={18} strokeWidth={2.5}/>
         </button>
 
@@ -65,12 +65,12 @@ export function AddGunModal({ isOpen, onClose, onConfirm }: { isOpen: boolean, o
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           <div className="grid grid-cols-2 gap-4">
              <div>
-              <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase tracking-widest">体系名称/型号</label>
-              <input required autoFocus className={cn(inputClasses, "py-3 bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-700 shadow-sm text-sm")} placeholder="e.g. M4A1..." value={name} onChange={r => setName(r.target.value)} />
+              <label className="block text-xs font-bold text-muted mb-2 uppercase tracking-widest">体系名称/型号</label>
+              <input required autoFocus className={cn(inputClasses,"py-3 bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-700 shadow-sm text-sm")} placeholder="e.g. M4A1..." value={name} onChange={r => setName(r.target.value)} />
             </div>
             <div>
-              <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase tracking-widest">所属图鉴分类</label>
-              <select className={cn(inputClasses, "py-3 bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-700 shadow-sm text-sm")} value={category} onChange={r => setCategory(r.target.value)}>
+              <label className="block text-xs font-bold text-muted mb-2 uppercase tracking-widest">所属图鉴分类</label>
+              <select className={cn(inputClasses,"py-3 bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-700 shadow-sm text-sm")} value={category} onChange={r => setCategory(r.target.value)}>
                 <option value="ar">突击步枪 (AR)</option>
                 <option value="br">战斗步枪 (BR)</option>
                 <option value="smg">冲锋枪 (SMG)</option>
@@ -84,20 +84,20 @@ export function AddGunModal({ isOpen, onClose, onConfirm }: { isOpen: boolean, o
 
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase tracking-widest">评级</label>
-              <select className={cn(inputClasses, "py-3 bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-700 shadow-sm text-sm")} value={tier} onChange={r => setTier(r.target.value)}>
+              <label className="block text-xs font-bold text-muted mb-2 uppercase tracking-widest">评级</label>
+              <select className={cn(inputClasses,"py-3 bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-700 shadow-sm text-sm")} value={tier} onChange={r => setTier(r.target.value)}>
                 <option value="T0">T0</option>
                 <option value="T1">T1</option>
                 <option value="T2">T2</option>
               </select>
             </div>
             <div>
-              <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase tracking-widest">金额(≈)</label>
-              <input required className={cn(inputClasses, "py-3 bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-700 shadow-sm text-sm")} placeholder="15W" value={price} onChange={r => setPrice(r.target.value)} />
+              <label className="block text-xs font-bold text-muted mb-2 uppercase tracking-widest">金额(≈)</label>
+              <input required className={cn(inputClasses,"py-3 bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-700 shadow-sm text-sm")} placeholder="15W" value={price} onChange={r => setPrice(r.target.value)} />
             </div>
             <div>
-              <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase tracking-widest">配置方案</label>
-              <select className={cn(inputClasses, "py-3 bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-700 shadow-sm text-sm")} value={buildType} onChange={r => setBuildType(r.target.value)}>
+              <label className="block text-xs font-bold text-muted mb-2 uppercase tracking-widest">配置方案</label>
+              <select className={cn(inputClasses,"py-3 bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-700 shadow-sm text-sm")} value={buildType} onChange={r => setBuildType(r.target.value)}>
                 <option value="满改">满改</option>
                 <option value="半改">半改</option>
                 <option value="丐版">丐版</option>
@@ -106,17 +106,17 @@ export function AddGunModal({ isOpen, onClose, onConfirm }: { isOpen: boolean, o
             </div>
           </div>
           <div>
-            <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase tracking-widest">改枪游戏代码 (Code)</label>
-            <input required className={cn(inputClasses, "py-3 font-mono bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-700 shadow-sm text-sm")} placeholder="Delta-XXX..." value={code} onChange={r => setCode(r.target.value)} />
+            <label className="block text-xs font-bold text-muted mb-2 uppercase tracking-widest">改枪游戏代码 (Code)</label>
+            <input required className={cn(inputClasses,"py-3 font-mono bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-700 shadow-sm text-sm")} placeholder="Delta-XXX..." value={code} onChange={r => setCode(r.target.value)} />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase tracking-widest">来源作者</label>
-              <input className={cn(inputClasses, "py-3 bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-700 shadow-sm text-sm")} placeholder="UP主名" value={author} onChange={r => setAuthor(r.target.value)} />
+              <label className="block text-xs font-bold text-muted mb-2 uppercase tracking-widest">来源作者</label>
+              <input className={cn(inputClasses,"py-3 bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-700 shadow-sm text-sm")} placeholder="UP主名" value={author} onChange={r => setAuthor(r.target.value)} />
             </div>
             <div>
-              <label className="block text-xs font-bold text-zinc-500 mb-2 uppercase tracking-widest">来源链接</label>
-              <input className={cn(inputClasses, "py-3 bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-700 shadow-sm text-sm")} placeholder="https://..." value={sourceUrl} onChange={r => setSourceUrl(r.target.value)} />
+              <label className="block text-xs font-bold text-muted mb-2 uppercase tracking-widest">来源链接</label>
+              <input className={cn(inputClasses,"py-3 bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-700 shadow-sm text-sm")} placeholder="https://..." value={sourceUrl} onChange={r => setSourceUrl(r.target.value)} />
             </div>
           </div>
 

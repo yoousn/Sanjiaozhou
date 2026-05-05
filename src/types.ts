@@ -41,6 +41,8 @@ export type AppearanceConfig = {
   gunCodeColorDark: string;
   gunSourceColorLight: string;
   gunSourceColorDark: string;
+  subTextColorLight: string;
+  subTextColorDark: string;
 };
 
 export type CollectModelProviderInput = {

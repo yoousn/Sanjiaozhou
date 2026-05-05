@@ -44,7 +44,7 @@ export function Header({
     'p-2 md:p-2.5 transition duration-200 outline-none focus:ring-4 focus:ring-zinc-900/10 dark:focus:ring-white/10 active:scale-95',
     radiusClass,
     getButtonClassName(buttonStyle, 'default'),
-    'dark:bg-[#121214] dark:border-zinc-800 dark:text-zinc-400 dark:hover:text-white'
+    'dark:bg-[#121214] dark:border-zinc-800  dark:hover:text-white'
   );
   const primaryButtonClass = cn(
     'flex items-center gap-1.5 px-3 py-1.5 md:px-4 md:py-2 font-bold text-[12px] transition duration-200 outline-none focus:ring-4 focus:ring-emerald-500/20 active:scale-95',
@@ -68,7 +68,7 @@ export function Header({
   return (
     <header className="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 relative z-30">
       <div className="relative w-full max-w-sm group" onBlur={() => setTimeout(() => setIsFocused(false), 200)}>
-        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-zinc-400 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors">
+        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-muted group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors">
           <Search size={18} strokeWidth={2.5}/>
         </div>
         <input
@@ -77,15 +77,14 @@ export function Header({
           onChange={e => onSearchChange(e.target.value)}
           onFocus={() => setIsFocused(true)}
           placeholder="搜索枪械配置..."
-          className={cn(
-            "w-full pl-11 pr-12 py-3 bg-white dark:bg-[#121214] border border-zinc-200/80 dark:border-zinc-800 shadow-[0_2px_8px_rgba(0,0,0,0.04)] text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-4 focus:ring-zinc-900/10 dark:focus:ring-white/10 focus:border-zinc-300 dark:focus:border-zinc-600 transition duration-200 text-sm font-bold",
+          className={cn("w-full pl-11 pr-12 py-3 bg-white dark:bg-[#121214] border border-zinc-200/80 dark:border-zinc-800 shadow-[0_2px_8px_rgba(0,0,0,0.04)] text-zinc-900 dark:text-white placeholder:text-muted dark:placeholder:text-zinc-600 focus:outline-none focus:ring-4 focus:ring-zinc-900/10 dark:focus:ring-white/10 focus:border-zinc-300 dark:focus:border-zinc-600 transition duration-200 text-sm font-bold",
             radiusClass
           )}
         />
         {searchQuery && (
           <button
             onClick={() => onSearchChange('')}
-            className="absolute inset-y-0 right-0 pr-4 flex items-center text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 outline-none"
+            className="absolute inset-y-0 right-0 pr-4 flex items-center text-muted hover:text-zinc-600 dark:hover:text-zinc-200 outline-none"
             title="清除搜索"
           >
             <X size={16} strokeWidth={2.5} />
@@ -100,7 +99,7 @@ export function Header({
                 onClick={() => onSearchChange(s)}
                 className="w-full flex items-center gap-2.5 px-4 py-2.5 hover:bg-zinc-50 dark:hover:bg-white/5 text-sm font-bold text-zinc-700 dark:text-zinc-300 transition-colors outline-none"
               >
-                <Search size={14} className="text-zinc-400 shrink-0" strokeWidth={3} />
+                <Search size={14} className="text-muted shrink-0" strokeWidth={3} />
                 <span className="truncate">{s}</span>
               </button>
             ))}
@@ -135,15 +134,14 @@ export function Header({
             </button>
 
             <div className="relative flex items-center">
-              <div className="absolute left-2.5 text-zinc-400 pointer-events-none">
+              <div className="absolute left-2.5 text-muted pointer-events-none">
                 <ArrowUpDown size={14} strokeWidth={2.5} />
               </div>
               <select
                 value={sortBy}
                 onChange={(e) => onSortChange(e.target.value)}
                 className={cn(
-                  inputClasses,
-                  "pl-8 pr-6 py-2 font-bold text-[13px] bg-white border border-zinc-200/80 shadow-[0_2px_8px_rgba(0,0,0,0.04)] text-zinc-700 cursor-pointer appearance-none hover:border-zinc-300 transition duration-200 outline-none focus:ring-4 focus:ring-zinc-900/10",
+                  inputClasses,"pl-8 pr-6 py-2 font-bold text-[13px] bg-white border border-zinc-200/80 shadow-[0_2px_8px_rgba(0,0,0,0.04)] text-zinc-700 cursor-pointer appearance-none hover:border-zinc-300 transition duration-200 outline-none focus:ring-4 focus:ring-zinc-900/10",
                   radiusClass
                 )}
               >
@@ -152,7 +150,7 @@ export function Header({
                 <option value="name">按名称</option>
                 <option value="price">按价格</option>
               </select>
-              <div className="absolute right-3 pointer-events-none text-zinc-400">
+              <div className="absolute right-3 pointer-events-none text-muted">
                 <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
@@ -173,21 +171,21 @@ export function Header({
           <div className="flex items-center gap-1.5">
             <button
               onClick={onAddNew}
-              className={cn(compactButtonClass, getButtonClassName(buttonStyle, 'primary'))}
+              className={cn(compactButtonClass, getButtonClassName(buttonStyle,'primary'))}
             >
               <Plus size={12} strokeWidth={2.5}/>
               <span className="hidden sm:inline">新增条目</span>
             </button>
             <button
               onClick={onCancel}
-              className={cn(compactButtonClass, getButtonClassName(buttonStyle, 'default'))}
+              className={cn(compactButtonClass, getButtonClassName(buttonStyle,'default'))}
             >
               <X size={12} strokeWidth={2.5}/>
               <span className="hidden sm:inline">取消</span>
             </button>
             <button
               onClick={onSave}
-              className={cn(compactButtonClass, getButtonClassName(buttonStyle === 'soft' ? 'solid' : buttonStyle, 'default'))}
+              className={cn(compactButtonClass, getButtonClassName(buttonStyle ==='soft'?'solid': buttonStyle,'default'))}
             >
               <Save size={12} strokeWidth={2.5}/>
               <span className="hidden sm:inline">保存</span>

@@ -216,14 +216,10 @@ export const GunCard = React.memo(function GunCard({
 
   return (
     <div
-      className={cn(
-        "group/card relative flex flex-col rounded-2xl transition duration-200 h-full",
-        cardPaddingClass,
-        "bg-white dark:bg-[#121214] border hover:-translate-y-0.5",
+      className={cn("group/card relative flex flex-col rounded-2xl transition duration-200 h-full",
+        cardPaddingClass,"bg-white dark:bg-[#121214] border hover:-translate-y-0.5",
         isEditing
-          ? "border-emerald-500/40 ring-4 ring-emerald-500/10 shadow-[0_8px_30px_rgb(16,185,129,0.06)] bg-white/80 dark:bg-[#121214]/80"
-          : "border-zinc-200/80 dark:border-zinc-800"
-      )}
+          ?"border-emerald-500/40 ring-4 ring-emerald-500/10 shadow-[0_8px_30px_rgb(16,185,129,0.06)] bg-white/80 dark:bg-[#121214]/80":"border-zinc-200/80 dark:border-zinc-800")}
     >
       <div className="absolute inset-0 rounded-2xl pointer-events-none border border-white/50 dark:border-white/5" />
 
@@ -241,7 +237,7 @@ export const GunCard = React.memo(function GunCard({
                 </div>
               )}
               <input
-                className={cn(inputClasses, "text-[15px] py-1.5 font-black w-full bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-700 shadow-sm")}
+                className={cn(inputClasses,"text-[15px] py-1.5 font-black w-full bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-700 shadow-sm")}
                 style={{ color: 'var(--gun-text-color, var(--user-gun-color, currentColor))' }}
                 defaultValue={group.name}
                 onBlur={e => { if(e.target.value !== group.name) onUpdateGroup(group.id, 'name', e.target.value) }}
@@ -250,7 +246,7 @@ export const GunCard = React.memo(function GunCard({
               <button
                 type="button"
                 onClick={() => onDeleteGroup(group.id)}
-                className={cn("shrink-0 p-2 transition duration-200 active:scale-90 outline-none", radiusClass, getButtonClassName(buttonStyle === 'outline' ? 'soft' : buttonStyle, 'danger'))}
+                className={cn("shrink-0 p-2 transition duration-200 active:scale-90 outline-none", radiusClass, getButtonClassName(buttonStyle ==='outline'?'soft': buttonStyle,'danger'))}
                 title="删除枪系"
               >
                 <Trash2 size={16} strokeWidth={2.5}/>
@@ -258,9 +254,9 @@ export const GunCard = React.memo(function GunCard({
             </div>
             <div className="flex items-center justify-between w-full">
               <div className="flex items-center gap-2">
-                 <span className="text-[11px] font-bold text-zinc-500 bg-zinc-100 px-1.5 py-0.5 rounded">归属:</span>
+                 <span className="text-[11px] font-bold text-muted bg-zinc-100 px-1.5 py-0.5 rounded">归属:</span>
                  <select
-                    className={cn(inputClasses, "py-0.5 bg-white border border-zinc-200 text-[11px] w-auto shadow-sm cursor-pointer")}
+                    className={cn(inputClasses,"py-0.5 bg-white border border-zinc-200 text-[11px] w-auto shadow-sm cursor-pointer")}
                     defaultValue={group.category}
                     onBlur={e => { if(e.target.value !== group.category) onUpdateGroup(group.id, 'category', e.target.value) }}
                   >
@@ -277,22 +273,17 @@ export const GunCard = React.memo(function GunCard({
                 <button
                   type="button"
                   onClick={handlePinClick}
-                  className={cn(
-                    "p-1 transition-colors outline-none",
+                  className={cn("p-1 transition-colors outline-none",
                     radiusClass,
                     group.pinned
-                      ? "text-yellow-600 bg-yellow-50 hover:bg-yellow-100"
-                      : "text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100"
-                  )}
+                      ?"text-yellow-600 bg-yellow-50 hover:bg-yellow-100":"text-muted hover:text-zinc-700 hover:bg-zinc-100")}
                   title={group.pinned ? "取消置顶" : "置顶卡片"}
                 >
-                  <Pin size={14} className={cn(group.pinned && "fill-yellow-500")} />
+                  <Pin size={14} className={cn(group.pinned &&"fill-yellow-500")} />
                 </button>
                 {pinMessage && (
-                  <div className={cn(
-                    "absolute -top-7 -right-3 z-50 px-1.5 py-0.5 rounded shadow-sm text-[11px] font-black text-white italic transform -rotate-12 whitespace-nowrap pointer-events-none animate-fade-in",
-                    pinMessage.type === 'pin' ? "bg-emerald-500" : "bg-zinc-400"
-                  )}>
+                  <div className={cn("absolute -top-7 -right-3 z-50 px-1.5 py-0.5 rounded shadow-sm text-[11px] font-black text-white italic transform -rotate-12 whitespace-nowrap pointer-events-none animate-fade-in",
+                    pinMessage.type ==='pin'?"bg-emerald-500":"bg-zinc-400")}>
                     {pinMessage.text}
                   </div>
                 )}
@@ -313,27 +304,22 @@ export const GunCard = React.memo(function GunCard({
                 <button
                   type="button"
                   onClick={handlePinClick}
-                  className={cn(
-                    "p-1 transition-colors outline-none",
+                  className={cn("p-1 transition-colors outline-none",
                     radiusClass,
                     group.pinned
-                      ? "text-yellow-600 bg-yellow-50 hover:bg-yellow-100"
-                      : "text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100"
-                  )}
+                      ?"text-yellow-600 bg-yellow-50 hover:bg-yellow-100":"text-muted hover:text-zinc-700 hover:bg-zinc-100")}
                   title={group.pinned ? "取消置顶" : "置顶卡片"}
                 >
-                  <Pin size={14} className={cn(group.pinned && "fill-yellow-500")} />
+                  <Pin size={14} className={cn(group.pinned &&"fill-yellow-500")} />
                 </button>
                 {pinMessage && (
-                  <div className={cn(
-                    "absolute -top-7 -right-3 z-50 px-1.5 py-0.5 rounded shadow-sm text-[11px] font-black text-white italic transform -rotate-12 whitespace-nowrap pointer-events-none animate-fade-in",
-                    pinMessage.type === 'pin' ? "bg-emerald-500" : "bg-zinc-400"
-                  )}>
+                  <div className={cn("absolute -top-7 -right-3 z-50 px-1.5 py-0.5 rounded shadow-sm text-[11px] font-black text-white italic transform -rotate-12 whitespace-nowrap pointer-events-none animate-fade-in",
+                    pinMessage.type ==='pin'?"bg-emerald-500":"bg-zinc-400")}>
                     {pinMessage.text}
                   </div>
                 )}
               </div>
-              <span className="text-[9px] font-bold uppercase tracking-widest text-zinc-400 bg-zinc-100 px-1.5 py-0.5 rounded border border-zinc-200/60">
+              <span className="text-[9px] font-bold uppercase tracking-widest text-muted bg-zinc-100 px-1.5 py-0.5 rounded border border-zinc-200/60">
                  {group.category.toUpperCase()}
               </span>
             </div>
@@ -369,25 +355,25 @@ export const GunCard = React.memo(function GunCard({
           </SortableContext>
         </DndContext>
 
-        <div className={cn("flex items-center justify-center gap-3 mt-1 py-1 h-6", totalPages <= 1 && "invisible")}>
+        <div className={cn("flex items-center justify-center gap-3 mt-1 py-1 h-6", totalPages <= 1 &&"invisible")}>
           <button
             type="button"
             onClick={() => setPage(p => Math.max(0, p - 1))}
             disabled={page === 0}
-            className="text-[12px] font-bold text-zinc-500 hover:text-zinc-900 disabled:opacity-30 disabled:cursor-not-allowed transition"
+            className="text-[12px] font-bold text-muted hover:text-zinc-900 disabled:opacity-30 disabled:cursor-not-allowed transition"
           >
             上一页
           </button>
           <div className="flex items-center gap-1">
             {Array.from({ length: totalPages }).map((_, i) => (
-              <div key={i} className={cn("w-1.5 h-1.5 rounded-full transition-colors", page === i ? "bg-zinc-800" : "bg-zinc-200")} />
+              <div key={i} className={cn("w-1.5 h-1.5 rounded-full transition-colors", page === i ?"bg-zinc-800":"bg-zinc-200")} />
             ))}
           </div>
           <button
             type="button"
             onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
             disabled={page === totalPages - 1}
-            className="text-[12px] font-bold text-zinc-500 hover:text-zinc-900 disabled:opacity-30 disabled:cursor-not-allowed transition"
+            className="text-[12px] font-bold text-muted hover:text-zinc-900 disabled:opacity-30 disabled:cursor-not-allowed transition"
           >
             下一页
           </button>

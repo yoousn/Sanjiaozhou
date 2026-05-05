@@ -135,9 +135,9 @@ export function ModelConfigModal({
         <div className="flex items-center justify-between border-b border-zinc-200 px-6 py-4 dark:border-zinc-800">
           <div>
             <h3 className="text-xl font-black text-zinc-900 dark:text-white">模型配置</h3>
-            <p className="mt-1 text-[12px] font-medium text-zinc-500 dark:text-zinc-400">获取模型、设置默认模型，并在操练场直接对话</p>
+            <p className="mt-1 text-[12px] font-medium text-muted">获取模型、设置默认模型，并在操练场直接对话</p>
           </div>
-          <button onClick={onClose} className="rounded-full bg-zinc-100 p-2 text-zinc-500 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700">
+          <button onClick={onClose} className="rounded-full bg-zinc-100 p-2 text-muted hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700">
             <X size={18} strokeWidth={2.5} />
           </button>
         </div>
@@ -145,14 +145,14 @@ export function ModelConfigModal({
         <div className="grid min-h-0 flex-1 grid-cols-1 overflow-hidden lg:grid-cols-[220px_1fr_360px]">
           <aside className="border-b border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-[#18181b] lg:border-b-0 lg:border-r">
             <div className="mb-3 flex items-center justify-between">
-              <span className="text-[12px] font-black uppercase tracking-widest text-zinc-500">模型源</span>
+              <span className="text-[12px] font-black uppercase tracking-widest text-muted">模型源</span>
               <button
                 type="button"
                 onClick={() => {
                   onSelectedProviderIdChange('');
                   onProviderFormChange({ id: '', name: '', baseUrl: '', apiKey: '', models: [], selectedModel: '', hasSavedApiKey: false });
                 }}
-                className="rounded-xl bg-white p-2 text-zinc-500 hover:text-zinc-900 dark:bg-[#121214] dark:hover:text-white"
+                className="rounded-xl bg-white p-2 text-muted hover:text-zinc-900 dark:bg-[#121214] dark:hover:text-white"
                 title="新增模型源"
               >
                 <Plus size={14} strokeWidth={3} />
@@ -164,12 +164,9 @@ export function ModelConfigModal({
                   key={provider.id}
                   type="button"
                   onClick={() => onSelectedProviderIdChange(provider.id)}
-                  className={cn(
-                    'w-full rounded-2xl border px-3 py-3 text-left transition',
+                  className={cn('w-full rounded-2xl border px-3 py-3 text-left transition',
                     selectedProviderId === provider.id
-                      ? 'border-zinc-900 bg-zinc-900 text-white dark:border-white dark:bg-white dark:text-zinc-900'
-                      : 'border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 dark:border-zinc-800 dark:bg-[#121214] dark:text-zinc-400'
-                  )}
+                      ?'border-zinc-900 bg-zinc-900 text-white dark:border-white dark:bg-white dark:text-zinc-900':'border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 dark:border-zinc-800 dark:bg-[#121214]')}
                 >
                   <div className="truncate text-[13px] font-black">{provider.name}</div>
                   <div className="mt-1 text-[11px] font-bold opacity-70">{provider.models.length} 个模型</div>
@@ -190,25 +187,25 @@ export function ModelConfigModal({
           <section className="min-h-0 overflow-y-auto p-5">
             <div className="grid gap-4 md:grid-cols-2">
               <div>
-                <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-zinc-500">名称</label>
-                <input value={providerForm.name} onChange={(e) => onProviderFormChange((prev) => ({ ...prev, name: e.target.value }))} className={cn(inputClasses, 'border border-zinc-200 bg-white py-2 text-[13px] shadow-sm dark:border-zinc-800 dark:bg-[#18181b] dark:text-white')} placeholder="我的接口" />
+                <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted">名称</label>
+                <input value={providerForm.name} onChange={(e) => onProviderFormChange((prev) => ({ ...prev, name: e.target.value }))} className={cn(inputClasses,'border border-zinc-200 bg-white py-2 text-[13px] shadow-sm dark:border-zinc-800 dark:bg-[#18181b] dark:text-white')} placeholder="我的接口" />
               </div>
               <div>
-                <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-zinc-500">接口地址</label>
-                <input value={providerForm.baseUrl} onChange={(e) => onProviderFormChange((prev) => ({ ...prev, baseUrl: e.target.value }))} className={cn(inputClasses, 'border border-zinc-200 bg-white py-2 text-[13px] shadow-sm dark:border-zinc-800 dark:bg-[#18181b] dark:text-white')} placeholder="https://api.example.com/v1 或 https://api.example.com" />
+                <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted">接口地址</label>
+                <input value={providerForm.baseUrl} onChange={(e) => onProviderFormChange((prev) => ({ ...prev, baseUrl: e.target.value }))} className={cn(inputClasses,'border border-zinc-200 bg-white py-2 text-[13px] shadow-sm dark:border-zinc-800 dark:bg-[#18181b] dark:text-white')} placeholder="https://api.example.com/v1 或 https://api.example.com" />
               </div>
             </div>
 
             <div className="mt-4">
-              <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-zinc-500">API Key</label>
-              <input value={providerForm.apiKey} onChange={(e) => onProviderFormChange((prev) => ({ ...prev, apiKey: e.target.value }))} className={cn(inputClasses, 'border border-zinc-200 bg-white py-2 text-[13px] shadow-sm dark:border-zinc-800 dark:bg-[#18181b] dark:text-white')} placeholder={providerForm.hasSavedApiKey ? '已保存 API Key，留空则继续使用原 Key' : 'sk-...'} />
+              <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted">API Key</label>
+              <input value={providerForm.apiKey} onChange={(e) => onProviderFormChange((prev) => ({ ...prev, apiKey: e.target.value }))} className={cn(inputClasses,'border border-zinc-200 bg-white py-2 text-[13px] shadow-sm dark:border-zinc-800 dark:bg-[#18181b] dark:text-white')} placeholder={providerForm.hasSavedApiKey ? '已保存 API Key，留空则继续使用原 Key' : 'sk-...'} />
             </div>
 
             <div className="mt-5 rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-[#18181b]">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <div className="text-[13px] font-black text-zinc-900 dark:text-white">获取模型</div>
-                  <div className="mt-1 text-[11px] font-medium text-zinc-400">获取后会更新默认模型和操练场列表</div>
+                  <div className="mt-1 text-[11px] font-medium text-muted">获取后会更新默认模型和操练场列表</div>
                 </div>
                 <button type="button" onClick={onFetchProviderModels} disabled={isFetchingProviderModels || isSavingProvider} className="inline-flex items-center gap-2 rounded-2xl border border-zinc-200 bg-white px-4 py-2 text-[12px] font-black text-zinc-700 transition hover:border-zinc-300 disabled:opacity-60 dark:border-zinc-800 dark:bg-[#121214] dark:text-zinc-300">
                   {isFetchingProviderModels ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} strokeWidth={2.5} />}
@@ -219,8 +216,8 @@ export function ModelConfigModal({
 
             <div className="mt-5 grid gap-4 md:grid-cols-[1fr_auto]">
               <div>
-                <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-zinc-500">默认模型</label>
-                <select value={providerForm.selectedModel || ''} onChange={(e) => onProviderFormChange((prev) => ({ ...prev, selectedModel: e.target.value }))} className={cn(inputClasses, 'border border-zinc-200 bg-white py-2 text-[13px] shadow-sm dark:border-zinc-800 dark:bg-[#18181b] dark:text-white')}>
+                <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted">默认模型</label>
+                <select value={providerForm.selectedModel || ''} onChange={(e) => onProviderFormChange((prev) => ({ ...prev, selectedModel: e.target.value }))} className={cn(inputClasses,'border border-zinc-200 bg-white py-2 text-[13px] shadow-sm dark:border-zinc-800 dark:bg-[#18181b] dark:text-white')}>
                   <option value="">请选择模型</option>
                   {providerForm.models.map((model) => <option key={model} value={model}>{model}</option>)}
                 </select>
@@ -241,7 +238,7 @@ export function ModelConfigModal({
               <Bot size={16} />
               <div>
                 <div className="text-[13px] font-black text-zinc-900 dark:text-white">模型操练场</div>
-                <div className="text-[11px] font-bold text-zinc-400">{selectedProvider?.name || '未选择模型源'} / {parsedActiveModel.model || '未选择模型'}</div>
+                <div className="text-[11px] font-bold text-muted">{selectedProvider?.name || '未选择模型源'} / {parsedActiveModel.model || '未选择模型'}</div>
               </div>
             </div>
             <select value={activeModel} onChange={(e) => onSelectedModelChange(e.target.value)} className="mb-3 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-[12px] font-bold outline-none dark:border-zinc-800 dark:bg-[#121214] dark:text-white">
@@ -253,19 +250,19 @@ export function ModelConfigModal({
               测试模型
             </button>
             {modelTestResult && (
-              <div className={cn('mb-3 rounded-xl px-3 py-2 text-[11px] font-bold', modelTestResult.success ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300' : 'bg-red-50 text-red-700')}>
+              <div className={cn('mb-3 rounded-xl px-3 py-2 text-[11px] font-bold', modelTestResult.success ?'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300':'bg-red-50 text-red-700')}>
                 {modelTestResult.success ? <Check size={13} className="mr-1 inline" /> : null}{modelTestResult.success ? `测试通过 · ${modelTestResult.latencyMs}ms` : modelTestResult.error || '测试失败'}
               </div>
             )}
 
             <div className="min-h-0 flex-1 space-y-3 overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-[#121214]">
               {chatMessages.length === 0 ? (
-                <div className="flex h-full flex-col items-center justify-center text-center text-[12px] font-bold text-zinc-400">
+                <div className="flex h-full flex-col items-center justify-center text-center text-[12px] font-bold text-muted">
                   <MessageSquare size={22} className="mb-2" />
                   像 New API 操练场一样直接发送测试消息
                 </div>
               ) : chatMessages.map((message, index) => (
-                <div key={index} className={cn('rounded-2xl px-3 py-2 text-[12px] leading-relaxed', message.role === 'user' ? 'ml-8 bg-zinc-900 text-white' : 'mr-8 bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200')}>
+                <div key={index} className={cn('rounded-2xl px-3 py-2 text-[12px] leading-relaxed', message.role ==='user'?'ml-8 bg-zinc-900 text-white':'mr-8 bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200')}>
                   {message.reasoning && <details className="mb-2 rounded-xl bg-white/60 p-2 text-[11px] dark:bg-black/20"><summary className="cursor-pointer font-black">思考内容</summary><div className="mt-1 whitespace-pre-wrap opacity-80">{message.reasoning}</div></details>}
                   <div className="whitespace-pre-wrap">{message.content}</div>
                   <div className="mt-1 flex items-center justify-between gap-2 text-[10px] opacity-60">
@@ -278,7 +275,7 @@ export function ModelConfigModal({
                   </div>
                 </div>
               ))}
-              {isChatting && <div className="mr-8 inline-flex items-center gap-2 rounded-2xl bg-zinc-100 px-3 py-2 text-[12px] font-bold text-zinc-500 dark:bg-zinc-800"><Loader2 size={14} className="animate-spin" /> 思考中...</div>}
+              {isChatting && <div className="mr-8 inline-flex items-center gap-2 rounded-2xl bg-zinc-100 px-3 py-2 text-[12px] font-bold text-muted dark:bg-zinc-800"><Loader2 size={14} className="animate-spin" /> 思考中...</div>}
             </div>
 
             {chatError && <div className="mt-2 rounded-xl bg-red-50 px-3 py-2 text-[11px] font-bold text-red-700">{chatError}</div>}

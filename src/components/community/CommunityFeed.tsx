@@ -25,11 +25,11 @@ export function CommunityFeed({
 }) {
   if (posts.length === 0) {
     return (
-      <div className="py-24 flex flex-col items-center justify-center text-zinc-400 animate-fade-in">
+      <div className="py-24 flex flex-col items-center justify-center text-muted animate-fade-in">
         <div className="w-16 h-16 bg-white dark:bg-[#18181b] shadow-sm border border-zinc-200/50 rounded-2xl flex items-center justify-center mb-4">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-300"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
         </div>
-        <p className="font-bold text-xs tracking-widest uppercase text-zinc-500">还没有帖子，来发第一个吧</p>
+        <p className="font-bold text-xs tracking-widest uppercase text-muted">还没有帖子，来发第一个吧</p>
       </div>
     );
   }

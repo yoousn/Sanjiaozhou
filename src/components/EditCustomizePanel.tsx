@@ -34,7 +34,7 @@ function SliderField({ label, valueLabel, min, max, value, onChange }: SliderFie
   return (
     <div>
       <div className="mb-2 flex items-center justify-between gap-3">
-        <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">{label}</label>
+        <label className="block text-[12px] font-bold text-muted uppercase tracking-widest">{label}</label>
         <span className="text-[12px] font-black text-zinc-900 dark:text-white">{valueLabel}</span>
       </div>
       <input
@@ -89,9 +89,9 @@ export function EditCustomizePanel({
       <div className="mb-5 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
         <div>
           <h3 className="text-[15px] font-black text-zinc-900 dark:text-white">界面自定义</h3>
-          <p className="text-[13px] text-zinc-500">编辑模式下直接调整卡片大小、列数、间距、圆角和按钮样式，刷新后会自动保留。</p>
+          <p className="text-[13px] text-muted">编辑模式下直接调整卡片大小、列数、间距、圆角和按钮样式，刷新后会自动保留。</p>
         </div>
-        <button onClick={resetUiPreferences} className="text-[13px] font-bold text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition">恢复默认 UI 设置</button>
+        <button onClick={resetUiPreferences} className="text-[13px] font-bold text-muted hover:text-zinc-900 dark:hover:text-white transition">恢复默认 UI 设置</button>
       </div>
 
       <div className="mb-4 grid grid-cols-1 gap-2 md:grid-cols-3">
@@ -102,12 +102,9 @@ export function EditCustomizePanel({
               key={preset.value}
               type="button"
               onClick={() => applyDensityPreset(preset)}
-              className={cn(
-                'rounded-xl border px-3 py-2 text-left transition',
+              className={cn('rounded-xl border px-3 py-2 text-left transition',
                 active
-                  ? 'border-zinc-900 bg-zinc-900 text-white dark:border-white dark:bg-white dark:text-zinc-900'
-                  : 'border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 dark:border-zinc-800 dark:bg-[#18181b] dark:text-zinc-400'
-              )}
+                  ?'border-zinc-900 bg-zinc-900 text-white dark:border-white dark:bg-white dark:text-zinc-900':'border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 dark:border-zinc-800 dark:bg-[#18181b]')}
             >
               <div className="text-[12px] font-black">{preset.label}</div>
               <div className="mt-0.5 text-[10px] font-bold opacity-70">{preset.preferences.gridColumns}列 / {preset.preferences.variantsPerPage}条 / {preset.preferences.gridGap}px</div>
@@ -134,7 +131,7 @@ export function EditCustomizePanel({
           onChange={(nextIndex) => updateUiPreference('cardMinHeight', CARD_MIN_HEIGHT_OPTIONS[nextIndex])}
         />
         <div>
-          <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">每张卡片显示配置数</label>
+          <label className="block text-[12px] font-bold text-muted uppercase tracking-widest mb-2">每张卡片显示配置数</label>
           <select value={uiPreferences.variantsPerPage} onChange={(e) => updateUiPreference('variantsPerPage', Number(e.target.value) as 2 | 3 | 4)} className={settingsSelectClass}>
             {VARIANTS_PER_PAGE_OPTIONS.map((option) => (
               <option key={option} value={option}>{option}</option>
@@ -142,7 +139,7 @@ export function EditCustomizePanel({
           </select>
         </div>
         <div>
-          <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">桌面列数</label>
+          <label className="block text-[12px] font-bold text-muted uppercase tracking-widest mb-2">桌面列数</label>
           <select value={uiPreferences.gridColumns} onChange={(e) => updateUiPreference('gridColumns', Number(e.target.value) as 3 | 4)} className={settingsSelectClass}>
             {GRID_COLUMNS_OPTIONS.map((option) => (
               <option key={option} value={option}>{option} 列</option>
@@ -150,7 +147,7 @@ export function EditCustomizePanel({
           </select>
         </div>
         <div>
-          <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">每页卡片数</label>
+          <label className="block text-[12px] font-bold text-muted uppercase tracking-widest mb-2">每页卡片数</label>
           <select value={uiPreferences.groupsPerPage} onChange={(e) => updateUiPreference('groupsPerPage', Number(e.target.value) as 8 | 12 | 16 | 20 | 24)} className={settingsSelectClass}>
             {GROUPS_PER_PAGE_OPTIONS.map((option) => (
               <option key={option} value={option}>{option} 张</option>
@@ -166,7 +163,7 @@ export function EditCustomizePanel({
           onChange={(nextIndex) => updateUiPreference('gridGap', GRID_GAP_OPTIONS[nextIndex])}
         />
         <div>
-          <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">侧栏宽度</label>
+          <label className="block text-[12px] font-bold text-muted uppercase tracking-widest mb-2">侧栏宽度</label>
           <select value={uiPreferences.sidebarWidth} onChange={(e) => updateUiPreference('sidebarWidth', e.target.value as UiSidebarWidth)} className={settingsSelectClass}>
             {SIDEBAR_WIDTH_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>{option.label}</option>
@@ -182,7 +179,7 @@ export function EditCustomizePanel({
           onChange={(nextIndex) => updateUiPreference('controlRadius', RADIUS_OPTIONS[nextIndex].value as UiRadius)}
         />
         <div>
-          <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">按钮样式</label>
+          <label className="block text-[12px] font-bold text-muted uppercase tracking-widest mb-2">按钮样式</label>
           <select value={uiPreferences.buttonStyle} onChange={(e) => updateUiPreference('buttonStyle', e.target.value as UiButtonStyle)} className={settingsSelectClass}>
             {BUTTON_STYLE_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>{option.label}</option>

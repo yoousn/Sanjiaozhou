@@ -54,8 +54,8 @@ export function CollectApplyPanel({
       <div className="rounded-3xl border border-zinc-200 bg-zinc-50 p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <div className="text-[11px] font-bold uppercase tracking-widest text-zinc-500">采集模型</div>
-            <div className="mt-1 text-[12px] font-medium text-zinc-400">先选模型源，再选模型；测试模型不会写入网站</div>
+            <div className="text-[11px] font-bold uppercase tracking-widest text-muted">采集模型</div>
+            <div className="mt-1 text-[12px] font-medium text-muted">先选模型源，再选模型；测试模型不会写入网站</div>
           </div>
           <button
             type="button"
@@ -72,7 +72,7 @@ export function CollectApplyPanel({
           <select
             value={selectedProviderId}
             onChange={(e) => handleProviderChange(e.target.value)}
-            className={cn(inputClasses, 'border border-zinc-200 bg-white py-2 text-[13px] font-bold shadow-sm')}
+            className={cn(inputClasses,'border border-zinc-200 bg-white py-2 text-[13px] font-bold shadow-sm')}
           >
             {providerOptions.map((provider) => (
               <option key={provider.id} value={provider.id}>{provider.name}</option>
@@ -80,11 +80,11 @@ export function CollectApplyPanel({
           </select>
 
           <div className="relative">
-            <Cpu size={14} strokeWidth={2.5} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+            <Cpu size={14} strokeWidth={2.5} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
             <select
               value={selectedModel}
               onChange={(e) => onSelectedModelChange(e.target.value)}
-              className={cn(inputClasses, 'w-full border border-zinc-200 bg-white py-2 pl-9 pr-8 text-[13px] font-bold shadow-sm')}
+              className={cn(inputClasses,'w-full border border-zinc-200 bg-white py-2 pl-9 pr-8 text-[13px] font-bold shadow-sm')}
             >
               {modelOptions.map((option) => (
                 <option key={option.value} value={option.value}>{option.model}</option>
@@ -104,10 +104,8 @@ export function CollectApplyPanel({
         </div>
 
         {modelTestResult && (
-          <div className={cn(
-            'mt-4 rounded-2xl border px-4 py-3 text-[12px] font-medium',
-            modelTestResult.success ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-red-200 bg-red-50 text-red-700'
-          )}>
+          <div className={cn('mt-4 rounded-2xl border px-4 py-3 text-[12px] font-medium',
+            modelTestResult.success ?'border-emerald-200 bg-emerald-50 text-emerald-700':'border-red-200 bg-red-50 text-red-700')}>
             <div>结果：{modelTestResult.success ? '成功' : '失败'} · 延迟：{modelTestResult.latencyMs} ms</div>
             {modelTestResult.error && <div className="mt-1">错误：{modelTestResult.error}</div>}
           </div>
@@ -118,7 +116,7 @@ export function CollectApplyPanel({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <div className="text-sm font-black text-zinc-900">确认加入网站</div>
-            <div className="mt-1 text-[12px] font-medium text-zinc-400">已选 {selectedVideos.length} 个；若未选目标枪械，AI将自动提取视频内全部枪械</div>
+            <div className="mt-1 text-[12px] font-medium text-muted">已选 {selectedVideos.length} 个；若未选目标枪械，AI将自动提取视频内全部枪械</div>
           </div>
           <button
             type="button"
@@ -146,7 +144,7 @@ export function CollectApplyPanel({
         <div className="flex min-h-[220px] flex-col items-center justify-center rounded-3xl border border-dashed border-zinc-200 bg-zinc-50 text-center">
           <Sparkles size={24} className="mb-4 text-zinc-300" />
           <p className="text-sm font-bold text-zinc-700">确认后会自动写入网站</p>
-          <p className="mt-1 text-[12px] font-medium text-zinc-400">同枪会合并进原卡片，没有卡片会新增</p>
+          <p className="mt-1 text-[12px] font-medium text-muted">同枪会合并进原卡片，没有卡片会新增</p>
         </div>
       )}
 
@@ -154,16 +152,16 @@ export function CollectApplyPanel({
         <div className="flex min-h-[220px] flex-col items-center justify-center rounded-3xl border border-zinc-100 bg-zinc-50 text-center">
           <Loader2 size={24} className="mb-4 animate-spin text-emerald-500" />
           <p className="text-sm font-bold text-zinc-700">正在处理并写入</p>
-          <p className="mt-1 text-[12px] font-medium text-zinc-400">仅处理你勾选的视频</p>
+          <p className="mt-1 text-[12px] font-medium text-muted">仅处理你勾选的视频</p>
         </div>
       )}
 
       {preview && !isPreviewing && !isApplying && (
         <div className="space-y-4">
           <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3">
-            <span className="text-[11px] font-bold uppercase tracking-widest text-zinc-500">模型</span>
+            <span className="text-[11px] font-bold uppercase tracking-widest text-muted">模型</span>
             <span className="rounded-full border border-zinc-200 bg-white px-2.5 py-1 text-[12px] font-bold text-zinc-700">{preview.model || '未知'}</span>
-            <span className="text-[11px] font-medium text-zinc-400">结果 {preview.groups?.length || 0} 组</span>
+            <span className="text-[11px] font-medium text-muted">结果 {preview.groups?.length || 0} 组</span>
           </div>
 
           {hasPreviewErrors && (

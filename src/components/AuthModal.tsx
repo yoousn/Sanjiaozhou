@@ -79,14 +79,14 @@ export function AuthModal({ isOpen, onClose, onLogin, onRegister, showToast }: A
               <h2 className="text-2xl font-black tracking-tighter text-zinc-900 dark:text-white">
                 {isRegister ? '加入社区' : '欢迎回来'}
               </h2>
-              <button onClick={onClose} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors text-zinc-400">
+              <button onClick={onClose} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors text-muted">
                 <X size={20} />
               </button>
             </div>
 
             <form onSubmit={handleSubmit} className="px-8 pb-8 flex flex-col gap-4">
               <div>
-                <label className="block text-[11px] font-bold text-zinc-400 uppercase tracking-widest mb-1.5 ml-1">用户名</label>
+                <label className="block text-[11px] font-bold text-muted uppercase tracking-widest mb-1.5 ml-1">用户名</label>
                 <input
                   type="text"
                   value={username}
@@ -99,7 +99,7 @@ export function AuthModal({ isOpen, onClose, onLogin, onRegister, showToast }: A
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-zinc-400 uppercase tracking-widest mb-1.5 ml-1">密码</label>
+                <label className="block text-[11px] font-bold text-muted uppercase tracking-widest mb-1.5 ml-1">密码</label>
                 <input
                   type="password"
                   value={password}
@@ -125,7 +125,7 @@ export function AuthModal({ isOpen, onClose, onLogin, onRegister, showToast }: A
                 <button
                   type="button"
                   onClick={() => { setIsRegister(!isRegister); setError(null); }}
-                  className="text-[13px] font-bold text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition"
+                  className="text-[13px] font-bold text-muted hover:text-zinc-900 dark:hover:text-white transition"
                 >
                   {isRegister ? '已有账号？去登录' : '还没有账号？去注册'}
                 </button>

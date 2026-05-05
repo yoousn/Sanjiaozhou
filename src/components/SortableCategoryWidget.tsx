@@ -53,29 +53,25 @@ export function SortableCategoryWidget({
     <div
       ref={setNodeRef}
       style={style}
-      className={cn(
-        "relative bg-white/50 dark:bg-[#18181b]/50 backdrop-blur-md rounded-2xl border shadow-sm transition-all duration-200",
-        isDragging ? "border-zinc-900 dark:border-white shadow-xl scale-105" : "border-zinc-200/60 dark:border-zinc-800/60 hover:shadow-md",
-        isEditing ? "p-3 pt-8 pb-4" : "p-1.5",
-        size === 'full' ? "col-span-full w-full" : "col-span-1"
-      )}
+      className={cn("relative bg-white/50 dark:bg-[#18181b]/50 backdrop-blur-md rounded-2xl border shadow-sm transition-all duration-200",
+        isDragging ?"border-zinc-900 dark:border-white shadow-xl scale-105":"border-zinc-200/60 dark:border-zinc-800/60 hover:shadow-md",
+        isEditing ?"p-3 pt-8 pb-4":"p-1.5",
+        size ==='full'?"col-span-full w-full":"col-span-1")}
     >
       {isEditing && (
         <div className="absolute top-0 left-0 w-full h-8 flex items-center justify-between px-3 bg-zinc-100/50 dark:bg-zinc-800/50 rounded-t-2xl border-b border-zinc-200/50 dark:border-zinc-700/50">
-          <div {...attributes} {...listeners} className="flex items-center gap-1.5 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 cursor-grab active:cursor-grabbing px-2 py-1 -ml-2">
+          <div {...attributes} {...listeners} className="flex items-center gap-1.5 text-muted hover:text-zinc-900 dark:hover:text-zinc-100 cursor-grab active:cursor-grabbing px-2 py-1 -ml-2">
             <GripVertical size={14} />
             <span className="text-[11px] font-bold uppercase tracking-widest">拖动模块</span>
           </div>
-          <button onClick={onToggleSize} className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors p-1" title="切换大小">
+          <button onClick={onToggleSize} className="text-muted hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors p-1" title="切换大小">
             {size === 'full' ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
           </button>
         </div>
       )}
 
-      <div className={cn(
-        "flex items-center overflow-x-auto no-scrollbar max-w-full pt-12 -mt-10 pb-2 -mb-2",
-        size === 'full' ? "gap-2 sm:gap-4 justify-start sm:justify-center" : "gap-1.5 justify-start"
-      )}>
+      <div className={cn("flex items-center overflow-x-auto no-scrollbar max-w-full pt-12 -mt-10 pb-2 -mb-2",
+        size ==='full'?"gap-2 sm:gap-4 justify-start sm:justify-center":"gap-1.5 justify-start")}>
         {categories.map(cat => {
           const Icon = cat.icon;
           const isActive = activeTab === cat.id;
@@ -83,15 +79,12 @@ export function SortableCategoryWidget({
             <button
               key={cat.id}
               onClick={() => !isEditing && setActiveTab(cat.id)}
-              className={cn(
-                "p-2 sm:px-3 sm:py-2 rounded-xl transition-all duration-200 outline-none focus:ring-2 focus:ring-zinc-900/10 active:scale-95 group relative flex items-center justify-center shrink-0",
+              className={cn("p-2 sm:px-3 sm:py-2 rounded-xl transition-all duration-200 outline-none focus:ring-2 focus:ring-zinc-900/10 active:scale-95 group relative flex items-center justify-center shrink-0",
                 isActive 
-                  ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-md" 
-                  : "bg-transparent text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800",
-                isEditing && "pointer-events-none opacity-50"
-              )}
+                  ?"bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-md":"bg-transparent text-muted hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800",
+                isEditing &&"pointer-events-none opacity-50")}
             >
-              <Icon size={16} strokeWidth={isActive ? 2.5 : 2} className={cn("transition-transform duration-300", isActive && "scale-110", size === 'full' ? "sm:mr-2" : "")} />
+              <Icon size={16} strokeWidth={isActive ? 2.5 : 2} className={cn("transition-transform duration-300", isActive &&"scale-110", size ==='full'?"sm:mr-2":"")} />
               {size === 'full' && (
                 <span className="hidden sm:block text-[13px] font-bold whitespace-nowrap">{cat.label}</span>
               )}

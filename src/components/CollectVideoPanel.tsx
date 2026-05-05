@@ -24,7 +24,7 @@ export function CollectVideoPanel({
       <div className="flex items-center justify-between gap-3">
         <div>
           <h3 className="text-sm font-black text-zinc-900">命中视频</h3>
-          <p className="mt-1 text-[12px] font-medium text-zinc-400">搜索后显示在这里，可多选</p>
+          <p className="mt-1 text-[12px] font-medium text-muted">搜索后显示在这里，可多选</p>
         </div>
         <div className="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-[11px] font-bold text-zinc-600">
           已选 {selectedVideoIds.length}
@@ -43,16 +43,16 @@ export function CollectVideoPanel({
             <div className="flex min-h-[220px] flex-col items-center justify-center rounded-3xl border border-dashed border-zinc-200 bg-zinc-50 text-center">
               <Sparkles size={22} className="mb-3 text-zinc-300" />
               <p className="text-sm font-bold text-zinc-700">这里会显示搜索命中的视频</p>
-              <p className="mt-1 text-[12px] font-medium text-zinc-400">将展示博主最新视频，无论是否匹配皆可手动勾选</p>
+              <p className="mt-1 text-[12px] font-medium text-muted">将展示博主最新视频，无论是否匹配皆可手动勾选</p>
             </div>
 
             <div className="min-h-[220px] rounded-3xl border border-zinc-100 bg-zinc-50 p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <h4 className="text-sm font-black text-zinc-700">搜索实时记录</h4>
-                  <p className="mt-1 text-[12px] font-medium text-zinc-400">搜索完成后，这里保留最近一次记录</p>
+                  <p className="mt-1 text-[12px] font-medium text-muted">搜索完成后，这里保留最近一次记录</p>
                 </div>
-                <div className="rounded-full border border-zinc-200 bg-white px-3 py-1 text-[11px] font-bold text-zinc-500">
+                <div className="rounded-full border border-zinc-200 bg-white px-3 py-1 text-[11px] font-bold text-muted">
                   {searchLogs.length} 条
                 </div>
               </div>
@@ -63,7 +63,7 @@ export function CollectVideoPanel({
                     {log.message}
                   </div>
                 )) : (
-                  <div className="flex min-h-[148px] items-center justify-center rounded-2xl border border-dashed border-zinc-200 bg-white text-center text-[12px] font-medium text-zinc-400">
+                  <div className="flex min-h-[148px] items-center justify-center rounded-2xl border border-dashed border-zinc-200 bg-white text-center text-[12px] font-medium text-muted">
                     {searchResult.isPending ? '正在等待服务器返回搜索日志…' : '暂无搜索记录'}
                   </div>
                 )}
@@ -77,16 +77,16 @@ export function CollectVideoPanel({
             <div className="flex min-h-[220px] flex-col items-center justify-center rounded-3xl border border-zinc-100 bg-zinc-50 text-center">
               <Loader2 size={22} className="mb-3 animate-spin text-emerald-500" />
               <p className="text-sm font-bold text-zinc-700">正在搜索视频</p>
-              <p className="mt-1 text-[12px] font-medium text-zinc-400">正在抓取并分析博主最新视频...</p>
+              <p className="mt-1 text-[12px] font-medium text-muted">正在抓取并分析博主最新视频...</p>
             </div>
 
             <div className="min-h-[220px] rounded-3xl border border-zinc-100 bg-zinc-50 p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <h4 className="text-sm font-black text-zinc-700">搜索实时记录</h4>
-                  <p className="mt-1 text-[12px] font-medium text-zinc-400">用于显示搜索阶段发生了什么</p>
+                  <p className="mt-1 text-[12px] font-medium text-muted">用于显示搜索阶段发生了什么</p>
                 </div>
-                <div className="rounded-full border border-zinc-200 bg-white px-3 py-1 text-[11px] font-bold text-zinc-500">
+                <div className="rounded-full border border-zinc-200 bg-white px-3 py-1 text-[11px] font-bold text-muted">
                   {searchLogs.length} 条
                 </div>
               </div>
@@ -97,7 +97,7 @@ export function CollectVideoPanel({
                     {log.message}
                   </div>
                 )) : (
-                  <div className="flex min-h-[148px] items-center justify-center rounded-2xl border border-dashed border-zinc-200 bg-white text-center text-[12px] font-medium text-zinc-400">
+                  <div className="flex min-h-[148px] items-center justify-center rounded-2xl border border-dashed border-zinc-200 bg-white text-center text-[12px] font-medium text-muted">
                     正在等待服务器返回搜索日志…
                   </div>
                 )}
@@ -114,15 +114,13 @@ export function CollectVideoPanel({
               key={video.id}
               type="button"
               onClick={() => onToggleVideo(video.id)}
-              className={cn(
-                'w-full rounded-2xl border p-4 text-left transition',
-                checked ? 'border-emerald-500 bg-emerald-50' : 'border-zinc-200 bg-white hover:border-zinc-300'
-              )}
+              className={cn('w-full rounded-2xl border p-4 text-left transition',
+                checked ?'border-emerald-500 bg-emerald-50':'border-zinc-200 bg-white hover:border-zinc-300')}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="line-clamp-2 text-[13px] font-black text-zinc-900">{video.title}</div>
-                  <div className="mt-2 text-[11px] font-medium text-zinc-500">{video.author} · {video.uploadDate || '未知日期'}</div>
+                  <div className="mt-2 text-[11px] font-medium text-muted">{video.author} · {video.uploadDate || '未知日期'}</div>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {(video.matchedIn || []).length > 0 ? (
                       (video.matchedIn || []).map((item) => (
@@ -131,13 +129,13 @@ export function CollectVideoPanel({
                         </span>
                       ))
                     ) : (
-                      <span className="rounded-full border border-zinc-200 bg-zinc-100 px-2 py-0.5 text-[10px] font-bold text-zinc-500">
+                      <span className="rounded-full border border-zinc-200 bg-zinc-100 px-2 py-0.5 text-[10px] font-bold text-muted">
                         常规候选 (可手动勾选)
                       </span>
                     )}
                   </div>
                 </div>
-                <div className={cn('mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded border', checked ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-zinc-300 bg-white text-transparent')}>
+                <div className={cn('mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded border', checked ?'border-emerald-500 bg-emerald-500 text-white':'border-zinc-300 bg-white text-transparent')}>
                   <CheckCircle2 size={13} strokeWidth={2.5} />
                 </div>
               </div>
@@ -147,7 +145,7 @@ export function CollectVideoPanel({
                   target="_blank"
                   rel="noreferrer"
                   onClick={(e) => e.stopPropagation()}
-                  className="inline-flex items-center gap-1 text-[11px] font-bold text-zinc-500 transition-colors hover:text-zinc-900"
+                  className="inline-flex items-center gap-1 text-[11px] font-bold text-muted transition-colors hover:text-zinc-900"
                 >
                   <ExternalLink size={11} strokeWidth={2.5} />
                   打开视频

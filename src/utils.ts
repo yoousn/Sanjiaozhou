@@ -97,6 +97,8 @@ export const DEFAULT_APPEARANCE_CONFIG: AppearanceConfig = {
   gunCodeColorDark: '',
   gunSourceColorLight: '',
   gunSourceColorDark: '',
+  subTextColorLight: '',
+  subTextColorDark: '',
 };
 
 export { buildModelOptionValue, parseModelOptionValue } from '../shared/modelOption';

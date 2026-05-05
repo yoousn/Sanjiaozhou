@@ -49,7 +49,7 @@ export function AppearanceSettingsPage({ appearanceConfig, setAppearanceConfig, 
     radiusClass,
     getButtonClassName(uiPreferences.buttonStyle === 'soft' ? 'solid' : uiPreferences.buttonStyle, 'default')
   );
-  const textButtonClass = 'text-[13px] font-bold text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition';
+  const textButtonClass = 'text-[13px] font-bold text-muted hover:text-zinc-900 dark:hover:text-white transition';
 
   const handleDraftChange = <K extends keyof AppearanceConfig>(key: K, value: AppearanceConfig[K]) => {
     if (isDisabled) return;
@@ -174,10 +174,10 @@ export function AppearanceSettingsPage({ appearanceConfig, setAppearanceConfig, 
   const SectionTitle = ({ icon: Icon, title, desc }: { icon: any; title: string; desc?: string }) => (
     <div className="mb-4">
       <div className="flex items-center gap-2 mb-1">
-        <Icon size={18} className="text-zinc-500" />
+        <Icon size={18} className="text-muted" />
         <h3 className="text-lg font-black text-zinc-900 dark:text-white">{title}</h3>
       </div>
-      {desc && <p className="text-[13px] text-zinc-500 pl-7">{desc}</p>}
+      {desc && <p className="text-[13px] text-muted pl-7">{desc}</p>}
     </div>
   );
 
@@ -202,7 +202,7 @@ export function AppearanceSettingsPage({ appearanceConfig, setAppearanceConfig, 
     return (
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <span className="text-[12px] font-bold text-zinc-500 dark:text-zinc-400">{label}</span>
+          <span className="text-[12px] font-bold text-muted">{label}</span>
           <span className="text-[12px] font-mono font-bold text-zinc-700 dark:text-zinc-300">{displayValue}{unit}</span>
         </div>
         <input
@@ -237,7 +237,7 @@ export function AppearanceSettingsPage({ appearanceConfig, setAppearanceConfig, 
   return (
     <div className="max-w-3xl mx-auto animate-fade-in mt-4">
       <h2 className="text-3xl font-black tracking-tighter mb-8 flex items-center gap-3">
-        <Palette size={28} className="text-zinc-400" /> 外观设置
+        <Palette size={28} className="text-muted" /> 外观设置
       </h2>
 
       {isAdmin ? (
@@ -251,29 +251,28 @@ export function AppearanceSettingsPage({ appearanceConfig, setAppearanceConfig, 
           </div>
         </div>
       ) : (
-        <div className={cn("mb-6 p-5 rounded-2xl border transition-colors flex items-center justify-between gap-4", useGlobalAppearance ? "border-emerald-200 dark:border-emerald-500/20 bg-emerald-50 dark:bg-emerald-500/10" : "border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#121214]")}>
+        <div className={cn("mb-6 p-5 rounded-2xl border transition-colors flex items-center justify-between gap-4", useGlobalAppearance ?"border-emerald-200 dark:border-emerald-500/20 bg-emerald-50 dark:bg-emerald-500/10":"border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#121214]")}>
           <div className="flex items-start gap-3">
-            {useGlobalAppearance ? <Globe size={20} className="text-emerald-600 dark:text-emerald-400 mt-0.5 shrink-0" /> : <MonitorSmartphone size={20} className="text-zinc-400 dark:text-zinc-500 mt-0.5 shrink-0" />}
+            {useGlobalAppearance ? <Globe size={20} className="text-emerald-600 dark:text-emerald-400 mt-0.5 shrink-0" /> : <MonitorSmartphone size={20} className="text-muted mt-0.5 shrink-0" />}
             <div>
-              <h3 className={cn("text-[14px] font-black mb-1", useGlobalAppearance ? "text-emerald-900 dark:text-emerald-200" : "text-zinc-900 dark:text-white")}>
+              <h3 className={cn("text-[14px] font-black mb-1", useGlobalAppearance ?"text-emerald-900 dark:text-emerald-200":"text-zinc-900 dark:text-white")}>
                 {useGlobalAppearance ? "🌍 当前正在跟随全局外观" : "💻 当前正在使用本地自定义外观"}
               </h3>
-              <p className={cn("text-[12px] font-medium", useGlobalAppearance ? "text-emerald-700 dark:text-emerald-400/80" : "text-zinc-500 dark:text-zinc-400")}>
+              <p className={cn("text-[12px] font-medium", useGlobalAppearance ?"text-emerald-700 dark:text-emerald-400/80":"text-muted")}>
                 {useGlobalAppearance ? "下方的所有设置已被管理员锁定，如需自己调整，请关闭此开关。" : "您可以自由调整下方设置，只会保存在您的浏览器中，不影响他人。"}
               </p>
             </div>
           </div>
           <button onClick={() => updateUiPreference('useGlobalAppearance', !useGlobalAppearance)}
-            className={cn('relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors', useGlobalAppearance ? 'bg-emerald-500' : 'bg-zinc-300 dark:bg-zinc-700')}>
-            <span className={cn('inline-block h-4 w-4 transform rounded-full bg-white transition-transform', useGlobalAppearance ? 'translate-x-6' : 'translate-x-1')} />
+            className={cn('relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors', useGlobalAppearance ?'bg-emerald-500':'bg-zinc-300 dark:bg-zinc-700')}>
+            <span className={cn('inline-block h-4 w-4 transform rounded-full bg-white transition-transform', useGlobalAppearance ?'translate-x-6':'translate-x-1')} />
           </button>
         </div>
       )}
 
       {saveStatus && (
         <div className={cn("mb-6 p-4 rounded-2xl border text-[13px] font-bold flex items-center gap-2",
-          saveStatus.type === 'success' ? "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20 text-emerald-600 dark:text-emerald-400" : "bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400"
-        )}>
+          saveStatus.type ==='success'?"bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20 text-emerald-600 dark:text-emerald-400":"bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400")}>
           {saveStatus.type === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
           {saveStatus.msg}
         </div>
@@ -289,12 +288,12 @@ export function AppearanceSettingsPage({ appearanceConfig, setAppearanceConfig, 
         <SectionTitle icon={Type} title="站点信息" desc="设置站点名称和描述，用于页面标题和元信息。" />
         <div className="flex flex-col gap-4">
           <div>
-            <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">站点名称</label>
+            <label className="block text-[12px] font-bold text-muted uppercase tracking-widest mb-2">站点名称</label>
             <input type="text" value={draft.siteName} onChange={(e) => handleDraftChange('siteName', e.target.value)}
               className="w-full bg-white/50 dark:bg-black/20 border border-zinc-200/50 dark:border-zinc-800/50 rounded-xl px-4 py-2.5 text-[13px] font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/10 transition backdrop-blur-sm" placeholder="站点名称" />
           </div>
           <div>
-            <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">站点描述</label>
+            <label className="block text-[12px] font-bold text-muted uppercase tracking-widest mb-2">站点描述</label>
             <input type="text" value={draft.siteDescription} onChange={(e) => handleDraftChange('siteDescription', e.target.value)}
               className="w-full bg-white/50 dark:bg-black/20 border border-zinc-200/50 dark:border-zinc-800/50 rounded-xl px-4 py-2.5 text-[13px] font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/10 transition backdrop-blur-sm" placeholder="站点描述，用于元信息及社交媒体卡片" />
           </div>
@@ -305,13 +304,13 @@ export function AppearanceSettingsPage({ appearanceConfig, setAppearanceConfig, 
         <SectionTitle icon={Code} title="自定义代码" desc="在所有页面加载时注入自定义 HTML/CSS/JavaScript。" />
         <div className="flex flex-col gap-4">
           <div>
-            <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2 flex items-center gap-1"><FileCode size={12} /> 自定义头部 (&lt;/head&gt; 前)</label>
+            <label className="block text-[12px] font-bold text-muted uppercase tracking-widest mb-2 flex items-center gap-1"><FileCode size={12} /> 自定义头部 (&lt;/head&gt; 前)</label>
             <textarea value={draft.customHead} onChange={(e) => handleDraftChange('customHead', e.target.value)} rows={4}
               className="w-full bg-white/50 dark:bg-black/20 border border-zinc-200/50 dark:border-zinc-800/50 rounded-xl px-4 py-3 text-[12px] font-mono text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/10 transition resize-y backdrop-blur-sm"
               placeholder="<style>...</style> 或 <script>...</script>" />
           </div>
           <div>
-            <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2 flex items-center gap-1"><FileCode size={12} /> 自定义 Body 底部 (&lt;/body&gt; 前)</label>
+            <label className="block text-[12px] font-bold text-muted uppercase tracking-widest mb-2 flex items-center gap-1"><FileCode size={12} /> 自定义 Body 底部 (&lt;/body&gt; 前)</label>
             <textarea value={draft.customBody} onChange={(e) => handleDraftChange('customBody', e.target.value)} rows={4}
               className="w-full bg-white/50 dark:bg-black/20 border border-zinc-200/50 dark:border-zinc-800/50 rounded-xl px-4 py-3 text-[12px] font-mono text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/10 transition resize-y backdrop-blur-sm"
               placeholder="<script>...</script>" />
@@ -325,13 +324,13 @@ export function AppearanceSettingsPage({ appearanceConfig, setAppearanceConfig, 
           {draft.faviconUrl ? (
             <div className="flex items-center gap-4 p-3 bg-white/50 dark:bg-black/20 rounded-xl border border-zinc-200/50 dark:border-zinc-800/50 backdrop-blur-sm">
               <img src={draft.faviconUrl} alt="favicon" className="w-8 h-8 rounded" />
-              <span className="text-[12px] font-bold text-zinc-500 dark:text-zinc-400">当前 Favicon</span>
-              <button onClick={handleDeleteFavicon} className="p-1.5 text-zinc-400 hover:text-red-500 transition" title="删除"><Trash2 size={14} /></button>
+              <span className="text-[12px] font-bold text-muted">当前 Favicon</span>
+              <button onClick={handleDeleteFavicon} className="p-1.5 text-muted hover:text-red-500 transition" title="删除"><Trash2 size={14} /></button>
             </div>
-          ) : <span className="text-[12px] font-bold text-zinc-400">尚未设置 Favicon</span>}
+          ) : <span className="text-[12px] font-bold text-muted">尚未设置 Favicon</span>}
           <input ref={faviconRef} type="file" accept="image/x-icon,image/png,image/jpeg,image/svg+xml" className="hidden"
             onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(f, 'favicon'); e.target.value = ''; }} />
-          <button onClick={() => faviconRef.current?.click()} disabled={isUploadingFavicon} className={cn(actionButtonClass, 'px-4 py-2 text-[12px]')}>
+          <button onClick={() => faviconRef.current?.click()} disabled={isUploadingFavicon} className={cn(actionButtonClass,'px-4 py-2 text-[12px]')}>
             {isUploadingFavicon && <Loader2 size={12} className="animate-spin" />}
             <Upload size={12} /> {isUploadingFavicon ? '上传中...' : '上传 Favicon'}
           </button>
@@ -342,24 +341,24 @@ export function AppearanceSettingsPage({ appearanceConfig, setAppearanceConfig, 
         <div className="flex items-center justify-between mb-6">
           <SectionTitle icon={Sparkles} title="自定义外观" desc="开启后可设置自定义背景图片和玻璃拟态效果。" />
           <button onClick={() => handleDraftChange('customEnabled', !draft.customEnabled)}
-            className={cn('relative inline-flex h-6 w-11 items-center rounded-full transition-colors', draft.customEnabled ? 'bg-zinc-900 dark:bg-white' : 'bg-zinc-300 dark:bg-zinc-700')}>
-            <span className={cn('inline-block h-4 w-4 transform rounded-full bg-white dark:bg-zinc-900 transition-transform', draft.customEnabled ? 'translate-x-6' : 'translate-x-1')} />
+            className={cn('relative inline-flex h-6 w-11 items-center rounded-full transition-colors', draft.customEnabled ?'bg-zinc-900 dark:bg-white':'bg-zinc-300 dark:bg-zinc-700')}>
+            <span className={cn('inline-block h-4 w-4 transform rounded-full bg-white dark:bg-zinc-900 transition-transform', draft.customEnabled ?'translate-x-6':'translate-x-1')} />
           </button>
         </div>
 
-        <div className={cn('flex flex-col gap-6', !draft.customEnabled && 'opacity-50 pointer-events-none select-none')}>
+        <div className={cn('flex flex-col gap-6', !draft.customEnabled &&'opacity-50 pointer-events-none select-none')}>
           <div>
-            <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2 flex items-center gap-1"><ImageIcon size={12} /> 背景图片</label>
+            <label className="block text-[12px] font-bold text-muted uppercase tracking-widest mb-2 flex items-center gap-1"><ImageIcon size={12} /> 背景图片</label>
             <div className="flex items-center gap-3">
               <input type="text" value={draft.backgroundUrl} onChange={(e) => handleDraftChange('backgroundUrl', e.target.value)}
                 className="flex-1 bg-white/50 dark:bg-black/20 border border-zinc-200/50 dark:border-zinc-800/50 rounded-xl px-4 py-2.5 text-[13px] font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/10 transition backdrop-blur-sm"
                 placeholder="图片 URL 或随机图 API 地址，留空则不显示" />
               {draft.backgroundUrl && (
-                <button onClick={handleDeleteBackground} className="p-2 text-zinc-400 hover:text-red-500 transition shrink-0" title="删除背景图"><Trash2 size={16} /></button>
+                <button onClick={handleDeleteBackground} className="p-2 text-muted hover:text-red-500 transition shrink-0" title="删除背景图"><Trash2 size={16} /></button>
               )}
               <input ref={bgRef} type="file" accept="image/*" className="hidden"
                 onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(f, 'background'); e.target.value = ''; }} />
-              <button onClick={() => bgRef.current?.click()} disabled={isUploadingBg} className={cn(actionButtonClass, 'px-3 py-2 text-[12px] shrink-0')}>
+              <button onClick={() => bgRef.current?.click()} disabled={isUploadingBg} className={cn(actionButtonClass,'px-3 py-2 text-[12px] shrink-0')}>
                 {isUploadingBg && <Loader2 size={12} className="animate-spin" />}
                 <Upload size={12} /> {isUploadingBg ? '上传中...' : '上传'}
               </button>
@@ -368,8 +367,8 @@ export function AppearanceSettingsPage({ appearanceConfig, setAppearanceConfig, 
 
           <div className="flex items-center gap-3">
             <button onClick={() => handleDraftChange('backgroundFixed', !draft.backgroundFixed)}
-              className={cn('relative inline-flex h-6 w-11 items-center rounded-full transition-colors', draft.backgroundFixed ? 'bg-zinc-900 dark:bg-white' : 'bg-zinc-300 dark:bg-zinc-700')}>
-              <span className={cn('inline-block h-4 w-4 transform rounded-full bg-white dark:bg-zinc-900 transition-transform', draft.backgroundFixed ? 'translate-x-6' : 'translate-x-1')} />
+              className={cn('relative inline-flex h-6 w-11 items-center rounded-full transition-colors', draft.backgroundFixed ?'bg-zinc-900 dark:bg-white':'bg-zinc-300 dark:bg-zinc-700')}>
+              <span className={cn('inline-block h-4 w-4 transform rounded-full bg-white dark:bg-zinc-900 transition-transform', draft.backgroundFixed ?'translate-x-6':'translate-x-1')} />
             </button>
             <span className="text-[13px] font-bold text-zinc-700 dark:text-zinc-300">背景固定显示（不随页面滚动）</span>
           </div>
@@ -388,7 +387,7 @@ export function AppearanceSettingsPage({ appearanceConfig, setAppearanceConfig, 
         <div className="flex flex-col gap-5">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">体系名称/型号（亮色）</label>
+              <label className="block text-[12px] font-bold text-muted uppercase tracking-widest mb-2">体系名称/型号（亮色）</label>
               <div className="flex items-center gap-2">
                 <input type="color" value={draft.gunTextColorLight || '#18181b'} onChange={(e) => handleDraftChange('gunTextColorLight', e.target.value)}
                   className="w-10 h-10 rounded-lg border border-zinc-200 dark:border-zinc-800 cursor-pointer shrink-0" />
@@ -397,7 +396,7 @@ export function AppearanceSettingsPage({ appearanceConfig, setAppearanceConfig, 
               </div>
             </div>
             <div>
-              <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">体系名称/型号（暗色）</label>
+              <label className="block text-[12px] font-bold text-muted uppercase tracking-widest mb-2">体系名称/型号（暗色）</label>
               <div className="flex items-center gap-2">
                 <input type="color" value={draft.gunTextColorDark || '#fafafa'} onChange={(e) => handleDraftChange('gunTextColorDark', e.target.value)}
                   className="w-10 h-10 rounded-lg border border-zinc-200 dark:border-zinc-800 cursor-pointer shrink-0" />
@@ -406,7 +405,7 @@ export function AppearanceSettingsPage({ appearanceConfig, setAppearanceConfig, 
               </div>
             </div>
             <div>
-              <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">改枪码（亮色）</label>
+              <label className="block text-[12px] font-bold text-muted uppercase tracking-widest mb-2">改枪码（亮色）</label>
               <div className="flex items-center gap-2">
                 <input type="color" value={draft.gunCodeColorLight || '#52525b'} onChange={(e) => handleDraftChange('gunCodeColorLight', e.target.value)}
                   className="w-10 h-10 rounded-lg border border-zinc-200 dark:border-zinc-800 cursor-pointer shrink-0" />
@@ -415,7 +414,7 @@ export function AppearanceSettingsPage({ appearanceConfig, setAppearanceConfig, 
               </div>
             </div>
             <div>
-              <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">改枪码（暗色）</label>
+              <label className="block text-[12px] font-bold text-muted uppercase tracking-widest mb-2">改枪码（暗色）</label>
               <div className="flex items-center gap-2">
                 <input type="color" value={draft.gunCodeColorDark || '#a1a1aa'} onChange={(e) => handleDraftChange('gunCodeColorDark', e.target.value)}
                   className="w-10 h-10 rounded-lg border border-zinc-200 dark:border-zinc-800 cursor-pointer shrink-0" />
@@ -424,7 +423,7 @@ export function AppearanceSettingsPage({ appearanceConfig, setAppearanceConfig, 
               </div>
             </div>
             <div>
-              <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">来源作者/链接（亮色）</label>
+              <label className="block text-[12px] font-bold text-muted uppercase tracking-widest mb-2">来源作者/链接（亮色）</label>
               <div className="flex items-center gap-2">
                 <input type="color" value={draft.gunSourceColorLight || '#a1a1aa'} onChange={(e) => handleDraftChange('gunSourceColorLight', e.target.value)}
                   className="w-10 h-10 rounded-lg border border-zinc-200 dark:border-zinc-800 cursor-pointer shrink-0" />
@@ -433,11 +432,29 @@ export function AppearanceSettingsPage({ appearanceConfig, setAppearanceConfig, 
               </div>
             </div>
             <div>
-              <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">来源作者/链接（暗色）</label>
+              <label className="block text-[12px] font-bold text-muted uppercase tracking-widest mb-2">来源作者/链接（暗色）</label>
               <div className="flex items-center gap-2">
                 <input type="color" value={draft.gunSourceColorDark || '#71717a'} onChange={(e) => handleDraftChange('gunSourceColorDark', e.target.value)}
                   className="w-10 h-10 rounded-lg border border-zinc-200 dark:border-zinc-800 cursor-pointer shrink-0" />
                 <input type="text" value={draft.gunSourceColorDark} onChange={(e) => handleDraftChange('gunSourceColorDark', e.target.value)}
+                  className="flex-1 bg-white/50 dark:bg-black/20 border border-zinc-200/50 dark:border-zinc-800/50 rounded-xl px-4 py-2.5 text-[13px] font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/10 transition backdrop-blur-sm" placeholder="留空使用默认" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-[12px] font-bold text-muted uppercase tracking-widest mb-2">次级文字/描述等（亮色）</label>
+              <div className="flex items-center gap-2">
+                <input type="color" value={draft.subTextColorLight || '#71717a'} onChange={(e) => handleDraftChange('subTextColorLight', e.target.value)}
+                  className="w-10 h-10 rounded-lg border border-zinc-200 dark:border-zinc-800 cursor-pointer shrink-0" />
+                <input type="text" value={draft.subTextColorLight} onChange={(e) => handleDraftChange('subTextColorLight', e.target.value)}
+                  className="flex-1 bg-white/50 dark:bg-black/20 border border-zinc-200/50 dark:border-zinc-800/50 rounded-xl px-4 py-2.5 text-[13px] font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/10 transition backdrop-blur-sm" placeholder="留空使用默认" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-[12px] font-bold text-muted uppercase tracking-widest mb-2">次级文字/描述等（暗色）</label>
+              <div className="flex items-center gap-2">
+                <input type="color" value={draft.subTextColorDark || '#a1a1aa'} onChange={(e) => handleDraftChange('subTextColorDark', e.target.value)}
+                  className="w-10 h-10 rounded-lg border border-zinc-200 dark:border-zinc-800 cursor-pointer shrink-0" />
+                <input type="text" value={draft.subTextColorDark} onChange={(e) => handleDraftChange('subTextColorDark', e.target.value)}
                   className="flex-1 bg-white/50 dark:bg-black/20 border border-zinc-200/50 dark:border-zinc-800/50 rounded-xl px-4 py-2.5 text-[13px] font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/10 transition backdrop-blur-sm" placeholder="留空使用默认" />
               </div>
             </div>
@@ -446,7 +463,7 @@ export function AppearanceSettingsPage({ appearanceConfig, setAppearanceConfig, 
       </div>
 
       <div className={panelClass} style={glassBg}>
-        <div className="flex items-center gap-2 mb-4"><Eye size={18} className="text-zinc-500" /><h3 className="text-lg font-black text-zinc-900 dark:text-white">实时预览</h3></div>
+        <div className="flex items-center gap-2 mb-4"><Eye size={18} className="text-muted" /><h3 className="text-lg font-black text-zinc-900 dark:text-white">实时预览</h3></div>
         <div className="relative h-56 rounded-2xl overflow-hidden border border-zinc-200/50 dark:border-zinc-800/50" style={previewBgStyle}>
           <div className="absolute inset-0" style={previewOverlayStyle} />
           <div className="absolute inset-0 flex items-center justify-center gap-4 p-4">
@@ -494,21 +511,21 @@ export function AppearanceSettingsPage({ appearanceConfig, setAppearanceConfig, 
       </div>
 
       <div className="flex items-center justify-between gap-3 pt-2 pb-8">
-        <button onClick={handleReset} disabled={isDisabled} className={cn(textButtonClass, isDisabled && "opacity-50 cursor-not-allowed")}><RotateCcw size={12} className="inline mr-1" /> {isAdmin ? '恢复默认全局外观' : '恢复默认外观'}</button>
+        <button onClick={handleReset} disabled={isDisabled} className={cn(textButtonClass, isDisabled &&"opacity-50 cursor-not-allowed")}><RotateCcw size={12} className="inline mr-1" /> {isAdmin ? '恢复默认全局外观' : '恢复默认外观'}</button>
         <div className="flex gap-3">
           {isAdmin ? (
             <>
               <button
                 onClick={handleSaveLocal}
                 disabled={isSaving}
-                className={cn(actionButtonClass, 'px-5 py-2.5 bg-white text-zinc-900 border border-zinc-200 hover:bg-zinc-50 dark:bg-[#18181b] dark:text-white dark:border-zinc-800 dark:hover:bg-zinc-800')}
+                className={cn(actionButtonClass,'px-5 py-2.5 bg-white text-zinc-900 border border-zinc-200 hover:bg-zinc-50 dark:bg-[#18181b] dark:text-white dark:border-zinc-800 dark:hover:bg-zinc-800')}
               >
                 仅保存在本地
               </button>
               <button
                 onClick={handleSaveGlobal}
                 disabled={isSaving}
-                className={cn(actionButtonClass, 'px-6 py-2.5 bg-amber-500 text-white border-amber-600 hover:bg-amber-600 dark:bg-amber-600 dark:border-amber-700 dark:hover:bg-amber-700')}
+                className={cn(actionButtonClass,'px-6 py-2.5 bg-amber-500 text-white border-amber-600 hover:bg-amber-600 dark:bg-amber-600 dark:border-amber-700 dark:hover:bg-amber-700')}
               >
                 {isSaving && <Loader2 size={14} className="animate-spin" />}
                 {isSaving ? '发布中...' : '发布到全局'}
@@ -518,7 +535,7 @@ export function AppearanceSettingsPage({ appearanceConfig, setAppearanceConfig, 
             <button
               onClick={handleSaveLocal}
               disabled={isSaving || isDisabled}
-              className={cn(actionButtonClass, 'px-6 py-2.5', isDisabled && "opacity-50 cursor-not-allowed")}
+              className={cn(actionButtonClass,'px-6 py-2.5', isDisabled &&"opacity-50 cursor-not-allowed")}
             >
               {isSaving && <Loader2 size={14} className="animate-spin" />}
               {isSaving ? '保存中...' : '保存本地设置'}

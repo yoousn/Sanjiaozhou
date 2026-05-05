@@ -83,12 +83,15 @@ const StyleInjector = React.memo(function StyleInjector({ customTheme, appearanc
         --gun-text-color: ${ac.gunTextColorLight};
         --gun-code-color: ${ac.gunCodeColorLight};
         --gun-source-color: ${ac.gunSourceColorLight};
+        --app-text-muted: ${ac.subTextColorLight || '#71717a'};
       }
       .dark {
         --gun-text-color: ${ac.gunTextColorDark};
         --gun-code-color: ${ac.gunCodeColorDark};
         --gun-source-color: ${ac.gunSourceColorDark};
+        --app-text-muted: ${ac.subTextColorDark || '#a1a1aa'};
       }
+      .text-muted { color: var(--app-text-muted) !important; }
       ${ac.customEnabled ? `
       .bg-white, .bg-zinc-50, .bg-zinc-100, .bg-zinc-200,
       .bg-emerald-50, .bg-red-50, .bg-yellow-50,
@@ -676,24 +679,21 @@ export default function App() {
           />
         </>
       )}
-      <div className={cn(
-        "flex min-h-screen selection:bg-zinc-200 dark:selection:bg-zinc-800 transition-colors duration-300 relative z-10",
+      <div className={cn("flex min-h-screen selection:bg-zinc-200 dark:selection:bg-zinc-800 transition-colors duration-300 relative z-10",
         theme.appearanceConfig.customEnabled && theme.appearanceConfig.backgroundUrl
-          ? "bg-transparent"
-          : "bg-[#F8F9FA] dark:bg-[#0b0b0c]"
-      )} style={{ color: theme.isDarkMode ? theme.customTheme.textColorDark : theme.customTheme.textColorLight, '--user-gun-color': theme.isDarkMode ? theme.customTheme.gunNameColorDark : theme.customTheme.gunNameColorLight } as React.CSSProperties}>
+          ?"bg-transparent":"bg-[#F8F9FA] dark:bg-[#0b0b0c]")} style={{ color: theme.isDarkMode ? theme.customTheme.textColorDark : theme.customTheme.textColorLight, '--user-gun-color': theme.isDarkMode ? theme.customTheme.gunNameColorDark : theme.customTheme.gunNameColorLight } as React.CSSProperties}>
         <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} onOpenSettings={() => setActiveTab('settings')} onOpenAppearance={() => setActiveTab('appearance')} sidebarWidth={theme.uiPreferences.sidebarWidth} controlRadius={theme.uiPreferences.controlRadius} buttonStyle={theme.uiPreferences.buttonStyle} auth={auth} onOpenAuth={() => setActiveModal('auth')} onLogout={async () => { await auth.logout(); showToast('已退出登录'); }} />
         <main className={cn('flex-1 p-4 md:p-6 lg:p-8 pb-32', sidebarWidthClasses.main)}>
           <div className="md:hidden fixed left-4 bottom-24 z-40 pointer-events-none">
-            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400/90 dark:text-zinc-500/90">{mobileVersionLabel}</span>
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted">{mobileVersionLabel}</span>
           </div>
           <div className="max-w-[1600px] mx-auto">
             {activeTab === 'community' ? (
-              <React.Suspense fallback={<div className="flex flex-col items-center justify-center py-24 animate-fade-in"><Loader2 size={24} className="animate-spin text-zinc-400 mb-4" /><p className="text-[13px] font-bold text-zinc-500">正在加载社区模块...</p></div>}>
+              <React.Suspense fallback={<div className="flex flex-col items-center justify-center py-24 animate-fade-in"><Loader2 size={24} className="animate-spin text-muted mb-4" /><p className="text-[13px] font-bold text-muted">正在加载社区模块...</p></div>}>
                 <CommunityPage auth={auth} onOpenAuth={() => setActiveModal('auth')} showToast={showToast} />
               </React.Suspense>
             ) : activeTab === 'settings' ? (
-              <React.Suspense fallback={<div className="flex flex-col items-center justify-center py-24 animate-fade-in"><Loader2 size={24} className="animate-spin text-zinc-400 mb-4" /><p className="text-[13px] font-bold text-zinc-500">正在加载设置模块...</p></div>}>
+              <React.Suspense fallback={<div className="flex flex-col items-center justify-center py-24 animate-fade-in"><Loader2 size={24} className="animate-spin text-muted mb-4" /><p className="text-[13px] font-bold text-muted">正在加载设置模块...</p></div>}>
                 <SettingsPage
                 uiPreferences={theme.uiPreferences}
                 customTheme={theme.customTheme}
@@ -710,7 +710,7 @@ export default function App() {
               />
               </React.Suspense>
             ) : activeTab === 'appearance' ? (
-              <React.Suspense fallback={<div className="flex flex-col items-center justify-center py-24 animate-fade-in"><Loader2 size={24} className="animate-spin text-zinc-400 mb-4" /><p className="text-[13px] font-bold text-zinc-500">正在加载外观设置...</p></div>}>
+              <React.Suspense fallback={<div className="flex flex-col items-center justify-center py-24 animate-fade-in"><Loader2 size={24} className="animate-spin text-muted mb-4" /><p className="text-[13px] font-bold text-muted">正在加载外观设置...</p></div>}>
                 <AppearanceSettingsPage
                   appearanceConfig={theme.appearanceConfig}
                   setAppearanceConfig={theme.setAppearanceConfig}
@@ -725,9 +725,9 @@ export default function App() {
               <>
                 <Header isEditing={isEditing} onEditStart={handleEditStart} onSave={handleSave} onCancel={handleCancel} onAddNew={() => setIsModalOpen(true)} onOpenCollect={() => setActiveModal('auto-collect')} onOpenModelConfig={() => setActiveModal('model-config')} sortBy={sortBy} onSortChange={handleSortChange} isDarkMode={theme.isDarkMode} onToggleDarkMode={() => theme.setIsDarkMode(!theme.isDarkMode)} searchQuery={searchQuery} onSearchChange={setSearchQuery} searchSuggestions={Array.from(new Set(sourceData.map(g => g.name)))} controlRadius={theme.uiPreferences.controlRadius} buttonStyle={theme.uiPreferences.buttonStyle} />
                 {isRefreshingData && savedData.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-24 animate-fade-in"><Loader2 size={24} className="animate-spin text-zinc-400 mb-4" /><p className="text-[13px] font-bold text-zinc-500">正在加载...</p></div>
+                  <div className="flex flex-col items-center justify-center py-24 animate-fade-in"><Loader2 size={24} className="animate-spin text-muted mb-4" /><p className="text-[13px] font-bold text-muted">正在加载...</p></div>
                 ) : savedDataLoadError && savedData.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-24 animate-fade-in"><AlertCircle size={24} className="text-zinc-400 mb-4" /><p className="text-[13px] font-bold text-zinc-500 mb-4">{savedDataLoadError}</p><button onClick={() => { void refetch(); }} className="px-4 py-2 bg-zinc-900 text-white text-[12px] font-bold rounded-xl hover:bg-zinc-800 transition">重试</button></div>
+                  <div className="flex flex-col items-center justify-center py-24 animate-fade-in"><AlertCircle size={24} className="text-muted mb-4" /><p className="text-[13px] font-bold text-muted mb-4">{savedDataLoadError}</p><button onClick={() => { void refetch(); }} className="px-4 py-2 bg-zinc-900 text-white text-[12px] font-bold rounded-xl hover:bg-zinc-800 transition">重试</button></div>
                 ) : (
                   <>
                     <div className="mb-8 pl-1 mt-2">
@@ -783,7 +783,7 @@ export default function App() {
                       </div>
                     )}
                     {viewData.length === 0 && (
-                      <div className="col-span-full py-24 flex flex-col items-center justify-center text-zinc-400 animate-fade-in"><div className="w-16 h-16 bg-white shadow-sm border border-zinc-200/50 rounded-2xl flex items-center justify-center mb-4"><Sparkles size={24} className="text-zinc-300" /></div><p className="font-bold text-xs tracking-widest uppercase text-zinc-500">该分类下暂无任何条目</p></div>
+                      <div className="col-span-full py-24 flex flex-col items-center justify-center text-muted animate-fade-in"><div className="w-16 h-16 bg-white shadow-sm border border-zinc-200/50 rounded-2xl flex items-center justify-center mb-4"><Sparkles size={24} className="text-zinc-300" /></div><p className="font-bold text-xs tracking-widest uppercase text-muted">该分类下暂无任何条目</p></div>
                     )}
                     {shouldPaginate && totalPages > 1 && (
                       <div className="mt-8 flex items-center justify-center gap-2 flex-wrap">
@@ -800,12 +800,9 @@ export default function App() {
                             key={i}
                             type="button"
                             onClick={() => setCurrentPage(i)}
-                            className={cn(
-                              'min-w-[32px] h-8 text-[12px] font-bold rounded-lg transition',
+                            className={cn('min-w-[32px] h-8 text-[12px] font-bold rounded-lg transition',
                               i === currentPage
-                                ? 'bg-zinc-900 text-white'
-                                : 'bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-100'
-                            )}
+                                ?'bg-zinc-900 text-white':'bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-100')}
                           >
                             {i + 1}
                           </button>
@@ -818,7 +815,7 @@ export default function App() {
                         >
                           下一页
                         </button>
-                        <span className="ml-2 text-[11px] font-medium text-zinc-400">
+                        <span className="ml-2 text-[11px] font-medium text-muted">
                           共 {viewData.length} 条
                         </span>
                       </div>

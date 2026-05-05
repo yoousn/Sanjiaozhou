@@ -24,7 +24,7 @@ export function DailyPwdCard({
               <Sparkles size={12} className="text-emerald-500" />
               <span className="text-[11px] font-black text-emerald-600 dark:text-emerald-400 tracking-[0.22em]">今日密码</span>
             </div>
-            <span className="text-[11px] font-semibold text-zinc-400">{dailyPwd.date}</span>
+            <span className="text-[11px] font-semibold text-muted">{dailyPwd.date}</span>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-2 md:gap-2.5">
             {Object.entries(dailyPwd.data).map(([mapName, pwd]) => {
@@ -42,7 +42,7 @@ export function DailyPwdCard({
                     className={`pointer-events-none absolute inset-0 bg-emerald-600 transition-all duration-500 ease-out ${isCopied ? 'opacity-100 scale-100' : 'opacity-0 scale-[0.92]'}`}
                   />
                   <div className="relative z-10 flex flex-col items-center text-center transition-colors duration-200">
-                    <span className={`text-[10px] font-bold leading-none ${isCopied ? 'text-white/85' : 'text-zinc-500 dark:text-zinc-400'}`}>{mapName}</span>
+                    <span className={`text-[10px] font-bold leading-none ${isCopied ? 'text-white/85' : 'text-muted '}`}>{mapName}</span>
                     <span className={`mt-1.5 text-[16px] font-black font-mono tracking-[0.1em] leading-none ${isCopied ? 'text-white' : 'text-zinc-800 dark:text-zinc-100'}`}>{password}</span>
                   </div>
                 </button>

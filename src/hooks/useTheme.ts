@@ -38,13 +38,14 @@ export function useTheme() {
       const saved = localStorage.getItem('uiPreferences');
       if (!saved) return DEFAULT_UI_PREFERENCES;
       const parsed = JSON.parse(saved) as Partial<UiPreferences>;
-      return { ...DEFAULT_UI_PREFERENCES, ...parsed };
+      // Ensure useGlobalAppearance is true by default if not set
+      return { ...DEFAULT_UI_PREFERENCES, ...parsed, useGlobalAppearance: parsed.useGlobalAppearance ?? true };
     } catch {
       return DEFAULT_UI_PREFERENCES;
     }
   });
 
-  const [appearanceConfig, setAppearanceConfig] = useState<AppearanceConfig>(() => {
+  const [localAppearanceConfig, setLocalAppearanceConfig] = useState<AppearanceConfig>(() => {
     try {
       const saved = localStorage.getItem('appearanceConfig');
       if (!saved) return DEFAULT_APPEARANCE_CONFIG;
@@ -54,6 +55,28 @@ export function useTheme() {
       return DEFAULT_APPEARANCE_CONFIG;
     }
   });
+
+  const [globalAppearanceConfig, setGlobalAppearanceConfig] = useState<AppearanceConfig | null>(null);
+
+  useEffect(() => {
+    fetch('/api/appearance')
+      .then(res => res.json())
+      .then(data => {
+        if (data && Object.keys(data).length > 0) {
+          setGlobalAppearanceConfig({ ...DEFAULT_APPEARANCE_CONFIG, ...data });
+        }
+      })
+      .catch(() => {
+        // Silently ignore fetch errors
+      });
+  }, []);
+
+  const appearanceConfig = useMemo(() => {
+    if (uiPreferences.useGlobalAppearance && globalAppearanceConfig) {
+      return globalAppearanceConfig;
+    }
+    return localAppearanceConfig;
+  }, [uiPreferences.useGlobalAppearance, globalAppearanceConfig, localAppearanceConfig]);
 
   useEffect(() => {
     if (isDarkMode) document.documentElement.classList.add('dark');
@@ -70,19 +93,21 @@ export function useTheme() {
   }, [uiPreferences]);
 
   useEffect(() => {
-    localStorage.setItem('appearanceConfig', JSON.stringify(appearanceConfig));
-  }, [appearanceConfig]);
+    localStorage.setItem('appearanceConfig', JSON.stringify(localAppearanceConfig));
+  }, [localAppearanceConfig]);
 
   const updateUiPreference = useCallback(<K extends keyof UiPreferences>(key: K, value: UiPreferences[K]) => {
     setUiPreferences((prev: UiPreferences) => ({ ...prev, [key]: value }));
   }, []);
 
   const updateAppearance = useCallback(<K extends keyof AppearanceConfig>(key: K, value: AppearanceConfig[K]) => {
-    setAppearanceConfig((prev: AppearanceConfig) => ({ ...prev, [key]: value }));
+    setLocalAppearanceConfig((prev: AppearanceConfig) => ({ ...prev, [key]: value }));
   }, []);
 
+  const setAppearanceConfig = setLocalAppearanceConfig;
+
   const resetTheme = useCallback(() => setCustomTheme(DEFAULT_THEME), []);
-  const resetAppearance = useCallback(() => setAppearanceConfig(DEFAULT_APPEARANCE_CONFIG), []);
+  const resetAppearance = useCallback(() => setLocalAppearanceConfig(DEFAULT_APPEARANCE_CONFIG), []);
 
   return useMemo(() => ({
     isDarkMode,
@@ -98,5 +123,6 @@ export function useTheme() {
     setAppearanceConfig,
     updateAppearance,
     resetAppearance,
-  }), [isDarkMode, customTheme, uiPreferences, appearanceConfig, updateUiPreference, resetTheme, updateAppearance, resetAppearance]);
+    globalAppearanceConfig, // Exported to help UI know the global config
+  }), [isDarkMode, customTheme, uiPreferences, appearanceConfig, updateUiPreference, resetTheme, updateAppearance, resetAppearance, globalAppearanceConfig]);
 }

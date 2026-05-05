@@ -84,7 +84,7 @@ router.get("/", (req, res) => {
   res.json(readAppearance());
 });
 
-router.post("/", (req, res) => {
+router.post("/", requireAdmin, (req, res) => {
   try {
     const body = req.body || {};
     const current = readAppearance();
@@ -97,7 +97,7 @@ router.post("/", (req, res) => {
   }
 });
 
-router.post("/upload/:type", upload.single("file"), (req, res) => {
+router.post("/upload/:type", requireAdmin, upload.single("file"), (req, res) => {
   const type = req.params.type;
   if (type !== "favicon" && type !== "background") {
     res.status(400).json({ error: "Invalid upload type" });
@@ -116,7 +116,7 @@ router.post("/upload/:type", upload.single("file"), (req, res) => {
   }
 });
 
-router.delete("/upload/favicon", (_req, res) => {
+router.delete("/upload/favicon", requireAdmin, (_req, res) => {
   try {
     const files = fs.readdirSync(UPLOADS_DIR).filter(f => f.startsWith("favicon_") || f.startsWith("file-"));
     for (const f of files) {
@@ -128,7 +128,7 @@ router.delete("/upload/favicon", (_req, res) => {
   }
 });
 
-router.delete("/upload/background", (_req, res) => {
+router.delete("/upload/background", requireAdmin, (_req, res) => {
   try {
     const files = fs.readdirSync(UPLOADS_DIR).filter(f => f.startsWith("background_") || f.startsWith("file-"));
     for (const f of files) {
@@ -139,6 +139,11 @@ router.delete("/upload/background", (_req, res) => {
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: e instanceof Error ? e.message : "删除失败" });
+  }
+});
+
+export default router;
+
   }
 });
 

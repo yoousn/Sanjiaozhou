@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Loader2, Upload, Trash2, Eye, Palette, RotateCcw, Image as ImageIcon, Type, Code, FileCode, Fingerprint, Sparkles, CheckCircle2, AlertCircle, Crosshair } from 'lucide-react';
+import { Loader2, Upload, Trash2, Eye, Palette, RotateCcw, Image as ImageIcon, Type, Code, FileCode, Fingerprint, Sparkles, CheckCircle2, AlertCircle, Crosshair, Globe, MonitorSmartphone, Crown } from 'lucide-react';
 import { cn, getButtonClassName, radiusClassMap, DEFAULT_APPEARANCE_CONFIG } from '../utils';
 import { AppearanceConfig } from '../types';
 
@@ -7,11 +7,13 @@ type Props = {
   appearanceConfig: AppearanceConfig;
   setAppearanceConfig: React.Dispatch<React.SetStateAction<AppearanceConfig>>;
   resetAppearance: () => void;
-  uiPreferences: { controlRadius: 'lg' | 'xl' | 'full'; buttonStyle: 'soft' | 'solid' | 'outline' };
+  uiPreferences: { controlRadius: 'lg' | 'xl' | 'full'; buttonStyle: 'soft' | 'solid' | 'outline'; useGlobalAppearance?: boolean };
+  updateUiPreference: (key: string, value: any) => void;
   showToast?: (msg: string, type?: 'success' | 'warn' | 'error') => void;
+  isAdmin?: boolean;
 };
 
-export function AppearanceSettingsPage({ appearanceConfig, setAppearanceConfig, resetAppearance, uiPreferences, showToast }: Props) {
+export function AppearanceSettingsPage({ appearanceConfig, setAppearanceConfig, resetAppearance, uiPreferences, updateUiPreference, showToast, isAdmin }: Props) {
   const [draft, setDraft] = useState<AppearanceConfig>(appearanceConfig);
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<{type: 'success'|'error', msg: string} | null>(null);
@@ -20,6 +22,10 @@ export function AppearanceSettingsPage({ appearanceConfig, setAppearanceConfig, 
   const [uploadError, setUploadError] = useState<string | null>(null);
   const faviconRef = useRef<HTMLInputElement>(null);
   const bgRef = useRef<HTMLInputElement>(null);
+
+  const useGlobalAppearance = uiPreferences.useGlobalAppearance ?? true;
+  const isFollowingGlobal = !isAdmin && useGlobalAppearance;
+  const isDisabled = isFollowingGlobal; // Inputs are disabled if user is not admin AND they are following global
 
   useEffect(() => {
     setDraft(appearanceConfig);
@@ -46,10 +52,19 @@ export function AppearanceSettingsPage({ appearanceConfig, setAppearanceConfig, 
   const textButtonClass = 'text-[13px] font-bold text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition';
 
   const handleDraftChange = <K extends keyof AppearanceConfig>(key: K, value: AppearanceConfig[K]) => {
+    if (isDisabled) return;
     setDraft(prev => ({ ...prev, [key]: value }));
   };
 
-  const handleSave = async () => {
+  const handleSaveLocal = () => {
+    setAppearanceConfig(draft);
+    const msg = '本地外观设置已保存';
+    setSaveStatus({ type: 'success', msg });
+    showToast?.(msg, 'success');
+  };
+
+  const handleSaveGlobal = async () => {
+    if (!isAdmin) return;
     setIsSaving(true);
     setSaveStatus(null);
     setUploadError(null);
@@ -62,7 +77,7 @@ export function AppearanceSettingsPage({ appearanceConfig, setAppearanceConfig, 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || '保存失败');
       setAppearanceConfig(draft);
-      const msg = '外观设置已保存，全站生效';
+      const msg = '已应用到全局并强制全站生效';
       setSaveStatus({ type: 'success', msg });
       showToast?.(msg, 'success');
     } catch (e) {
@@ -79,23 +94,34 @@ export function AppearanceSettingsPage({ appearanceConfig, setAppearanceConfig, 
     setDraft(DEFAULT_APPEARANCE_CONFIG);
     setAppearanceConfig(DEFAULT_APPEARANCE_CONFIG);
     setSaveStatus(null);
-    try {
-      await fetch('/api/appearance', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(DEFAULT_APPEARANCE_CONFIG),
-      });
-      const msg = '已恢复默认外观';
+    if (isAdmin) {
+      try {
+        await fetch('/api/appearance', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(DEFAULT_APPEARANCE_CONFIG),
+        });
+        const msg = '已恢复默认全局外观';
+        setSaveStatus({ type: 'success', msg });
+        showToast?.(msg, 'success');
+      } catch (e) {
+        const msg = '恢复默认全局外观失败';
+        setSaveStatus({ type: 'error', msg });
+        showToast?.(msg, 'warn');
+      }
+    } else {
+      const msg = '已恢复默认本地外观';
       setSaveStatus({ type: 'success', msg });
       showToast?.(msg, 'success');
-    } catch (e) {
-      const msg = '恢复默认失败，请刷新页面重试';
-      setSaveStatus({ type: 'error', msg });
-      showToast?.(msg, 'warn');
     }
   };
 
   const handleUpload = async (file: File, type: 'favicon' | 'background') => {
+    if (isDisabled) return;
+    if (!isAdmin) {
+      setUploadError('只有管理员可以上传文件（为了服务器安全）。如果您想在本地使用背景图，请输入图片直链。');
+      return;
+    }
     setUploadError(null);
     const isFav = type === 'favicon';
     isFav ? setIsUploadingFavicon(true) : setIsUploadingBg(true);
@@ -114,7 +140,12 @@ export function AppearanceSettingsPage({ appearanceConfig, setAppearanceConfig, 
   };
 
   const handleDeleteFavicon = async () => {
+    if (isDisabled) return;
     if (!draft.faviconUrl) return;
+    if (!isAdmin) {
+      handleDraftChange('faviconUrl', '');
+      return;
+    }
     try {
       const res = await fetch('/api/appearance/upload/favicon', { method: 'DELETE' });
       if (!res.ok) throw new Error('删除失败');
@@ -125,7 +156,12 @@ export function AppearanceSettingsPage({ appearanceConfig, setAppearanceConfig, 
   };
 
   const handleDeleteBackground = async () => {
+    if (isDisabled) return;
     if (!draft.backgroundUrl) return;
+    if (!isAdmin) {
+      handleDraftChange('backgroundUrl', '');
+      return;
+    }
     try {
       const res = await fetch('/api/appearance/upload/background', { method: 'DELETE' });
       if (!res.ok) throw new Error('删除失败');
@@ -203,6 +239,36 @@ export function AppearanceSettingsPage({ appearanceConfig, setAppearanceConfig, 
       <h2 className="text-3xl font-black tracking-tighter mb-8 flex items-center gap-3">
         <Palette size={28} className="text-zinc-400" /> 外观设置
       </h2>
+
+      {isAdmin ? (
+        <div className="mb-6 p-4 rounded-2xl border border-amber-200 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/10 flex items-start gap-3">
+          <Crown size={20} className="text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+          <div>
+            <h3 className="text-[14px] font-black text-amber-900 dark:text-amber-200 mb-1">管理员全局外观模式</h3>
+            <p className="text-[12px] font-medium text-amber-700 dark:text-amber-400/80">
+              您正在以管理员身份调整外观。保存后可以强制全站生效，或者只保存在本地。
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div className={cn("mb-6 p-5 rounded-2xl border transition-colors flex items-center justify-between gap-4", useGlobalAppearance ? "border-emerald-200 dark:border-emerald-500/20 bg-emerald-50 dark:bg-emerald-500/10" : "border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#121214]")}>
+          <div className="flex items-start gap-3">
+            {useGlobalAppearance ? <Globe size={20} className="text-emerald-600 dark:text-emerald-400 mt-0.5 shrink-0" /> : <MonitorSmartphone size={20} className="text-zinc-400 dark:text-zinc-500 mt-0.5 shrink-0" />}
+            <div>
+              <h3 className={cn("text-[14px] font-black mb-1", useGlobalAppearance ? "text-emerald-900 dark:text-emerald-200" : "text-zinc-900 dark:text-white")}>
+                {useGlobalAppearance ? "🌍 当前正在跟随全局外观" : "💻 当前正在使用本地自定义外观"}
+              </h3>
+              <p className={cn("text-[12px] font-medium", useGlobalAppearance ? "text-emerald-700 dark:text-emerald-400/80" : "text-zinc-500 dark:text-zinc-400")}>
+                {useGlobalAppearance ? "下方的所有设置已被管理员锁定，如需自己调整，请关闭此开关。" : "您可以自由调整下方设置，只会保存在您的浏览器中，不影响他人。"}
+              </p>
+            </div>
+          </div>
+          <button onClick={() => updateUiPreference('useGlobalAppearance', !useGlobalAppearance)}
+            className={cn('relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors', useGlobalAppearance ? 'bg-emerald-500' : 'bg-zinc-300 dark:bg-zinc-700')}>
+            <span className={cn('inline-block h-4 w-4 transform rounded-full bg-white transition-transform', useGlobalAppearance ? 'translate-x-6' : 'translate-x-1')} />
+          </button>
+        </div>
+      )}
 
       {saveStatus && (
         <div className={cn("mb-6 p-4 rounded-2xl border text-[13px] font-bold flex items-center gap-2",
@@ -428,15 +494,37 @@ export function AppearanceSettingsPage({ appearanceConfig, setAppearanceConfig, 
       </div>
 
       <div className="flex items-center justify-between gap-3 pt-2 pb-8">
-        <button onClick={handleReset} className={textButtonClass}><RotateCcw size={12} className="inline mr-1" /> 恢复默认</button>
-        <button
-          onClick={handleSave}
-          disabled={isSaving}
-          className={cn(actionButtonClass, 'px-6 py-2.5')}
-        >
-          {isSaving && <Loader2 size={14} className="animate-spin" />}
-          {isSaving ? '保存中...' : '保存设置'}
-        </button>
+        <button onClick={handleReset} disabled={isDisabled} className={cn(textButtonClass, isDisabled && "opacity-50 cursor-not-allowed")}><RotateCcw size={12} className="inline mr-1" /> {isAdmin ? '恢复默认全局外观' : '恢复默认外观'}</button>
+        <div className="flex gap-3">
+          {isAdmin ? (
+            <>
+              <button
+                onClick={handleSaveLocal}
+                disabled={isSaving}
+                className={cn(actionButtonClass, 'px-5 py-2.5 bg-white text-zinc-900 border border-zinc-200 hover:bg-zinc-50 dark:bg-[#18181b] dark:text-white dark:border-zinc-800 dark:hover:bg-zinc-800')}
+              >
+                仅保存在本地
+              </button>
+              <button
+                onClick={handleSaveGlobal}
+                disabled={isSaving}
+                className={cn(actionButtonClass, 'px-6 py-2.5 bg-amber-500 text-white border-amber-600 hover:bg-amber-600 dark:bg-amber-600 dark:border-amber-700 dark:hover:bg-amber-700')}
+              >
+                {isSaving && <Loader2 size={14} className="animate-spin" />}
+                {isSaving ? '发布中...' : '发布到全局'}
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={handleSaveLocal}
+              disabled={isSaving || isDisabled}
+              className={cn(actionButtonClass, 'px-6 py-2.5', isDisabled && "opacity-50 cursor-not-allowed")}
+            >
+              {isSaving && <Loader2 size={14} className="animate-spin" />}
+              {isSaving ? '保存中...' : '保存本地设置'}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -9,6 +9,7 @@ export function cn(...inputs: ClassValue[]) {
 export const inputClasses = "w-full bg-black/5 hover:bg-black/10 focus:bg-white focus:ring-2 focus:ring-zinc-900/20 rounded px-2 py-1 outline-none transition-all placeholder-zinc-400 text-zinc-900 font-semibold";
 
 export const DEFAULT_UI_PREFERENCES: UiPreferences = {
+  useGlobalAppearance: true,
   cardSize: 'default',
   densityPreset: 'balanced',
   cardMinHeight: 330,

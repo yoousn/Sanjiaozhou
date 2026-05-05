@@ -5,6 +5,7 @@ export type UiSidebarWidth = 'compact' | 'default';
 export type UiDensityPreset = 'compact' | 'balanced' | 'comfortable';
 
 export type UiPreferences = {
+  useGlobalAppearance: boolean;
   cardSize: UiCardSize;
   densityPreset?: UiDensityPreset;
   cardMinHeight: 300 | 330 | 360 | 400;

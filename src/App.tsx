@@ -716,6 +716,8 @@ export default function App() {
                   setAppearanceConfig={theme.setAppearanceConfig}
                   resetAppearance={theme.resetAppearance}
                   uiPreferences={theme.uiPreferences}
+                  updateUiPreference={theme.updateUiPreference}
+                  isAdmin={auth.isAdmin}
                   showToast={showToast}
                 />
               </React.Suspense>

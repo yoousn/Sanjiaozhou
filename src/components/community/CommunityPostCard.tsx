@@ -354,9 +354,10 @@ export const CommunityPostCard = React.memo(function CommunityPostCard({
           <img
             src={post.imageUrl}
             alt={post.description || "帖子图片"}
-            className="max-w-[95vw] max-h-[90vh] rounded-2xl object-contain transition-transform duration-150"
+            className="max-w-[95vw] max-h-[90vh] rounded-2xl object-contain"
             style={{
               transform: `scale(${imgScale}) translate(${imgPos.x}px, ${imgPos.y}px)`,
+              transition: isDragging ? 'none' : 'transform 0.15s ease',
               pointerEvents: imgScale > 1 ? 'none' : 'auto',
             }}
             draggable={false}

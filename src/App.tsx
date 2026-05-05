@@ -569,19 +569,74 @@ export default function App() {
 
   return (
     <>
-      <style>{`:root { --color-emerald-500: ${theme.customTheme.themeColor}; --color-emerald-600: ${theme.customTheme.themeColor}; --color-emerald-50: ${theme.customTheme.themeColor}1A; --app-blur: ${theme.appearanceConfig.blurStrength}px; --app-opacity: ${theme.appearanceConfig.opacity}; --app-radius: ${theme.appearanceConfig.radius}px; --app-glow: ${theme.appearanceConfig.glow}px; }`}</style>
+      <style>{`
+        :root {
+          --color-emerald-500: ${theme.customTheme.themeColor};
+          --color-emerald-600: ${theme.customTheme.themeColor};
+          --color-emerald-50: ${theme.customTheme.themeColor}1A;
+          --app-blur: ${theme.appearanceConfig.blurStrength}px;
+          --app-opacity: ${theme.appearanceConfig.opacity};
+          --app-opacity-ratio: ${theme.appearanceConfig.opacity / 100};
+          --app-radius: ${theme.appearanceConfig.radius}px;
+          --app-glow: ${theme.appearanceConfig.glow}px;
+        }
+        ${theme.appearanceConfig.customEnabled && theme.appearanceConfig.backgroundUrl ? `
+        /* 全局玻璃化：主要面板/卡片背景 */
+        .bg-white, .bg-zinc-50, .bg-\[\#F8F9FA\] {
+          background-color: rgba(255,255,255,var(--app-opacity-ratio)) !important;
+          backdrop-filter: blur(var(--app-blur)) !important;
+          -webkit-backdrop-filter: blur(var(--app-blur)) !important;
+        }
+        .dark .dark\:bg-\[\#121214\], .dark .dark\:bg-\[\#18181b\], .dark .dark\:bg-zinc-800, .dark .dark\:bg-zinc-900, .dark .dark\:bg-black {
+          background-color: rgba(18,18,20,calc(var(--app-opacity-ratio) * 0.85)) !important;
+          backdrop-filter: blur(var(--app-blur)) !important;
+          -webkit-backdrop-filter: blur(var(--app-blur)) !important;
+        }
+        /* 按钮/输入框保持更高可读性 */
+        button.bg-white, input.bg-white, textarea.bg-white, select.bg-white {
+          background-color: rgba(255,255,255,calc(var(--app-opacity-ratio) * 0.95)) !important;
+        }
+        .dark button.dark\:bg-\[\#18181b\], .dark input.dark\:bg-\[\#18181b\], .dark textarea.dark\:bg-\[\#18181b\] {
+          background-color: rgba(24,24,27,calc(var(--app-opacity-ratio) * 0.95)) !important;
+        }
+        /* 边框透明化 */
+        .border-zinc-200, [class*="border-zinc-200"] {
+          border-color: rgba(255,255,255,0.25) !important;
+        }
+        .dark .dark\:border-zinc-800, .dark [class*="dark:border-zinc-800"] {
+          border-color: rgba(255,255,255,0.08) !important;
+        }
+        ` : ''}
+      `}</style>
       {theme.appearanceConfig.customEnabled && theme.appearanceConfig.backgroundUrl && (
-        <div
-          className="fixed inset-0 z-0"
-          style={{
-            backgroundImage: `url(${theme.appearanceConfig.backgroundUrl})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundAttachment: theme.appearanceConfig.backgroundFixed ? 'fixed' : 'scroll',
-          }}
-        />
+        <>
+          <div
+            className="fixed inset-0 z-0"
+            style={{
+              backgroundImage: `url(${theme.appearanceConfig.backgroundUrl})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundAttachment: theme.appearanceConfig.backgroundFixed ? 'fixed' : 'scroll',
+            }}
+          />
+          <div
+            className="fixed inset-0 z-[1] pointer-events-none"
+            style={{
+              backdropFilter: `blur(${theme.appearanceConfig.blurStrength}px)`,
+              WebkitBackdropFilter: `blur(${theme.appearanceConfig.blurStrength}px)`,
+              background: theme.isDarkMode
+                ? `rgba(0,0,0,${theme.appearanceConfig.opacity / 100})`
+                : `rgba(255,255,255,${theme.appearanceConfig.opacity / 100})`,
+            }}
+          />
+        </>
       )}
-      <div className="flex min-h-screen bg-[#F8F9FA] dark:bg-[#0b0b0c] selection:bg-zinc-200 dark:selection:bg-zinc-800 transition-colors duration-300 relative z-10" style={{ color: theme.isDarkMode ? theme.customTheme.textColorDark : theme.customTheme.textColorLight, '--user-gun-color': theme.isDarkMode ? theme.customTheme.gunNameColorDark : theme.customTheme.gunNameColorLight } as React.CSSProperties}>
+      <div className={cn(
+        "flex min-h-screen selection:bg-zinc-200 dark:selection:bg-zinc-800 transition-colors duration-300 relative z-10",
+        theme.appearanceConfig.customEnabled && theme.appearanceConfig.backgroundUrl
+          ? "bg-transparent"
+          : "bg-[#F8F9FA] dark:bg-[#0b0b0c]"
+      )} style={{ color: theme.isDarkMode ? theme.customTheme.textColorDark : theme.customTheme.textColorLight, '--user-gun-color': theme.isDarkMode ? theme.customTheme.gunNameColorDark : theme.customTheme.gunNameColorLight } as React.CSSProperties}>
         <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} onOpenSettings={() => setActiveTab('settings')} onOpenAppearance={() => setActiveTab('appearance')} sidebarWidth={theme.uiPreferences.sidebarWidth} controlRadius={theme.uiPreferences.controlRadius} buttonStyle={theme.uiPreferences.buttonStyle} auth={auth} onOpenAuth={() => setActiveModal('auth')} onLogout={async () => { await auth.logout(); showToast('已退出登录'); }} />
         <main className={cn('flex-1 p-4 md:p-6 lg:p-8 pb-32', sidebarWidthClasses.main)}>
           <div className="md:hidden fixed left-4 bottom-24 z-40 pointer-events-none">
@@ -613,7 +668,7 @@ export default function App() {
               <React.Suspense fallback={<div className="flex flex-col items-center justify-center py-24 animate-fade-in"><Loader2 size={24} className="animate-spin text-zinc-400 mb-4" /><p className="text-[13px] font-bold text-zinc-500">正在加载外观设置...</p></div>}>
                 <AppearanceSettingsPage
                   appearanceConfig={theme.appearanceConfig}
-                  updateAppearance={theme.updateAppearance}
+                  setAppearanceConfig={theme.setAppearanceConfig}
                   resetAppearance={theme.resetAppearance}
                   uiPreferences={theme.uiPreferences}
                 />

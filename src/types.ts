@@ -11,6 +11,7 @@ export type UiPreferences = {
   variantsPerPage: 2 | 3 | 4;
   gridColumns: 3 | 4;
   gridGap: 12 | 16 | 20 | 24;
+  groupsPerPage: 8 | 12 | 16 | 20 | 24;
   sidebarWidth: UiSidebarWidth;
   controlRadius: UiRadius;
   buttonStyle: UiButtonStyle;

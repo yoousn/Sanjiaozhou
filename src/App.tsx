@@ -519,21 +519,21 @@ export default function App() {
   }, [sourceData, searchQuery, activeTab, sortBy]);
 
   const sidebarWidthClasses = sidebarWidthClassMap[theme.uiPreferences.sidebarWidth];
-  const gridClassName = cn('grid grid-cols-1 md:grid-cols-2 relative', theme.uiPreferences.gridColumns === 3 ? 'xl:grid-cols-3 2xl:grid-cols-3' : 'xl:grid-cols-3 2xl:grid-cols-4', gridGapClassMap[theme.uiPreferences.gridGap]);
+  const gridClassName = cn('grid grid-cols-1 md:grid-cols-2 relative', theme.uiPreferences.gridColumns === 3 ? 'lg:grid-cols-3' : 'lg:grid-cols-4', gridGapClassMap[theme.uiPreferences.gridGap]);
 
-  const GROUPS_PER_PAGE = 12;
+  const groupsPerPage = theme.uiPreferences.groupsPerPage || 12;
   const [currentPage, setCurrentPage] = useState(0);
   useEffect(() => {
     setCurrentPage(0);
-  }, [activeTab, searchQuery, sortBy]);
+  }, [activeTab, searchQuery, sortBy, groupsPerPage]);
   // 编辑模式或拖拽排序时不分页，避免冲突
-  const shouldPaginate = !isEditing && viewData.length > GROUPS_PER_PAGE;
-  const totalPages = shouldPaginate ? Math.ceil(viewData.length / GROUPS_PER_PAGE) : 1;
+  const shouldPaginate = !isEditing && viewData.length > groupsPerPage;
+  const totalPages = shouldPaginate ? Math.ceil(viewData.length / groupsPerPage) : 1;
   const pagedViewData = useMemo(() => {
     if (!shouldPaginate) return viewData;
-    const start = currentPage * GROUPS_PER_PAGE;
-    return viewData.slice(start, start + GROUPS_PER_PAGE);
-  }, [viewData, shouldPaginate, currentPage]);
+    const start = currentPage * groupsPerPage;
+    return viewData.slice(start, start + groupsPerPage);
+  }, [viewData, shouldPaginate, currentPage, groupsPerPage]);
 
   const renderGridElements = (useSortableWrapper: boolean) => {
     const dataToRender = pagedViewData;
@@ -567,60 +567,88 @@ export default function App() {
   const currentAppTitle = theme.uiPreferences.appTitle || '马坤时代';
   const currentAppSubtitle = theme.uiPreferences.appSubtitle || '专注修脚。基于顶级重回修脚时代架构运行。';
 
+  const glassStyle = useMemo(() => {
+    const ac = theme.appearanceConfig;
+    return `
+      :root {
+        --color-emerald-500: ${theme.customTheme.themeColor};
+        --color-emerald-600: ${theme.customTheme.themeColor};
+        --color-emerald-50: ${theme.customTheme.themeColor}1A;
+        --app-blur: ${ac.blurStrength}px;
+        --app-opacity: ${ac.opacity};
+        --app-opacity-ratio: ${ac.opacity / 100};
+        --app-radius: ${ac.radius}px;
+        --app-glow: ${ac.glow}px;
+        --gun-card-opacity: ${ac.gunCardOpacity / 100};
+        --gun-card-color-light: ${ac.gunCardColorLight};
+        --gun-card-color-dark: ${ac.gunCardColorDark};
+      }
+      ${ac.customEnabled ? `
+      /* 全局玻璃化：亮色模式 */
+      .bg-white, .bg-zinc-50, .bg-zinc-100, .bg-zinc-200,
+      .bg-emerald-50, .bg-red-50, .bg-yellow-50,
+      .bg-white\\/95, .bg-white\\/80,
+      .bg-\\[\\#F8F9FA\\] {
+        background-color: rgba(255,255,255,var(--app-opacity-ratio)) !important;
+        backdrop-filter: blur(var(--app-blur)) !important;
+        -webkit-backdrop-filter: blur(var(--app-blur)) !important;
+      }
+      /* 暗色模式 */
+      .dark .dark\\:bg-\\[\\#121214\\],
+      .dark .dark\\:bg-\\[\\#18181b\\],
+      .dark .dark\\:bg-zinc-800,
+      .dark .dark\\:bg-zinc-900,
+      .dark .dark\\:bg-black,
+      .dark .dark\\:bg-\\[\\#0b0b0c\\],
+      .dark .dark\\:bg-white\\/\\[0\\.02\\] {
+        background-color: rgba(18,18,20,calc(var(--app-opacity-ratio) * 0.85)) !important;
+        backdrop-filter: blur(var(--app-blur)) !important;
+        -webkit-backdrop-filter: blur(var(--app-blur)) !important;
+      }
+      /* 按钮/输入框更高可读性 */
+      button.bg-white, input.bg-white, textarea.bg-white, select.bg-white,
+      button.bg-zinc-100, input.bg-zinc-100, textarea.bg-zinc-100 {
+        background-color: rgba(255,255,255,calc(var(--app-opacity-ratio) * 0.95)) !important;
+      }
+      .dark button.dark\\:bg-\\[\\#18181b\\],
+      .dark input.dark\\:bg-\\[\\#18181b\\],
+      .dark textarea.dark\\:bg-\\[\\#18181b\\],
+      .dark button.dark\\:bg-zinc-800,
+      .dark input.dark\\:bg-zinc-800,
+      .dark textarea.dark\\:bg-zinc-800 {
+        background-color: rgba(24,24,27,calc(var(--app-opacity-ratio) * 0.95)) !important;
+      }
+      /* 悬停背景 */
+      .hover\\:bg-zinc-100:hover, .hover\\:bg-black\\/5:hover,
+      [class*="hover:bg-zinc-100"]:hover {
+        background-color: rgba(255,255,255,calc(var(--app-opacity-ratio) * 0.9)) !important;
+      }
+      .dark .dark\\:hover\\:bg-white\\/5:hover,
+      .dark .dark\\:hover\\:bg-zinc-800:hover,
+      [class*="dark:hover:bg-white/5"]:hover,
+      [class*="dark:hover:bg-zinc-800"]:hover {
+        background-color: rgba(24,24,27,calc(var(--app-opacity-ratio) * 0.9)) !important;
+      }
+      /* 边框透明化 */
+      .border-zinc-100, .border-zinc-200, [class*="border-zinc-200"] {
+        border-color: rgba(255,255,255,0.2) !important;
+      }
+      .dark .dark\\:border-zinc-700, .dark .dark\\:border-zinc-800,
+      .dark [class*="dark\\:border-zinc-800"] {
+        border-color: rgba(255,255,255,0.06) !important;
+      }
+      /* 阴影弱化 */
+      .shadow-sm, .shadow-md, .shadow-lg, .shadow-xl, .shadow-2xl,
+      [class*="shadow-"] {
+        box-shadow: 0 1px 3px 0 rgba(0,0,0,0.04), 0 1px 2px -1px rgba(0,0,0,0.04) !important;
+      }
+      ` : ''}
+    `;
+  }, [theme.customTheme.themeColor, theme.appearanceConfig.blurStrength, theme.appearanceConfig.opacity, theme.appearanceConfig.radius, theme.appearanceConfig.glow, theme.appearanceConfig.customEnabled, theme.appearanceConfig.gunCardOpacity, theme.appearanceConfig.gunCardColorLight, theme.appearanceConfig.gunCardColorDark]);
+
   return (
     <>
-      <style>{`
-        :root {
-          --color-emerald-500: ${theme.customTheme.themeColor};
-          --color-emerald-600: ${theme.customTheme.themeColor};
-          --color-emerald-50: ${theme.customTheme.themeColor}1A;
-          --app-blur: ${theme.appearanceConfig.blurStrength}px;
-          --app-opacity: ${theme.appearanceConfig.opacity};
-          --app-opacity-ratio: ${theme.appearanceConfig.opacity / 100};
-          --app-radius: ${theme.appearanceConfig.radius}px;
-          --app-glow: ${theme.appearanceConfig.glow}px;
-        }
-        ${theme.appearanceConfig.customEnabled ? `
-        /* 全局玻璃化：主要面板/卡片背景 */
-        .bg-white, .bg-zinc-50, .bg-zinc-100, .bg-\[\#F8F9FA\], .bg-white\/95 {
-          background-color: rgba(255,255,255,var(--app-opacity-ratio)) !important;
-          backdrop-filter: blur(var(--app-blur)) !important;
-          -webkit-backdrop-filter: blur(var(--app-blur)) !important;
-        }
-        .dark .dark\:bg-\[\#121214\], .dark .dark\:bg-\[\#18181b\], .dark .dark\:bg-zinc-800, .dark .dark\:bg-zinc-900, .dark .dark\:bg-black, .dark .dark\:bg-\[\#0b0b0c\], .dark .dark\:bg-white\/\[0\.02\] {
-          background-color: rgba(18,18,20,calc(var(--app-opacity-ratio) * 0.85)) !important;
-          backdrop-filter: blur(var(--app-blur)) !important;
-          -webkit-backdrop-filter: blur(var(--app-blur)) !important;
-        }
-        /* 按钮/输入框保持更高可读性 */
-        button.bg-white, input.bg-white, textarea.bg-white, select.bg-white, button.bg-zinc-100, input.bg-zinc-100, textarea.bg-zinc-100 {
-          background-color: rgba(255,255,255,calc(var(--app-opacity-ratio) * 0.95)) !important;
-        }
-        .dark button.dark\:bg-\[\#18181b\], .dark input.dark\:bg-\[\#18181b\], .dark textarea.dark\:bg-\[\#18181b\], .dark button.dark\:bg-zinc-800, .dark input.dark\:bg-zinc-800, .dark textarea.dark\:bg-zinc-800 {
-          background-color: rgba(24,24,27,calc(var(--app-opacity-ratio) * 0.95)) !important;
-        }
-        /* 悬停背景 */
-        .hover\:bg-zinc-100:hover, .hover\:bg-black\/5:hover {
-          background-color: rgba(255,255,255,calc(var(--app-opacity-ratio) * 0.9)) !important;
-        }
-        .dark .dark\:hover\:bg-white\/5:hover, .dark .dark\:hover\:bg-zinc-800:hover {
-          background-color: rgba(24,24,27,calc(var(--app-opacity-ratio) * 0.9)) !important;
-        }
-        /* 边框透明化 */
-        .border-zinc-200, [class*="border-zinc-200"] {
-          border-color: rgba(255,255,255,0.25) !important;
-        }
-        .dark .dark\:border-zinc-800, .dark [class*="dark:border-zinc-800"] {
-          border-color: rgba(255,255,255,0.08) !important;
-        }
-        /* 枪械卡片专用变量 */
-        :root {
-          --gun-card-opacity: ${theme.appearanceConfig.gunCardOpacity / 100};
-          --gun-card-color-light: ${theme.appearanceConfig.gunCardColorLight};
-          --gun-card-color-dark: ${theme.appearanceConfig.gunCardColorDark};
-        }
-        ` : ''}
-      `}</style>
+      <style dangerouslySetInnerHTML={{ __html: glassStyle }} />
       {theme.appearanceConfig.customEnabled && theme.appearanceConfig.backgroundUrl && (
         <>
           <div
@@ -684,6 +712,7 @@ export default function App() {
                   setAppearanceConfig={theme.setAppearanceConfig}
                   resetAppearance={theme.resetAppearance}
                   uiPreferences={theme.uiPreferences}
+                  showToast={showToast}
                 />
               </React.Suspense>
             ) : (

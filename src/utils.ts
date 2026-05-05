@@ -15,6 +15,7 @@ export const DEFAULT_UI_PREFERENCES: UiPreferences = {
   variantsPerPage: 3,
   gridColumns: 4,
   gridGap: 16,
+  groupsPerPage: 12,
   sidebarWidth: 'default',
   controlRadius: 'xl',
   buttonStyle: 'soft',

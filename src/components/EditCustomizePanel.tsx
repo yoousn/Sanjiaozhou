@@ -14,6 +14,7 @@ import {
   VARIANTS_PER_PAGE_OPTIONS,
   GRID_COLUMNS_OPTIONS,
   GRID_GAP_OPTIONS,
+  GROUPS_PER_PAGE_OPTIONS,
   SIDEBAR_WIDTH_OPTIONS,
   RADIUS_OPTIONS,
   BUTTON_STYLE_OPTIONS,
@@ -61,7 +62,7 @@ export function EditCustomizePanel({
   resetUiPreferences,
 }: EditCustomizePanelProps) {
   const settingsPanelClass = cn(
-    'bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 p-6 md:p-8 shadow-sm mb-6',
+    'bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 p-4 md:p-6 shadow-sm mb-4',
     uiPreferences.controlRadius === 'full' ? 'rounded-[2rem]' : 'rounded-3xl'
   );
   const settingsSelectClass = cn(
@@ -93,7 +94,7 @@ export function EditCustomizePanel({
         <button onClick={resetUiPreferences} className="text-[13px] font-bold text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition">恢复默认 UI 设置</button>
       </div>
 
-      <div className="mb-5 grid grid-cols-1 gap-2 md:grid-cols-3">
+      <div className="mb-4 grid grid-cols-1 gap-2 md:grid-cols-3">
         {DENSITY_PRESETS.map((preset) => {
           const active = uiPreferences.densityPreset === preset.value;
           return (
@@ -102,14 +103,14 @@ export function EditCustomizePanel({
               type="button"
               onClick={() => applyDensityPreset(preset)}
               className={cn(
-                'rounded-2xl border px-4 py-3 text-left transition',
+                'rounded-xl border px-3 py-2 text-left transition',
                 active
                   ? 'border-zinc-900 bg-zinc-900 text-white dark:border-white dark:bg-white dark:text-zinc-900'
                   : 'border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 dark:border-zinc-800 dark:bg-[#18181b] dark:text-zinc-400'
               )}
             >
-              <div className="text-[13px] font-black">{preset.label}</div>
-              <div className="mt-1 text-[11px] font-bold opacity-70">{preset.preferences.gridColumns}列 / {preset.preferences.variantsPerPage}条 / {preset.preferences.gridGap}px</div>
+              <div className="text-[12px] font-black">{preset.label}</div>
+              <div className="mt-0.5 text-[10px] font-bold opacity-70">{preset.preferences.gridColumns}列 / {preset.preferences.variantsPerPage}条 / {preset.preferences.gridGap}px</div>
             </button>
           );
         })}
@@ -145,6 +146,14 @@ export function EditCustomizePanel({
           <select value={uiPreferences.gridColumns} onChange={(e) => updateUiPreference('gridColumns', Number(e.target.value) as 3 | 4)} className={settingsSelectClass}>
             {GRID_COLUMNS_OPTIONS.map((option) => (
               <option key={option} value={option}>{option} 列</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">每页卡片数</label>
+          <select value={uiPreferences.groupsPerPage} onChange={(e) => updateUiPreference('groupsPerPage', Number(e.target.value) as 8 | 12 | 16 | 20 | 24)} className={settingsSelectClass}>
+            {GROUPS_PER_PAGE_OPTIONS.map((option) => (
+              <option key={option} value={option}>{option} 张</option>
             ))}
           </select>
         </div>

@@ -8,9 +8,10 @@ type Props = {
   setAppearanceConfig: React.Dispatch<React.SetStateAction<AppearanceConfig>>;
   resetAppearance: () => void;
   uiPreferences: { controlRadius: 'lg' | 'xl' | 'full'; buttonStyle: 'soft' | 'solid' | 'outline' };
+  showToast?: (msg: string, type?: 'success' | 'warn' | 'error') => void;
 };
 
-export function AppearanceSettingsPage({ appearanceConfig, setAppearanceConfig, resetAppearance, uiPreferences }: Props) {
+export function AppearanceSettingsPage({ appearanceConfig, setAppearanceConfig, resetAppearance, uiPreferences, showToast }: Props) {
   const [draft, setDraft] = useState<AppearanceConfig>(appearanceConfig);
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<{type: 'success'|'error', msg: string} | null>(null);
@@ -24,6 +25,7 @@ export function AppearanceSettingsPage({ appearanceConfig, setAppearanceConfig, 
     setDraft(appearanceConfig);
   }, [appearanceConfig]);
 
+  // 成功/失败提示 3 秒后自动消失
   useEffect(() => {
     if (!saveStatus) return;
     const t = setTimeout(() => setSaveStatus(null), 3000);
@@ -60,9 +62,13 @@ export function AppearanceSettingsPage({ appearanceConfig, setAppearanceConfig, 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || '保存失败');
       setAppearanceConfig(draft);
-      setSaveStatus({ type: 'success', msg: '外观设置已保存，全站生效' });
+      const msg = '外观设置已保存，全站生效';
+      setSaveStatus({ type: 'success', msg });
+      showToast?.(msg, 'success');
     } catch (e) {
-      setSaveStatus({ type: 'error', msg: e instanceof Error ? e.message : '保存失败' });
+      const msg = e instanceof Error ? e.message : '保存失败';
+      setSaveStatus({ type: 'error', msg });
+      showToast?.(msg, 'warn');
     } finally {
       setIsSaving(false);
     }
@@ -79,9 +85,13 @@ export function AppearanceSettingsPage({ appearanceConfig, setAppearanceConfig, 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(DEFAULT_APPEARANCE_CONFIG),
       });
-      setSaveStatus({ type: 'success', msg: '已恢复默认外观' });
+      const msg = '已恢复默认外观';
+      setSaveStatus({ type: 'success', msg });
+      showToast?.(msg, 'success');
     } catch (e) {
-      setSaveStatus({ type: 'error', msg: '恢复默认失败，请刷新页面重试' });
+      const msg = '恢复默认失败，请刷新页面重试';
+      setSaveStatus({ type: 'error', msg });
+      showToast?.(msg, 'warn');
     }
   };
 

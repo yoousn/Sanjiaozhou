@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { AppearanceConfig, UiPreferences } from '../types';
 import { DEFAULT_UI_PREFERENCES, DEFAULT_APPEARANCE_CONFIG } from '../utils';
 
@@ -73,18 +73,18 @@ export function useTheme() {
     localStorage.setItem('appearanceConfig', JSON.stringify(appearanceConfig));
   }, [appearanceConfig]);
 
-  const updateUiPreference = <K extends keyof UiPreferences>(key: K, value: UiPreferences[K]) => {
+  const updateUiPreference = useCallback(<K extends keyof UiPreferences>(key: K, value: UiPreferences[K]) => {
     setUiPreferences((prev: UiPreferences) => ({ ...prev, [key]: value }));
-  };
+  }, []);
 
-  const updateAppearance = <K extends keyof AppearanceConfig>(key: K, value: AppearanceConfig[K]) => {
+  const updateAppearance = useCallback(<K extends keyof AppearanceConfig>(key: K, value: AppearanceConfig[K]) => {
     setAppearanceConfig((prev: AppearanceConfig) => ({ ...prev, [key]: value }));
-  };
+  }, []);
 
-  const resetTheme = () => setCustomTheme(DEFAULT_THEME);
-  const resetAppearance = () => setAppearanceConfig(DEFAULT_APPEARANCE_CONFIG);
+  const resetTheme = useCallback(() => setCustomTheme(DEFAULT_THEME), []);
+  const resetAppearance = useCallback(() => setAppearanceConfig(DEFAULT_APPEARANCE_CONFIG), []);
 
-  return {
+  return useMemo(() => ({
     isDarkMode,
     setIsDarkMode,
     customTheme,
@@ -98,5 +98,5 @@ export function useTheme() {
     setAppearanceConfig,
     updateAppearance,
     resetAppearance,
-  };
+  }), [isDarkMode, customTheme, uiPreferences, appearanceConfig, updateUiPreference, resetTheme, updateAppearance, resetAppearance]);
 }

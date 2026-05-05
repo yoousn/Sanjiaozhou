@@ -222,3 +222,5 @@ v1.2.0   日期2026.5.5---大更新
   - 全局玻璃化 CSS 去掉每个 `.bg-white` 元素上的 `backdrop-filter`，改为由全屏背景 overlay 统一提供模糊，避免数十个元素同时触发 GPU 重绘
   - **关键修复**：全屏遮罩层的 `backdrop-filter: blur()` 改为对**背景图本身**使用 `filter: blur()`（配合 `overflow: hidden + scale(1.05)` 避免边缘白边），`backdrop-filter` 完全移除。`backdrop-filter` 会强制浏览器对下方所有 DOM 进行实时合成重绘，任何滚动/动画都触发全 viewport 重算；`filter: blur()` 只模糊单个元素，不影响页面其他内容的渲染，120 帧恢复丝滑
 - **保存提示修复**：外观设置保存/恢复默认时，页面内 banner + 全局 Toast 同时提示，3 秒后自动消失
+  - **彻底移除 `[class*="..."]` 属性选择器**：全局 CSS 注入中原有 `[class*="shadow-"]`、`[class*="hover:bg-zinc-100"]`、`[class*="border-zinc-200"]` 等属性选择器会在每次样式计算时强制浏览器遍历整个 DOM 扫描 class 属性，节点越多开销越大；现全部替换为明确类名选择器
+  - **`useTheme` 引用稳定化**：返回值用 `useMemo` 包装，update/reset 函数用 `useCallback` 包装，避免 App 任何微小重渲染导致 `theme` 对象引用变化，触发整棵树不必要的重渲染

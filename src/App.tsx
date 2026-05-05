@@ -117,25 +117,20 @@ const StyleInjector = React.memo(function StyleInjector({ customTheme, appearanc
       .dark textarea.dark\\:bg-zinc-800 {
         background-color: rgba(24,24,27,calc(var(--app-opacity-ratio) * 0.95)) !important;
       }
-      .hover\\:bg-zinc-100:hover, .hover\\:bg-black\\/5:hover,
-      [class*="hover:bg-zinc-100"]:hover {
+      .hover\\:bg-zinc-100:hover, .hover\\:bg-black\\/5:hover {
         background-color: rgba(255,255,255,calc(var(--app-opacity-ratio) * 0.9)) !important;
       }
       .dark .dark\\:hover\\:bg-white\\/5:hover,
-      .dark .dark\\:hover\\:bg-zinc-800:hover,
-      [class*="dark:hover:bg-white/5"]:hover,
-      [class*="dark:hover:bg-zinc-800"]:hover {
+      .dark .dark\\:hover\\:bg-zinc-800:hover {
         background-color: rgba(24,24,27,calc(var(--app-opacity-ratio) * 0.9)) !important;
       }
-      .border-zinc-100, .border-zinc-200, [class*="border-zinc-200"] {
+      .border-zinc-100, .border-zinc-200 {
         border-color: rgba(255,255,255,0.2) !important;
       }
-      .dark .dark\\:border-zinc-700, .dark .dark\\:border-zinc-800,
-      .dark [class*="dark\\:border-zinc-800"] {
+      .dark .dark\\:border-zinc-700, .dark .dark\\:border-zinc-800 {
         border-color: rgba(255,255,255,0.06) !important;
       }
-      .shadow-sm, .shadow-md, .shadow-lg, .shadow-xl, .shadow-2xl,
-      [class*="shadow-"] {
+      .shadow-sm, .shadow-md, .shadow-lg, .shadow-xl, .shadow-2xl {
         box-shadow: 0 1px 3px 0 rgba(0,0,0,0.04), 0 1px 2px -1px rgba(0,0,0,0.04) !important;
       }
       ` : ''}

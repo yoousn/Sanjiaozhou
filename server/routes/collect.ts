@@ -23,7 +23,7 @@ import {
 import { trimUniqueStrings, ensureGroupShape } from "../lib/shape.js";
 import { uniqueTrimmed, mergeCollectedGroups } from "../lib/merge.js";
 import { readBuilds, writeBuilds } from "./builds.js";
-import { readAutoLogs, addAutoLog } from "../lib/logs.js";
+import { readAutoLogs, addAutoLog, clearAutoLogs } from "../lib/logs.js";
 import { requireAdmin } from "../lib/auth.js";
 import { logger } from "../lib/logger.js";
 
@@ -313,6 +313,20 @@ router.post("/auto/cancel-retry", requireAdmin, (req, res) => {
   res.json({ success: true, hasRetry: retryState !== null, retryVideos: retryState?.videos || [] });
 });
 
+router.post("/auto/logs/clear", requireAdmin, (req, res) => {
+  try {
+    const days = req.body?.days;
+    const daysParam = days === "all" ? undefined : Number(days);
+    const removed = clearAutoLogs(daysParam);
+    const label = days === "all" || days == null ? "全部" : `${daysParam}天前`;
+    addAutoLog(`已清空${label}运行日志，共删除 ${removed} 条`, true);
+    res.json({ success: true, removed });
+  } catch (e) {
+    logger.error("API CLEAR AUTO LOGS Error", { error: e instanceof Error ? e.message : String(e) });
+    res.status(500).json({ error: "清空日志失败" });
+  }
+});
+
 export function startAutoCollectJob() {
   setInterval(async () => {
     const settings = readCollectSettings();
@@ -334,7 +348,8 @@ export function startAutoCollectJob() {
       lastAutoCollectTime = Date.now();
       const primary = await runAutoCollectAttempt(settings.autoCollect.model, creatorIds, retryVideos);
       let finalResult = primary;
-      if (primary.groups.length === 0 && settings.autoCollect.backupModel) {
+      const noNewVideos = primary.errors.some((e) => String(e).includes("未发现新的待采集视频"));
+      if (primary.groups.length === 0 && settings.autoCollect.backupModel && !noNewVideos) {
         addAutoLog(`主模型采集失败，正在切换备用模型：${primary.errors.join("; ") || "未提取到任何配置"}`, false);
         finalResult = await runAutoCollectAttempt(settings.autoCollect.backupModel, creatorIds, retryVideos);
       }

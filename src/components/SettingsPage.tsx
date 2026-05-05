@@ -1,5 +1,5 @@
-import React from 'react';
-import { Download, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { Loader2, CheckCircle2, AlertCircle, Trash2 } from 'lucide-react';
 import { cn, radiusClassMap, getButtonClassName } from '../utils';
 import { UiPreferences } from '../types';
 import { CustomTheme } from '../hooks/useTheme';
@@ -9,10 +9,6 @@ export type SettingsPageProps = {
   customTheme: CustomTheme;
   setCustomTheme: React.Dispatch<React.SetStateAction<CustomTheme>>;
   resetTheme: () => void;
-  isDownloadingData: boolean;
-  handleDownloadData: () => Promise<void>;
-  isDownloadingSettings: boolean;
-  handleDownloadSettingsFile: () => Promise<void>;
   cookieStatus: { exists: boolean; mtime?: string } | null;
   isUploadingCookie: boolean;
   handleCookieUpload: (e: React.ChangeEvent<HTMLInputElement>) => Promise<void>;
@@ -20,6 +16,7 @@ export type SettingsPageProps = {
   dailyPwdLogs: Array<{ time: string; message: string; success: boolean }>;
   isRefreshingDailyPwd: boolean;
   handleRefreshDailyPwd: () => Promise<void>;
+  onClearDailyPwdLogs?: (days: string) => Promise<void>;
 };
 
 export function SettingsPage({
@@ -27,10 +24,6 @@ export function SettingsPage({
   customTheme,
   setCustomTheme,
   resetTheme,
-  isDownloadingData,
-  handleDownloadData,
-  isDownloadingSettings,
-  handleDownloadSettingsFile,
   cookieStatus,
   isUploadingCookie,
   handleCookieUpload,
@@ -38,7 +31,33 @@ export function SettingsPage({
   dailyPwdLogs,
   isRefreshingDailyPwd,
   handleRefreshDailyPwd,
+  onClearDailyPwdLogs,
 }: SettingsPageProps) {
+  const [showClearDialog, setShowClearDialog] = useState(false);
+  const [clearTarget, setClearTarget] = useState<string | null>(null);
+  const [isClearing, setIsClearing] = useState(false);
+
+  const clearOptions = [
+    { label: '全部', value: 'all' },
+    { label: '1个月', value: '30' },
+    { label: '7天', value: '7' },
+    { label: '3天', value: '3' },
+    { label: '1天', value: '1' },
+  ];
+
+  const handleClearConfirm = async () => {
+    if (!clearTarget || !onClearDailyPwdLogs) return;
+    setIsClearing(true);
+    try {
+      await onClearDailyPwdLogs(clearTarget);
+      setShowClearDialog(false);
+      setClearTarget(null);
+    } catch {
+      // error handled by parent toast
+    } finally {
+      setIsClearing(false);
+    }
+  };
   const radiusClass = radiusClassMap[uiPreferences.controlRadius];
   const settingsActionButtonClass = cn(
     'px-6 py-2.5 text-[13px] font-black transition flex items-center gap-2 disabled:opacity-60',
@@ -56,29 +75,6 @@ export function SettingsPage({
       <h2 className="text-3xl font-black tracking-tighter mb-8 flex items-center gap-3">
         系统设置
       </h2>
-
-      <div className={settingsPanelClass}>
-        <h3 className="text-lg font-black mb-2 text-zinc-900 dark:text-white">数据管理</h3>
-        <p className="text-[13px] text-zinc-500 mb-6">为方便多端同步，部署代码前可先下载线上最新的数据和配置文件进行备份与替换。</p>
-        <div className="flex flex-wrap items-center gap-4">
-          <button
-            onClick={handleDownloadData}
-            disabled={isDownloadingData}
-            className={settingsActionButtonClass}
-          >
-            {isDownloadingData ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
-            {isDownloadingData ? '正在准备...' : '下载 data.json'}
-          </button>
-          <button
-            onClick={handleDownloadSettingsFile}
-            disabled={isDownloadingSettings}
-            className={settingsActionButtonClass}
-          >
-            {isDownloadingSettings ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
-            {isDownloadingSettings ? '正在准备...' : '下载 collect_settings.json'}
-          </button>
-        </div>
-      </div>
 
       <div className={settingsPanelClass}>
         <h3 className="text-lg font-black mb-2 text-zinc-900 dark:text-white">Bilibili 采集 Cookie</h3>
@@ -123,15 +119,27 @@ export function SettingsPage({
             <h3 className="text-lg font-black mb-2 text-zinc-900 dark:text-white">每日密码日志</h3>
             <p className="text-[13px] text-zinc-500">记录每日密码缓存读取、手动刷新和后台自动抓取状态，仅保留最近 100 条。</p>
           </div>
-          <button
-            type="button"
-            onClick={handleRefreshDailyPwd}
-            disabled={isRefreshingDailyPwd}
-            className={cn(settingsActionButtonClass, 'shrink-0 px-4')}
-          >
-            {isRefreshingDailyPwd && <Loader2 size={12} className="animate-spin" />}
-            {isRefreshingDailyPwd ? '获取中...' : '获取'}
-          </button>
+          <div className="flex items-center gap-2">
+            {dailyPwdLogs.length > 0 && (
+              <button
+                type="button"
+                onClick={() => { setShowClearDialog(true); setClearTarget(null); }}
+                className="flex items-center gap-1 text-[11px] font-bold text-zinc-500 hover:text-red-500 transition px-2 py-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 shrink-0"
+              >
+                <Trash2 size={12} />
+                清空日志
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={handleRefreshDailyPwd}
+              disabled={isRefreshingDailyPwd}
+              className={cn(settingsActionButtonClass, 'shrink-0 px-4')}
+            >
+              {isRefreshingDailyPwd && <Loader2 size={12} className="animate-spin" />}
+              {isRefreshingDailyPwd ? '获取中...' : '获取'}
+            </button>
+          </div>
         </div>
         <div className="bg-zinc-900 text-zinc-300 font-mono text-[11px] p-4 rounded-2xl h-36 overflow-y-auto flex flex-col gap-2 shadow-inner">
           {dailyPwdLogs.length === 0 ? (
@@ -144,6 +152,54 @@ export function SettingsPage({
             ))
           )}
         </div>
+
+        {showClearDialog && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => { setShowClearDialog(false); setClearTarget(null); }} />
+            <div className="relative bg-white dark:bg-[#18181b] rounded-2xl p-5 w-full max-w-sm mx-4 shadow-2xl border border-zinc-200 dark:border-zinc-800">
+              <h4 className="text-[14px] font-black text-zinc-900 dark:text-white mb-1">清空每日密码日志</h4>
+              <p className="text-[12px] text-zinc-500 mb-4">选择需要清理的时间范围</p>
+              <div className="grid grid-cols-5 gap-2 mb-4">
+                {clearOptions.map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setClearTarget(opt.value)}
+                    className={cn(
+                      "py-1.5 px-1 rounded-xl text-[11px] font-bold transition border",
+                      clearTarget === opt.value
+                        ? "bg-red-50 dark:bg-red-500/10 border-red-500 text-red-600 dark:text-red-400"
+                        : "bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300"
+                    )}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              {clearTarget && (
+                <div className="mb-4 p-3 bg-red-50 dark:bg-red-500/10 rounded-xl border border-red-100 dark:border-red-500/20">
+                  <p className="text-[12px] font-bold text-red-600 dark:text-red-400">确认删除{clearOptions.find(o => o.value === clearTarget)?.label}的日志吗？</p>
+                  <p className="text-[11px] text-red-500/70 mt-0.5">删除后不可恢复</p>
+                </div>
+              )}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { setShowClearDialog(false); setClearTarget(null); }}
+                  className="flex-1 py-2 rounded-xl text-[12px] font-bold text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={handleClearConfirm}
+                  disabled={!clearTarget || isClearing}
+                  className="flex-1 py-2 rounded-xl text-[12px] font-bold text-white bg-red-500 hover:bg-red-600 transition disabled:opacity-40"
+                >
+                  {isClearing ? <Loader2 size={12} className="animate-spin inline mr-1" /> : null}
+                  确认
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className={settingsPanelClass}>

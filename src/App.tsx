@@ -94,9 +94,6 @@ export default function App() {
   const [isUploadingCookie, setIsUploadingCookie] = useState(false);
   const [cookieTestResult, setCookieTestResult] = useState<{success: boolean; message: string} | null>(null);
   const [cookieStatus, setCookieStatus] = useState<{ exists: boolean; mtime?: string } | null>(null);
-  const [isDownloadingData, setIsDownloadingData] = useState(false);
-  const [settingsFileStatus, setSettingsFileStatus] = useState<{ exists: boolean; mtime?: string } | null>(null);
-  const [isDownloadingSettings, setIsDownloadingSettings] = useState(false);
 
   const [autoCollectConfig, setAutoConfig] = useState<AutoCollectConfig>({
     enabled: false,
@@ -136,20 +133,12 @@ export default function App() {
       .catch(console.error);
   }, []);
 
-  const fetchSettingsFileStatus = useCallback(() => {
-    fetch('/api/config/settings-file/status')
-      .then(res => res.json())
-      .then(data => setSettingsFileStatus(data))
-      .catch(console.error);
-  }, []);
-
   useEffect(() => {
     if (activeTab === 'settings') {
       fetchCookieStatus();
-      fetchSettingsFileStatus();
       daily.fetchDailyPwdLogs();
     }
-  }, [activeTab, fetchCookieStatus, fetchSettingsFileStatus, daily]);
+  }, [activeTab, fetchCookieStatus, daily]);
 
   useEffect(() => {
     if (activeModal === 'auto-collect') {
@@ -438,32 +427,29 @@ export default function App() {
     }
   };
 
-  const handleDownloadData = async () => {
-    setIsDownloadingData(true);
-    try {
-      const res = await fetch('/api/builds');
-      const data = await safeJson(res);
-      if (!res.ok) throw new Error('获取数据失败');
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url; a.download = 'data.json'; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
-      showToast('数据文件 data.json 已开始下载');
-    } catch (err) { showToast(err instanceof Error ? err.message : '下载数据失败', 'warn'); }
-    finally { setIsDownloadingData(false); }
+  const handleClearAutoLogs = async (days: string) => {
+    const res = await fetch('/api/collect/auto/logs/clear', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ days }),
+    });
+    const data = await safeJson(res);
+    if (!res.ok) throw new Error(data?.error || '清空日志失败');
+    showToast(`已清空${days === 'all' ? '全部' : `${days}天前`}日志，共删除 ${data.removed || 0} 条`);
   };
 
-  const handleDownloadSettingsFile = async () => {
-    setIsDownloadingSettings(true);
-    try {
-      const res = await fetch('/api/config/settings-file');
-      const data = await safeJson(res);
-      if (!res.ok) throw new Error('获取配置失败');
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url; a.download = 'collect_settings.json'; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
-      showToast('配置文件 collect_settings.json 已开始下载');
-    } catch (err) { showToast(err instanceof Error ? err.message : '下载配置失败', 'warn'); }
-    finally { setIsDownloadingSettings(false); }
+  const handleClearDailyPwdLogs = async (days: string) => {
+    const res = await fetch('/api/daily-password/logs/clear', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ days }),
+    });
+    const data = await safeJson(res);
+    if (!res.ok) throw new Error(data?.error || '清空日志失败');
+    daily.fetchDailyPwdLogs();
+    showToast(`已清空${days === 'all' ? '全部' : `${days}天前`}日志，共删除 ${data.removed || 0} 条`);
   };
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
@@ -601,10 +587,6 @@ export default function App() {
                 customTheme={theme.customTheme}
                 setCustomTheme={theme.setCustomTheme}
                 resetTheme={theme.resetTheme}
-                isDownloadingData={isDownloadingData}
-                handleDownloadData={handleDownloadData}
-                isDownloadingSettings={isDownloadingSettings}
-                handleDownloadSettingsFile={handleDownloadSettingsFile}
                 cookieStatus={cookieStatus}
                 isUploadingCookie={isUploadingCookie}
                 handleCookieUpload={handleCookieUpload}
@@ -612,6 +594,7 @@ export default function App() {
                 dailyPwdLogs={daily.dailyPwdLogs}
                 isRefreshingDailyPwd={daily.isRefreshingDailyPwd}
                 handleRefreshDailyPwd={daily.handleRefreshDailyPwd}
+                onClearDailyPwdLogs={handleClearDailyPwdLogs}
               />
               </React.Suspense>
             ) : (
@@ -743,6 +726,7 @@ export default function App() {
             } catch(e) { showToast(e instanceof Error ? e.message : '保存配置失败', 'warn'); }
             finally { setIsSavingAuto(false); }
           }}
+          onClearLogs={handleClearAutoLogs}
         />
       )}
       {activeModal === 'model-config' && (

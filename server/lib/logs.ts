@@ -50,3 +50,33 @@ export function readDailyPwdLogs(): AutoLog[] {
 export function addDailyPwdLog(message: string, success: boolean) {
   addLog(DAILY_PWD_LOGS_FILE, message, success);
 }
+
+export function clearLogs(filePath: string, days?: number): number {
+  if (!fs.existsSync(filePath)) return 0;
+  try {
+    const logs = readLogs(filePath);
+    if (days == null) {
+      writeJsonAtomic(filePath, []);
+      return logs.length;
+    }
+    const now = Date.now();
+    const cutoff = now - days * 24 * 60 * 60 * 1000;
+    const remaining = logs.filter((log) => {
+      const d = new Date(String(log.time).replace(/-/g, "/"));
+      return d.getTime() > cutoff;
+    });
+    const removed = logs.length - remaining.length;
+    writeJsonAtomic(filePath, remaining);
+    return removed;
+  } catch {
+    return 0;
+  }
+}
+
+export function clearAutoLogs(days?: number): number {
+  return clearLogs(AUTO_LOGS_FILE, days);
+}
+
+export function clearDailyPwdLogs(days?: number): number {
+  return clearLogs(DAILY_PWD_LOGS_FILE, days);
+}

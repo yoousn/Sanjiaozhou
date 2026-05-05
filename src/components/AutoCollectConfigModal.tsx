@@ -1,5 +1,5 @@
-import React from 'react';
-import { X, Loader2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Loader2, Trash2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '../utils';
 import { CollectMeta } from '../types';
@@ -23,6 +23,7 @@ export type AutoCollectConfigModalProps = {
   meta: CollectMeta;
   isSaving: boolean;
   onSave: () => Promise<void>;
+  onClearLogs?: (days: string) => Promise<void>;
 };
 
 export function AutoCollectConfigModal({
@@ -32,7 +33,35 @@ export function AutoCollectConfigModal({
   meta,
   isSaving,
   onSave,
+  onClearLogs,
 }: AutoCollectConfigModalProps) {
+  const [showClearDialog, setShowClearDialog] = useState(false);
+  const [clearTarget, setClearTarget] = useState<string | null>(null);
+  const [isClearing, setIsClearing] = useState(false);
+
+  const clearOptions = [
+    { label: '全部', value: 'all' },
+    { label: '1个月', value: '30' },
+    { label: '7天', value: '7' },
+    { label: '3天', value: '3' },
+    { label: '1天', value: '1' },
+  ];
+
+  const handleClearConfirm = async () => {
+    if (!clearTarget || !onClearLogs) return;
+    setIsClearing(true);
+    try {
+      await onClearLogs(clearTarget);
+      setConfig(p => ({ ...p, logs: [] }));
+      setShowClearDialog(false);
+      setClearTarget(null);
+    } catch {
+      // error handled by parent toast
+    } finally {
+      setIsClearing(false);
+    }
+  };
+
   return (
     <AnimatePresence>
       <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden p-4 overscroll-contain" onWheel={(event) => event.stopPropagation()}>
@@ -212,6 +241,15 @@ export function AutoCollectConfigModal({
 
           <div className="flex justify-between items-center mt-1">
             <h4 className="text-[12px] font-bold uppercase tracking-widest text-zinc-500">运行日志 (仅存最近100条)</h4>
+            {config.logs.length > 0 && (
+              <button
+                onClick={() => { setShowClearDialog(true); setClearTarget(null); }}
+                className="flex items-center gap-1 text-[11px] font-bold text-zinc-500 hover:text-red-500 transition px-2 py-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10"
+              >
+                <Trash2 size={12} />
+                清空日志
+              </button>
+            )}
           </div>
           <div className="bg-zinc-900 text-zinc-300 font-mono text-[11px] p-4 rounded-2xl h-48 overflow-y-auto flex flex-col gap-2 shadow-inner">
             {config.logs.length === 0 ? (
@@ -225,6 +263,54 @@ export function AutoCollectConfigModal({
             )}
           </div>
         </div>
+
+        {showClearDialog && (
+          <div className="absolute inset-0 z-20 flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm rounded-3xl" onClick={() => { setShowClearDialog(false); setClearTarget(null); }} />
+            <div className="relative bg-white dark:bg-[#18181b] rounded-2xl p-5 w-full max-w-sm mx-4 shadow-2xl border border-zinc-200 dark:border-zinc-800">
+              <h4 className="text-[14px] font-black text-zinc-900 dark:text-white mb-1">清空运行日志</h4>
+              <p className="text-[12px] text-zinc-500 mb-4">选择需要清理的时间范围</p>
+              <div className="grid grid-cols-5 gap-2 mb-4">
+                {clearOptions.map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setClearTarget(opt.value)}
+                    className={cn(
+                      "py-1.5 px-1 rounded-xl text-[11px] font-bold transition border",
+                      clearTarget === opt.value
+                        ? "bg-red-50 dark:bg-red-500/10 border-red-500 text-red-600 dark:text-red-400"
+                        : "bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300"
+                    )}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              {clearTarget && (
+                <div className="mb-4 p-3 bg-red-50 dark:bg-red-500/10 rounded-xl border border-red-100 dark:border-red-500/20">
+                  <p className="text-[12px] font-bold text-red-600 dark:text-red-400">确认删除{clearOptions.find(o => o.value === clearTarget)?.label}的日志吗？</p>
+                  <p className="text-[11px] text-red-500/70 mt-0.5">删除后不可恢复</p>
+                </div>
+              )}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { setShowClearDialog(false); setClearTarget(null); }}
+                  className="flex-1 py-2 rounded-xl text-[12px] font-bold text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={handleClearConfirm}
+                  disabled={!clearTarget || isClearing}
+                  className="flex-1 py-2 rounded-xl text-[12px] font-bold text-white bg-red-500 hover:bg-red-600 transition disabled:opacity-40"
+                >
+                  {isClearing ? <Loader2 size={12} className="animate-spin inline mr-1" /> : null}
+                  确认
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         </motion.div>
       </div>
     </AnimatePresence>

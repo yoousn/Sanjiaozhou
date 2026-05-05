@@ -4,7 +4,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { execFile } from "child_process";
 import { promisify } from "util";
-import { readDailyPwdLogs, addDailyPwdLog } from "../lib/logs.js";
+import { readDailyPwdLogs, addDailyPwdLog, clearDailyPwdLogs } from "../lib/logs.js";
 import { writeJsonAtomic } from "../lib/atomicJson.js";
 import { requireAdmin } from "../lib/auth.js";
 import { logger } from "../lib/logger.js";
@@ -61,6 +61,20 @@ router.post("/refresh", requireAdmin, async (req, res) => {
     addDailyPwdLog(`${sourceLabel}失败：${message}`, false);
     logger.error("API PASSWORD REFRESH Error", { error: e instanceof Error ? e.message : String(e) });
     res.status(500).json({ error: message });
+  }
+});
+
+router.post("/logs/clear", requireAdmin, (req, res) => {
+  try {
+    const days = req.body?.days;
+    const daysParam = days === "all" ? undefined : Number(days);
+    const removed = clearDailyPwdLogs(daysParam);
+    const label = days === "all" || days == null ? "全部" : `${daysParam}天前`;
+    addDailyPwdLog(`已清空${label}日志，共删除 ${removed} 条`, true);
+    res.json({ success: true, removed });
+  } catch (e) {
+    logger.error("API CLEAR DAILY PWD LOGS Error", { error: e instanceof Error ? e.message : String(e) });
+    res.status(500).json({ error: "清空日志失败" });
   }
 });
 

@@ -220,4 +220,5 @@ v1.2.0   日期2026.5.5---大更新
   - 提取 `<style>` CSS 注入为独立 `StyleInjector` memo 组件，只在配置变化时重新计算
   - 首页 `motion.div` 移除按 idx 递增的 stagger delay，简化动画降低 framer-motion 计算量
   - 全局玻璃化 CSS 去掉每个 `.bg-white` 元素上的 `backdrop-filter`，改为由全屏背景 overlay 统一提供模糊，避免数十个元素同时触发 GPU 重绘
+  - **关键修复**：全屏遮罩层的 `backdrop-filter: blur()` 改为对**背景图本身**使用 `filter: blur()`（配合 `overflow: hidden + scale(1.05)` 避免边缘白边），`backdrop-filter` 完全移除。`backdrop-filter` 会强制浏览器对下方所有 DOM 进行实时合成重绘，任何滚动/动画都触发全 viewport 重算；`filter: blur()` 只模糊单个元素，不影响页面其他内容的渲染，120 帧恢复丝滑
 - **保存提示修复**：外观设置保存/恢复默认时，页面内 banner + 全局 Toast 同时提示，3 秒后自动消失

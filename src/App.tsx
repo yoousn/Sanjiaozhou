@@ -653,20 +653,27 @@ export default function App() {
       <StyleInjector customTheme={theme.customTheme} appearanceConfig={theme.appearanceConfig} />
       {theme.appearanceConfig.customEnabled && theme.appearanceConfig.backgroundUrl && (
         <>
-          <div
-            className="fixed inset-0 z-0"
-            style={{
-              backgroundImage: `url(${theme.appearanceConfig.backgroundUrl})`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              backgroundAttachment: theme.appearanceConfig.backgroundFixed ? 'fixed' : 'scroll',
-            }}
-          />
+          {/* 背景图层：blur 直接作用在图上，而非 backdrop-filter 作用在 overlay 上，避免拖慢整个页面合成 */}
+          <div className="fixed inset-0 z-0 overflow-hidden">
+            <div
+              className="absolute"
+              style={{
+                top: '-30px',
+                left: '-30px',
+                right: '-30px',
+                bottom: '-30px',
+                backgroundImage: `url(${theme.appearanceConfig.backgroundUrl})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                filter: `blur(${theme.appearanceConfig.blurStrength}px)`,
+                transform: 'scale(1.05)',
+              }}
+            />
+          </div>
+          {/* 半透明遮罩层：纯颜色覆盖，不再带 backdrop-filter */}
           <div
             className="fixed inset-0 z-[1] pointer-events-none"
             style={{
-              backdropFilter: `blur(${theme.appearanceConfig.blurStrength}px)`,
-              WebkitBackdropFilter: `blur(${theme.appearanceConfig.blurStrength}px)`,
               background: theme.isDarkMode
                 ? `rgba(0,0,0,${theme.appearanceConfig.opacity / 100})`
                 : `rgba(255,255,255,${theme.appearanceConfig.opacity / 100})`,

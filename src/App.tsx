@@ -580,24 +580,31 @@ export default function App() {
           --app-radius: ${theme.appearanceConfig.radius}px;
           --app-glow: ${theme.appearanceConfig.glow}px;
         }
-        ${theme.appearanceConfig.customEnabled && theme.appearanceConfig.backgroundUrl ? `
+        ${theme.appearanceConfig.customEnabled ? `
         /* 全局玻璃化：主要面板/卡片背景 */
-        .bg-white, .bg-zinc-50, .bg-\[\#F8F9FA\] {
+        .bg-white, .bg-zinc-50, .bg-zinc-100, .bg-\[\#F8F9FA\], .bg-white\/95 {
           background-color: rgba(255,255,255,var(--app-opacity-ratio)) !important;
           backdrop-filter: blur(var(--app-blur)) !important;
           -webkit-backdrop-filter: blur(var(--app-blur)) !important;
         }
-        .dark .dark\:bg-\[\#121214\], .dark .dark\:bg-\[\#18181b\], .dark .dark\:bg-zinc-800, .dark .dark\:bg-zinc-900, .dark .dark\:bg-black {
+        .dark .dark\:bg-\[\#121214\], .dark .dark\:bg-\[\#18181b\], .dark .dark\:bg-zinc-800, .dark .dark\:bg-zinc-900, .dark .dark\:bg-black, .dark .dark\:bg-\[\#0b0b0c\], .dark .dark\:bg-white\/\[0\.02\] {
           background-color: rgba(18,18,20,calc(var(--app-opacity-ratio) * 0.85)) !important;
           backdrop-filter: blur(var(--app-blur)) !important;
           -webkit-backdrop-filter: blur(var(--app-blur)) !important;
         }
         /* 按钮/输入框保持更高可读性 */
-        button.bg-white, input.bg-white, textarea.bg-white, select.bg-white {
+        button.bg-white, input.bg-white, textarea.bg-white, select.bg-white, button.bg-zinc-100, input.bg-zinc-100, textarea.bg-zinc-100 {
           background-color: rgba(255,255,255,calc(var(--app-opacity-ratio) * 0.95)) !important;
         }
-        .dark button.dark\:bg-\[\#18181b\], .dark input.dark\:bg-\[\#18181b\], .dark textarea.dark\:bg-\[\#18181b\] {
+        .dark button.dark\:bg-\[\#18181b\], .dark input.dark\:bg-\[\#18181b\], .dark textarea.dark\:bg-\[\#18181b\], .dark button.dark\:bg-zinc-800, .dark input.dark\:bg-zinc-800, .dark textarea.dark\:bg-zinc-800 {
           background-color: rgba(24,24,27,calc(var(--app-opacity-ratio) * 0.95)) !important;
+        }
+        /* 悬停背景 */
+        .hover\:bg-zinc-100:hover, .hover\:bg-black\/5:hover {
+          background-color: rgba(255,255,255,calc(var(--app-opacity-ratio) * 0.9)) !important;
+        }
+        .dark .dark\:hover\:bg-white\/5:hover, .dark .dark\:hover\:bg-zinc-800:hover {
+          background-color: rgba(24,24,27,calc(var(--app-opacity-ratio) * 0.9)) !important;
         }
         /* 边框透明化 */
         .border-zinc-200, [class*="border-zinc-200"] {
@@ -605,6 +612,12 @@ export default function App() {
         }
         .dark .dark\:border-zinc-800, .dark [class*="dark:border-zinc-800"] {
           border-color: rgba(255,255,255,0.08) !important;
+        }
+        /* 枪械卡片专用变量 */
+        :root {
+          --gun-card-opacity: ${theme.appearanceConfig.gunCardOpacity / 100};
+          --gun-card-color-light: ${theme.appearanceConfig.gunCardColorLight};
+          --gun-card-color-dark: ${theme.appearanceConfig.gunCardColorDark};
         }
         ` : ''}
       `}</style>

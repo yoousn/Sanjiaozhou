@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Loader2, Upload, Trash2, Eye, Palette, RotateCcw, Image as ImageIcon, Type, Code, FileCode, Fingerprint, Sparkles, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Loader2, Upload, Trash2, Eye, Palette, RotateCcw, Image as ImageIcon, Type, Code, FileCode, Fingerprint, Sparkles, CheckCircle2, AlertCircle, Crosshair } from 'lucide-react';
 import { cn, getButtonClassName, radiusClassMap, DEFAULT_APPEARANCE_CONFIG } from '../utils';
 import { AppearanceConfig } from '../types';
 
@@ -114,6 +114,17 @@ export function AppearanceSettingsPage({ appearanceConfig, setAppearanceConfig, 
     }
   };
 
+  const handleDeleteBackground = async () => {
+    if (!draft.backgroundUrl) return;
+    try {
+      const res = await fetch('/api/appearance/upload/background', { method: 'DELETE' });
+      if (!res.ok) throw new Error('删除失败');
+      handleDraftChange('backgroundUrl', '');
+    } catch (e) {
+      setUploadError(e instanceof Error ? e.message : '删除失败');
+    }
+  };
+
   const SectionTitle = ({ icon: Icon, title, desc }: { icon: any; title: string; desc?: string }) => (
     <div className="mb-4">
       <div className="flex items-center gap-2 mb-1">
@@ -125,21 +136,36 @@ export function AppearanceSettingsPage({ appearanceConfig, setAppearanceConfig, 
   );
 
   const SliderField = ({ label, value, min, max, unit, onChange }: { label: string; value: number; min: number; max: number; unit: string; onChange: (v: number) => void }) => {
-    const [localValue, setLocalValue] = useState(value);
-    useEffect(() => { setLocalValue(value); }, [value]);
+    const inputRef = useRef<HTMLInputElement>(null);
+    const [displayValue, setDisplayValue] = useState(value);
+    // sync when value prop changes from outside (e.g. reset)
+    useEffect(() => { setDisplayValue(value); if (inputRef.current) inputRef.current.value = String(value); }, [value]);
+
+    const handleInput = () => {
+      const el = inputRef.current;
+      if (!el) return;
+      setDisplayValue(Number(el.value));
+    };
+
+    const handleCommit = () => {
+      const el = inputRef.current;
+      if (!el) return;
+      onChange(Number(el.value));
+    };
+
     return (
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
           <span className="text-[12px] font-bold text-zinc-500 dark:text-zinc-400">{label}</span>
-          <span className="text-[12px] font-mono font-bold text-zinc-700 dark:text-zinc-300">{localValue}{unit}</span>
+          <span className="text-[12px] font-mono font-bold text-zinc-700 dark:text-zinc-300">{displayValue}{unit}</span>
         </div>
         <input
-          type="range" min={min} max={max} value={localValue}
-          onChange={(e) => {
-            const v = Number(e.target.value);
-            setLocalValue(v);
-            onChange(v);
-          }}
+          ref={inputRef}
+          type="range" min={min} max={max} defaultValue={value}
+          onInput={handleInput}
+          onPointerUp={handleCommit}
+          onMouseUp={handleCommit}
+          onKeyUp={handleCommit}
           className="w-full h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-full appearance-none cursor-pointer accent-zinc-900 dark:accent-white"
         />
       </div>
@@ -252,6 +278,9 @@ export function AppearanceSettingsPage({ appearanceConfig, setAppearanceConfig, 
               <input type="text" value={draft.backgroundUrl} onChange={(e) => handleDraftChange('backgroundUrl', e.target.value)}
                 className="flex-1 bg-white/50 dark:bg-black/20 border border-zinc-200/50 dark:border-zinc-800/50 rounded-xl px-4 py-2.5 text-[13px] font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/10 transition backdrop-blur-sm"
                 placeholder="图片 URL 或随机图 API 地址，留空则不显示" />
+              {draft.backgroundUrl && (
+                <button onClick={handleDeleteBackground} className="p-2 text-zinc-400 hover:text-red-500 transition shrink-0" title="删除背景图"><Trash2 size={16} /></button>
+              )}
               <input ref={bgRef} type="file" accept="image/*" className="hidden"
                 onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(f, 'background'); e.target.value = ''; }} />
               <button onClick={() => bgRef.current?.click()} disabled={isUploadingBg} className={cn(actionButtonClass, 'px-3 py-2 text-[12px] shrink-0')}>
@@ -271,9 +300,36 @@ export function AppearanceSettingsPage({ appearanceConfig, setAppearanceConfig, 
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <SliderField label="毛玻璃模糊强度" value={draft.blurStrength} min={0} max={20} unit="px" onChange={(v) => handleDraftChange('blurStrength', v)} />
-            <SliderField label="整体透明度" value={draft.opacity} min={70} max={100} unit="%" onChange={(v) => handleDraftChange('opacity', v)} />
+            <SliderField label="整体透明度" value={draft.opacity} min={0} max={100} unit="%" onChange={(v) => handleDraftChange('opacity', v)} />
             <SliderField label="圆角大小" value={draft.radius} min={0} max={16} unit="px" onChange={(v) => handleDraftChange('radius', v)} />
             <SliderField label="光晕强度" value={draft.glow} min={0} max={20} unit="px" onChange={(v) => handleDraftChange('glow', v)} />
+          </div>
+        </div>
+      </div>
+
+      <div className={panelClass} style={glassBg}>
+        <SectionTitle icon={Crosshair} title="枪械卡片样式" desc="调整首页枪械卡片的不透明度与底色。" />
+        <div className="flex flex-col gap-6">
+          <SliderField label="卡片不透明度" value={draft.gunCardOpacity} min={0} max={100} unit="%" onChange={(v) => handleDraftChange('gunCardOpacity', v)} />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">亮色模式卡片底色</label>
+              <div className="flex items-center gap-2">
+                <input type="color" value={draft.gunCardColorLight} onChange={(e) => handleDraftChange('gunCardColorLight', e.target.value)}
+                  className="w-10 h-10 rounded-lg border border-zinc-200 dark:border-zinc-800 cursor-pointer shrink-0" />
+                <input type="text" value={draft.gunCardColorLight} onChange={(e) => handleDraftChange('gunCardColorLight', e.target.value)}
+                  className="flex-1 bg-white/50 dark:bg-black/20 border border-zinc-200/50 dark:border-zinc-800/50 rounded-xl px-4 py-2.5 text-[13px] font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/10 transition backdrop-blur-sm" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">暗色模式卡片底色</label>
+              <div className="flex items-center gap-2">
+                <input type="color" value={draft.gunCardColorDark} onChange={(e) => handleDraftChange('gunCardColorDark', e.target.value)}
+                  className="w-10 h-10 rounded-lg border border-zinc-200 dark:border-zinc-800 cursor-pointer shrink-0" />
+                <input type="text" value={draft.gunCardColorDark} onChange={(e) => handleDraftChange('gunCardColorDark', e.target.value)}
+                  className="flex-1 bg-white/50 dark:bg-black/20 border border-zinc-200/50 dark:border-zinc-800/50 rounded-xl px-4 py-2.5 text-[13px] font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/10 transition backdrop-blur-sm" />
+              </div>
+            </div>
           </div>
         </div>
       </div>

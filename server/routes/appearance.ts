@@ -2,6 +2,7 @@ import { Router } from "express";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import multer from "multer";
 import { logger } from "../lib/logger.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -10,6 +11,21 @@ const __dirname = path.dirname(__filename);
 const RUNTIME_DIR = path.join(__dirname, "..", "..", "runtime");
 const UPLOADS_DIR = path.join(RUNTIME_DIR, "uploads");
 const APPEARANCE_FILE = path.join(RUNTIME_DIR, "appearance.json");
+
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: (_req, _file, cb) => {
+      ensureDir(UPLOADS_DIR);
+      cb(null, UPLOADS_DIR);
+    },
+    filename: (_req, file, cb) => {
+      const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+      const ext = path.extname(file.originalname) || ".png";
+      cb(null, file.fieldname + "-" + uniqueSuffix + ext);
+    },
+  }),
+  limits: { fileSize: 10 * 1024 * 1024 },
+});
 
 function ensureDir(dir: string) {
   if (!fs.existsSync(dir)) {
@@ -81,31 +97,44 @@ router.post("/", (req, res) => {
   }
 });
 
-router.post("/upload/:type", async (req, res) => {
+router.post("/upload/:type", upload.single("file"), (req, res) => {
   const type = req.params.type;
   if (type !== "favicon" && type !== "background") {
     res.status(400).json({ error: "Invalid upload type" });
     return;
   }
   try {
-    ensureDir(UPLOADS_DIR);
-    const maxBytes = type === "favicon" ? 5 * 1024 * 1024 : 10 * 1024 * 1024;
-    const ext = type === "favicon" ? ".ico" : ".png";
-    const filename = `${type}_${Date.now()}${ext}`;
-    const dest = path.join(UPLOADS_DIR, filename);
-    await saveFile(req, dest, maxBytes);
-    res.json({ success: true, url: `/uploads/${filename}` });
+    if (!req.file) {
+      res.status(400).json({ error: "No file uploaded" });
+      return;
+    }
+    const url = `/uploads/${req.file.filename}`;
+    res.json({ success: true, url });
   } catch (e) {
     logger.error("Upload error", { type, error: e instanceof Error ? e.message : String(e) });
     res.status(500).json({ error: e instanceof Error ? e.message : "上传失败" });
   }
 });
 
-router.delete("/upload/favicon", (req, res) => {
+router.delete("/upload/favicon", (_req, res) => {
   try {
-    const files = fs.readdirSync(UPLOADS_DIR).filter(f => f.startsWith("favicon_"));
+    const files = fs.readdirSync(UPLOADS_DIR).filter(f => f.startsWith("favicon_") || f.startsWith("file-"));
     for (const f of files) {
-      fs.unlinkSync(path.join(UPLOADS_DIR, f));
+      if (f.includes("favicon")) fs.unlinkSync(path.join(UPLOADS_DIR, f));
+    }
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e instanceof Error ? e.message : "删除失败" });
+  }
+});
+
+router.delete("/upload/background", (_req, res) => {
+  try {
+    const files = fs.readdirSync(UPLOADS_DIR).filter(f => f.startsWith("background_") || f.startsWith("file-"));
+    for (const f of files) {
+      if (f.includes("background") || f.match(/\.(jpg|jpeg|png|gif|webp|bmp)$/i)) {
+        try { fs.unlinkSync(path.join(UPLOADS_DIR, f)); } catch {}
+      }
     }
     res.json({ success: true });
   } catch (e) {

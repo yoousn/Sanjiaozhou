@@ -33,6 +33,9 @@ export type AppearanceConfig = {
   opacity: number;
   radius: number;
   glow: number;
+  gunCardOpacity: number;
+  gunCardColorLight: string;
+  gunCardColorDark: string;
 };
 
 export type CollectModelProviderInput = {

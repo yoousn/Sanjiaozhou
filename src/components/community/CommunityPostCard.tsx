@@ -72,6 +72,7 @@ export const CommunityPostCard = React.memo(function CommunityPostCard({
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [posAtDragStart, setPosAtDragStart] = useState({ x: 0, y: 0 });
   const overlayRef = useRef<HTMLDivElement>(null);
+  const wasDraggingRef = useRef(false);
 
   const closePreview = useCallback(() => {
     setPreviewImage(false);
@@ -321,11 +322,18 @@ export const CommunityPostCard = React.memo(function CommunityPostCard({
           ref={overlayRef}
           className="fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center select-none"
           style={{ cursor: imgScale > 1 ? (isDragging ? 'grabbing' : 'grab') : 'pointer' }}
-          onClick={(e) => {
-            if (!isDragging) closePreview();
+          onMouseDown={(e) => {
+            if (imgScale > 1) {
+              e.preventDefault();
+              setIsDragging(true);
+              wasDraggingRef.current = false;
+              setDragStart({ x: e.clientX, y: e.clientY });
+              setPosAtDragStart({ ...imgPos });
+            }
           }}
           onMouseMove={(e) => {
             if (isDragging && imgScale > 1) {
+              wasDraggingRef.current = true;
               setImgPos({
                 x: posAtDragStart.x + (e.clientX - dragStart.x) / imgScale,
                 y: posAtDragStart.y + (e.clientY - dragStart.y) / imgScale,
@@ -335,6 +343,13 @@ export const CommunityPostCard = React.memo(function CommunityPostCard({
           onMouseUp={() => {
             if (isDragging) setIsDragging(false);
           }}
+          onClick={() => {
+            if (wasDraggingRef.current) {
+              wasDraggingRef.current = false;
+              return;
+            }
+            closePreview();
+          }}
         >
           <img
             src={post.imageUrl}
@@ -343,19 +358,6 @@ export const CommunityPostCard = React.memo(function CommunityPostCard({
             style={{
               transform: `scale(${imgScale}) translate(${imgPos.x}px, ${imgPos.y}px)`,
               pointerEvents: imgScale > 1 ? 'none' : 'auto',
-            }}
-            onClick={(e) => {
-              e.stopPropagation();
-              if (imgScale <= 1) closePreview();
-            }}
-            onMouseDown={(e) => {
-              if (imgScale > 1) {
-                e.preventDefault();
-                e.stopPropagation();
-                setIsDragging(true);
-                setDragStart({ x: e.clientX, y: e.clientY });
-                setPosAtDragStart({ ...imgPos });
-              }
             }}
             draggable={false}
           />

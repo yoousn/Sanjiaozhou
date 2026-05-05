@@ -133,7 +133,7 @@ export function VariantItem({
       <div className="mt-0.5 flex flex-col gap-1.5">
         <div className="flex items-center gap-1.5">
           <div className="flex-1 px-2.5 py-2 rounded-lg bg-white dark:bg-[#0b0b0c] border border-zinc-200/80 dark:border-zinc-800 flex items-center overflow-hidden shadow-[inset_0_1px_2px_rgba(0,0,0,0.01)]">
-            <code className="text-[11px] text-zinc-600 dark:text-zinc-400 group-hover/variant:text-zinc-900 dark:group-hover/variant:text-zinc-200 font-mono tracking-wide font-bold text-left truncate transition-colors">
+            <code className="text-[11px] text-zinc-600 dark:text-zinc-400 group-hover/variant:text-zinc-900 dark:group-hover/variant:text-zinc-200 font-mono tracking-wide font-bold text-left truncate transition-colors" style={{ color: 'var(--gun-code-color)' }}>
               {variant.code || '暂无代码'}
             </code>
           </div>
@@ -162,10 +162,10 @@ export function VariantItem({
           </div>
         </div>
 
-        <div className="text-[10px] text-zinc-400 font-medium px-1 flex items-center justify-between gap-2">
+        <div className="text-[10px] text-zinc-400 font-medium px-1 flex items-center justify-between gap-2" style={{ color: 'var(--gun-source-color)' }}>
           <span className="truncate">来源: {variant.author || '未知来源'} · 视频日期: {variant.date || '未知日期'}</span>
           {variant.sourceUrl && /^https?:\/\//i.test(variant.sourceUrl) && (
-            <a href={variant.sourceUrl} target="_blank" rel="noreferrer" className="shrink-0 inline-flex items-center gap-1 text-zinc-500 hover:text-zinc-900 transition-colors">
+            <a href={variant.sourceUrl} target="_blank" rel="noreferrer" className="shrink-0 inline-flex items-center gap-1 text-zinc-500 hover:text-zinc-900 transition-colors" style={{ color: 'var(--gun-source-color)' }}>
               <ExternalLink size={11} strokeWidth={2.5} />
               原视频
             </a>

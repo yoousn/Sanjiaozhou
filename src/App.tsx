@@ -63,6 +63,87 @@ import {
 
 import { SortableCategoryWidget } from './components/SortableCategoryWidget';
 
+/* StyleInjector: 独立 memo 组件，只在主题/外观配置变化时重新计算 CSS */
+const StyleInjector = React.memo(function StyleInjector({ customTheme, appearanceConfig }: {
+  customTheme: { themeColor: string };
+  appearanceConfig: import('./types').AppearanceConfig;
+}) {
+  const ac = appearanceConfig;
+  const style = React.useMemo(() => {
+    return `
+      :root {
+        --color-emerald-500: ${customTheme.themeColor};
+        --color-emerald-600: ${customTheme.themeColor};
+        --color-emerald-50: ${customTheme.themeColor}1A;
+        --app-blur: ${ac.blurStrength}px;
+        --app-opacity: ${ac.opacity};
+        --app-opacity-ratio: ${ac.opacity / 100};
+        --app-radius: ${ac.radius}px;
+        --app-glow: ${ac.glow}px;
+        --gun-text-color: ${ac.gunTextColorLight};
+        --gun-code-color: ${ac.gunCodeColorLight};
+        --gun-source-color: ${ac.gunSourceColorLight};
+      }
+      .dark {
+        --gun-text-color: ${ac.gunTextColorDark};
+        --gun-code-color: ${ac.gunCodeColorDark};
+        --gun-source-color: ${ac.gunSourceColorDark};
+      }
+      ${ac.customEnabled ? `
+      .bg-white, .bg-zinc-50, .bg-zinc-100, .bg-zinc-200,
+      .bg-emerald-50, .bg-red-50, .bg-yellow-50,
+      .bg-white\\/95, .bg-white\\/80,
+      .bg-\\[\\#F8F9FA\\] {
+        background-color: rgba(255,255,255,var(--app-opacity-ratio)) !important;
+      }
+      .dark .dark\\:bg-\\[\\#121214\\],
+      .dark .dark\\:bg-\\[\\#18181b\\],
+      .dark .dark\\:bg-zinc-800,
+      .dark .dark\\:bg-zinc-900,
+      .dark .dark\\:bg-black,
+      .dark .dark\\:bg-\\[\\#0b0b0c\\],
+      .dark .dark\\:bg-white\\/\\[0\\.02\\] {
+        background-color: rgba(18,18,20,calc(var(--app-opacity-ratio) * 0.85)) !important;
+      }
+      button.bg-white, input.bg-white, textarea.bg-white, select.bg-white,
+      button.bg-zinc-100, input.bg-zinc-100, textarea.bg-zinc-100 {
+        background-color: rgba(255,255,255,calc(var(--app-opacity-ratio) * 0.95)) !important;
+      }
+      .dark button.dark\\:bg-\\[\\#18181b\\],
+      .dark input.dark\\:bg-\\[\\#18181b\\],
+      .dark textarea.dark\\:bg-\\[\\#18181b\\],
+      .dark button.dark\\:bg-zinc-800,
+      .dark input.dark\\:bg-zinc-800,
+      .dark textarea.dark\\:bg-zinc-800 {
+        background-color: rgba(24,24,27,calc(var(--app-opacity-ratio) * 0.95)) !important;
+      }
+      .hover\\:bg-zinc-100:hover, .hover\\:bg-black\\/5:hover,
+      [class*="hover:bg-zinc-100"]:hover {
+        background-color: rgba(255,255,255,calc(var(--app-opacity-ratio) * 0.9)) !important;
+      }
+      .dark .dark\\:hover\\:bg-white\\/5:hover,
+      .dark .dark\\:hover\\:bg-zinc-800:hover,
+      [class*="dark:hover:bg-white/5"]:hover,
+      [class*="dark:hover:bg-zinc-800"]:hover {
+        background-color: rgba(24,24,27,calc(var(--app-opacity-ratio) * 0.9)) !important;
+      }
+      .border-zinc-100, .border-zinc-200, [class*="border-zinc-200"] {
+        border-color: rgba(255,255,255,0.2) !important;
+      }
+      .dark .dark\\:border-zinc-700, .dark .dark\\:border-zinc-800,
+      .dark [class*="dark\\:border-zinc-800"] {
+        border-color: rgba(255,255,255,0.06) !important;
+      }
+      .shadow-sm, .shadow-md, .shadow-lg, .shadow-xl, .shadow-2xl,
+      [class*="shadow-"] {
+        box-shadow: 0 1px 3px 0 rgba(0,0,0,0.04), 0 1px 2px -1px rgba(0,0,0,0.04) !important;
+      }
+      ` : ''}
+    `;
+  }, [customTheme.themeColor, ac.blurStrength, ac.opacity, ac.radius, ac.glow, ac.customEnabled, ac.gunTextColorLight, ac.gunTextColorDark, ac.gunCodeColorLight, ac.gunCodeColorDark, ac.gunSourceColorLight, ac.gunSourceColorDark]);
+  return <style dangerouslySetInnerHTML={{ __html: style }} />;
+});
+
 export default function App() {
   const queryClient = useQueryClient();
   const mobileVersionLabel = `v${__APP_VERSION__}`;
@@ -554,7 +635,7 @@ export default function App() {
         return <SortableGunCard key={`${activeTab}-${group.id}`} group={group} idx={idx} isEditing={isEditing} activeTab={activeTab} onUpdateGroup={handleUpdateGroup} onDeleteGroup={handleDeleteGroup} onUpdateVariant={handleUpdateVariant} onDeleteVariant={handleDeleteVariant} onAddVariant={handleAddVariant} onReorderVariants={handleReorderVariants} onTogglePin={handleTogglePin} cardSize={theme.uiPreferences.cardSize} cardMinHeight={theme.uiPreferences.cardMinHeight} variantsPerPage={theme.uiPreferences.variantsPerPage} controlRadius={theme.uiPreferences.controlRadius} buttonStyle={theme.uiPreferences.buttonStyle} />;
       }
       return (
-        <motion.div key={`${activeTab}-${group.id}`} className="self-start w-full shadow-sm hover:shadow-md transition-shadow rounded-2xl" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1], delay: idx * 0.04 }}>
+        <motion.div key={`${activeTab}-${group.id}`} className="self-start w-full shadow-sm hover:shadow-md transition-shadow rounded-2xl" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}>
           <GunCard group={group} isEditing={isEditing} onUpdateGroup={handleUpdateGroup} onDeleteGroup={handleDeleteGroup} onUpdateVariant={handleUpdateVariant} onDeleteVariant={handleDeleteVariant} onAddVariant={handleAddVariant} onReorderVariants={handleReorderVariants} onTogglePin={handleTogglePin} cardSize={theme.uiPreferences.cardSize} cardMinHeight={theme.uiPreferences.cardMinHeight} variantsPerPage={theme.uiPreferences.variantsPerPage} controlRadius={theme.uiPreferences.controlRadius} buttonStyle={theme.uiPreferences.buttonStyle} />
         </motion.div>
       );
@@ -567,88 +648,9 @@ export default function App() {
   const currentAppTitle = theme.uiPreferences.appTitle || '马坤时代';
   const currentAppSubtitle = theme.uiPreferences.appSubtitle || '专注修脚。基于顶级重回修脚时代架构运行。';
 
-  const glassStyle = useMemo(() => {
-    const ac = theme.appearanceConfig;
-    return `
-      :root {
-        --color-emerald-500: ${theme.customTheme.themeColor};
-        --color-emerald-600: ${theme.customTheme.themeColor};
-        --color-emerald-50: ${theme.customTheme.themeColor}1A;
-        --app-blur: ${ac.blurStrength}px;
-        --app-opacity: ${ac.opacity};
-        --app-opacity-ratio: ${ac.opacity / 100};
-        --app-radius: ${ac.radius}px;
-        --app-glow: ${ac.glow}px;
-        --gun-card-opacity: ${ac.gunCardOpacity / 100};
-        --gun-card-color-light: ${ac.gunCardColorLight};
-        --gun-card-color-dark: ${ac.gunCardColorDark};
-      }
-      ${ac.customEnabled ? `
-      /* 全局玻璃化：亮色模式 */
-      .bg-white, .bg-zinc-50, .bg-zinc-100, .bg-zinc-200,
-      .bg-emerald-50, .bg-red-50, .bg-yellow-50,
-      .bg-white\\/95, .bg-white\\/80,
-      .bg-\\[\\#F8F9FA\\] {
-        background-color: rgba(255,255,255,var(--app-opacity-ratio)) !important;
-        backdrop-filter: blur(var(--app-blur)) !important;
-        -webkit-backdrop-filter: blur(var(--app-blur)) !important;
-      }
-      /* 暗色模式 */
-      .dark .dark\\:bg-\\[\\#121214\\],
-      .dark .dark\\:bg-\\[\\#18181b\\],
-      .dark .dark\\:bg-zinc-800,
-      .dark .dark\\:bg-zinc-900,
-      .dark .dark\\:bg-black,
-      .dark .dark\\:bg-\\[\\#0b0b0c\\],
-      .dark .dark\\:bg-white\\/\\[0\\.02\\] {
-        background-color: rgba(18,18,20,calc(var(--app-opacity-ratio) * 0.85)) !important;
-        backdrop-filter: blur(var(--app-blur)) !important;
-        -webkit-backdrop-filter: blur(var(--app-blur)) !important;
-      }
-      /* 按钮/输入框更高可读性 */
-      button.bg-white, input.bg-white, textarea.bg-white, select.bg-white,
-      button.bg-zinc-100, input.bg-zinc-100, textarea.bg-zinc-100 {
-        background-color: rgba(255,255,255,calc(var(--app-opacity-ratio) * 0.95)) !important;
-      }
-      .dark button.dark\\:bg-\\[\\#18181b\\],
-      .dark input.dark\\:bg-\\[\\#18181b\\],
-      .dark textarea.dark\\:bg-\\[\\#18181b\\],
-      .dark button.dark\\:bg-zinc-800,
-      .dark input.dark\\:bg-zinc-800,
-      .dark textarea.dark\\:bg-zinc-800 {
-        background-color: rgba(24,24,27,calc(var(--app-opacity-ratio) * 0.95)) !important;
-      }
-      /* 悬停背景 */
-      .hover\\:bg-zinc-100:hover, .hover\\:bg-black\\/5:hover,
-      [class*="hover:bg-zinc-100"]:hover {
-        background-color: rgba(255,255,255,calc(var(--app-opacity-ratio) * 0.9)) !important;
-      }
-      .dark .dark\\:hover\\:bg-white\\/5:hover,
-      .dark .dark\\:hover\\:bg-zinc-800:hover,
-      [class*="dark:hover:bg-white/5"]:hover,
-      [class*="dark:hover:bg-zinc-800"]:hover {
-        background-color: rgba(24,24,27,calc(var(--app-opacity-ratio) * 0.9)) !important;
-      }
-      /* 边框透明化 */
-      .border-zinc-100, .border-zinc-200, [class*="border-zinc-200"] {
-        border-color: rgba(255,255,255,0.2) !important;
-      }
-      .dark .dark\\:border-zinc-700, .dark .dark\\:border-zinc-800,
-      .dark [class*="dark\\:border-zinc-800"] {
-        border-color: rgba(255,255,255,0.06) !important;
-      }
-      /* 阴影弱化 */
-      .shadow-sm, .shadow-md, .shadow-lg, .shadow-xl, .shadow-2xl,
-      [class*="shadow-"] {
-        box-shadow: 0 1px 3px 0 rgba(0,0,0,0.04), 0 1px 2px -1px rgba(0,0,0,0.04) !important;
-      }
-      ` : ''}
-    `;
-  }, [theme.customTheme.themeColor, theme.appearanceConfig.blurStrength, theme.appearanceConfig.opacity, theme.appearanceConfig.radius, theme.appearanceConfig.glow, theme.appearanceConfig.customEnabled, theme.appearanceConfig.gunCardOpacity, theme.appearanceConfig.gunCardColorLight, theme.appearanceConfig.gunCardColorDark]);
-
   return (
     <>
-      <style dangerouslySetInnerHTML={{ __html: glassStyle }} />
+      <StyleInjector customTheme={theme.customTheme} appearanceConfig={theme.appearanceConfig} />
       {theme.appearanceConfig.customEnabled && theme.appearanceConfig.backgroundUrl && (
         <>
           <div

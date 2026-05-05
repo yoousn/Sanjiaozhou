@@ -242,7 +242,7 @@ export const GunCard = React.memo(function GunCard({
               )}
               <input
                 className={cn(inputClasses, "text-[15px] py-1.5 font-black w-full bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-700 shadow-sm")}
-                style={{ color: 'var(--user-gun-color, currentColor)' }}
+                style={{ color: 'var(--gun-text-color, var(--user-gun-color, currentColor))' }}
                 defaultValue={group.name}
                 onBlur={e => { if(e.target.value !== group.name) onUpdateGroup(group.id, 'name', e.target.value) }}
                 placeholder="枪械名称..."
@@ -303,9 +303,9 @@ export const GunCard = React.memo(function GunCard({
           <div className="flex items-center justify-between">
             <h3 
               className="text-lg font-black tracking-tight flex items-center gap-2"
-              style={{ color: 'var(--user-gun-color, currentColor)' }}
+              style={{ color: 'var(--gun-text-color, var(--user-gun-color, currentColor))' }}
             >
-              <span className="w-1.5 h-4 rounded-full" style={{ backgroundColor: 'var(--user-gun-color, currentColor)' }} />
+              <span className="w-1.5 h-4 rounded-full" style={{ backgroundColor: 'var(--gun-text-color, var(--user-gun-color, currentColor))' }} />
               {group.name}
             </h3>
             <div className="flex items-center gap-1.5">

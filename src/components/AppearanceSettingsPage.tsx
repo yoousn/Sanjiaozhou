@@ -35,7 +35,7 @@ export function AppearanceSettingsPage({ appearanceConfig, setAppearanceConfig, 
   const radiusClass = radiusClassMap[uiPreferences.controlRadius];
 
   const panelClass = cn(
-    'border border-zinc-200/50 dark:border-zinc-800/50 p-6 md:p-8 shadow-sm mb-6 backdrop-blur-md',
+    'border border-zinc-200/50 dark:border-zinc-800/50 p-6 md:p-8 shadow-sm mb-6 backdrop-blur-md bg-white dark:bg-[#121214]',
     uiPreferences.controlRadius === 'full' ? 'rounded-[2rem]' : 'rounded-3xl'
   );
   const actionButtonClass = cn(
@@ -318,26 +318,61 @@ export function AppearanceSettingsPage({ appearanceConfig, setAppearanceConfig, 
       </div>
 
       <div className={panelClass} style={glassBg}>
-        <SectionTitle icon={Crosshair} title="枪械卡片样式" desc="调整首页枪械卡片的不透明度与底色。" />
-        <div className="flex flex-col gap-6">
-          <SliderField label="卡片不透明度" value={draft.gunCardOpacity} min={0} max={100} unit="%" onChange={(v) => handleDraftChange('gunCardOpacity', v)} />
+        <SectionTitle icon={Crosshair} title="枪械卡片文字颜色" desc="自定义首页枪械卡片的文字颜色，留空则使用默认颜色。" />
+        <div className="flex flex-col gap-5">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">亮色模式卡片底色</label>
+              <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">体系名称/型号（亮色）</label>
               <div className="flex items-center gap-2">
-                <input type="color" value={draft.gunCardColorLight} onChange={(e) => handleDraftChange('gunCardColorLight', e.target.value)}
+                <input type="color" value={draft.gunTextColorLight || '#18181b'} onChange={(e) => handleDraftChange('gunTextColorLight', e.target.value)}
                   className="w-10 h-10 rounded-lg border border-zinc-200 dark:border-zinc-800 cursor-pointer shrink-0" />
-                <input type="text" value={draft.gunCardColorLight} onChange={(e) => handleDraftChange('gunCardColorLight', e.target.value)}
-                  className="flex-1 bg-white/50 dark:bg-black/20 border border-zinc-200/50 dark:border-zinc-800/50 rounded-xl px-4 py-2.5 text-[13px] font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/10 transition backdrop-blur-sm" />
+                <input type="text" value={draft.gunTextColorLight} onChange={(e) => handleDraftChange('gunTextColorLight', e.target.value)}
+                  className="flex-1 bg-white/50 dark:bg-black/20 border border-zinc-200/50 dark:border-zinc-800/50 rounded-xl px-4 py-2.5 text-[13px] font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/10 transition backdrop-blur-sm" placeholder="留空使用默认" />
               </div>
             </div>
             <div>
-              <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">暗色模式卡片底色</label>
+              <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">体系名称/型号（暗色）</label>
               <div className="flex items-center gap-2">
-                <input type="color" value={draft.gunCardColorDark} onChange={(e) => handleDraftChange('gunCardColorDark', e.target.value)}
+                <input type="color" value={draft.gunTextColorDark || '#fafafa'} onChange={(e) => handleDraftChange('gunTextColorDark', e.target.value)}
                   className="w-10 h-10 rounded-lg border border-zinc-200 dark:border-zinc-800 cursor-pointer shrink-0" />
-                <input type="text" value={draft.gunCardColorDark} onChange={(e) => handleDraftChange('gunCardColorDark', e.target.value)}
-                  className="flex-1 bg-white/50 dark:bg-black/20 border border-zinc-200/50 dark:border-zinc-800/50 rounded-xl px-4 py-2.5 text-[13px] font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/10 transition backdrop-blur-sm" />
+                <input type="text" value={draft.gunTextColorDark} onChange={(e) => handleDraftChange('gunTextColorDark', e.target.value)}
+                  className="flex-1 bg-white/50 dark:bg-black/20 border border-zinc-200/50 dark:border-zinc-800/50 rounded-xl px-4 py-2.5 text-[13px] font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/10 transition backdrop-blur-sm" placeholder="留空使用默认" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">改枪码（亮色）</label>
+              <div className="flex items-center gap-2">
+                <input type="color" value={draft.gunCodeColorLight || '#52525b'} onChange={(e) => handleDraftChange('gunCodeColorLight', e.target.value)}
+                  className="w-10 h-10 rounded-lg border border-zinc-200 dark:border-zinc-800 cursor-pointer shrink-0" />
+                <input type="text" value={draft.gunCodeColorLight} onChange={(e) => handleDraftChange('gunCodeColorLight', e.target.value)}
+                  className="flex-1 bg-white/50 dark:bg-black/20 border border-zinc-200/50 dark:border-zinc-800/50 rounded-xl px-4 py-2.5 text-[13px] font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/10 transition backdrop-blur-sm" placeholder="留空使用默认" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">改枪码（暗色）</label>
+              <div className="flex items-center gap-2">
+                <input type="color" value={draft.gunCodeColorDark || '#a1a1aa'} onChange={(e) => handleDraftChange('gunCodeColorDark', e.target.value)}
+                  className="w-10 h-10 rounded-lg border border-zinc-200 dark:border-zinc-800 cursor-pointer shrink-0" />
+                <input type="text" value={draft.gunCodeColorDark} onChange={(e) => handleDraftChange('gunCodeColorDark', e.target.value)}
+                  className="flex-1 bg-white/50 dark:bg-black/20 border border-zinc-200/50 dark:border-zinc-800/50 rounded-xl px-4 py-2.5 text-[13px] font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/10 transition backdrop-blur-sm" placeholder="留空使用默认" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">来源作者/链接（亮色）</label>
+              <div className="flex items-center gap-2">
+                <input type="color" value={draft.gunSourceColorLight || '#a1a1aa'} onChange={(e) => handleDraftChange('gunSourceColorLight', e.target.value)}
+                  className="w-10 h-10 rounded-lg border border-zinc-200 dark:border-zinc-800 cursor-pointer shrink-0" />
+                <input type="text" value={draft.gunSourceColorLight} onChange={(e) => handleDraftChange('gunSourceColorLight', e.target.value)}
+                  className="flex-1 bg-white/50 dark:bg-black/20 border border-zinc-200/50 dark:border-zinc-800/50 rounded-xl px-4 py-2.5 text-[13px] font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/10 transition backdrop-blur-sm" placeholder="留空使用默认" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">来源作者/链接（暗色）</label>
+              <div className="flex items-center gap-2">
+                <input type="color" value={draft.gunSourceColorDark || '#71717a'} onChange={(e) => handleDraftChange('gunSourceColorDark', e.target.value)}
+                  className="w-10 h-10 rounded-lg border border-zinc-200 dark:border-zinc-800 cursor-pointer shrink-0" />
+                <input type="text" value={draft.gunSourceColorDark} onChange={(e) => handleDraftChange('gunSourceColorDark', e.target.value)}
+                  className="flex-1 bg-white/50 dark:bg-black/20 border border-zinc-200/50 dark:border-zinc-800/50 rounded-xl px-4 py-2.5 text-[13px] font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900/10 transition backdrop-blur-sm" placeholder="留空使用默认" />
               </div>
             </div>
           </div>
@@ -346,16 +381,47 @@ export function AppearanceSettingsPage({ appearanceConfig, setAppearanceConfig, 
 
       <div className={panelClass} style={glassBg}>
         <div className="flex items-center gap-2 mb-4"><Eye size={18} className="text-zinc-500" /><h3 className="text-lg font-black text-zinc-900 dark:text-white">实时预览</h3></div>
-        <div className="relative h-48 rounded-2xl overflow-hidden border border-zinc-200/50 dark:border-zinc-800/50" style={previewBgStyle}>
-          <div className="absolute inset-0 flex items-center justify-center" style={previewOverlayStyle}>
-            <div className="px-6 py-4 border border-white/20 dark:border-white/10"
+        <div className="relative h-56 rounded-2xl overflow-hidden border border-zinc-200/50 dark:border-zinc-800/50" style={previewBgStyle}>
+          <div className="absolute inset-0" style={previewOverlayStyle} />
+          <div className="absolute inset-0 flex items-center justify-center gap-4 p-4">
+            {/* 通用面板预览 */}
+            <div className="px-5 py-3 border border-white/20 dark:border-white/10"
               style={{
                 borderRadius: draft.customEnabled ? draft.radius : 12,
                 boxShadow: draft.customEnabled ? `0 4px ${draft.glow}px rgba(0,0,0,0.1)` : undefined,
                 background: draft.customEnabled ? `rgba(255,255,255,${draft.opacity / 100})` : undefined,
                 backdropFilter: draft.customEnabled ? `blur(${draft.blurStrength}px)` : undefined,
               }}>
-              <span className="text-[13px] font-black text-zinc-900 dark:text-white">卡片预览效果</span>
+              <span className="text-[13px] font-black" style={{ color: draft.gunTextColorLight || undefined }}>面板预览</span>
+            </div>
+            {/* 枪械卡片模拟预览 */}
+            <div className="w-56 flex flex-col gap-2 p-3 rounded-xl border border-zinc-200/60 dark:border-zinc-700/50"
+              style={{
+                background: draft.customEnabled ? `rgba(255,255,255,${draft.opacity / 100})` : 'rgba(255,255,255,0.95)',
+                backdropFilter: draft.customEnabled ? `blur(${draft.blurStrength}px)` : undefined,
+                borderRadius: draft.customEnabled ? draft.radius : 12,
+              }}>
+              <div className="flex items-center justify-between">
+                <h4 className="text-[14px] font-black tracking-tight" style={{ color: draft.gunTextColorLight || undefined }}>
+                  <span className="w-1.5 h-3.5 rounded-full inline-block mr-1.5" style={{ backgroundColor: draft.gunTextColorLight || '#18181b' }} />
+                  M4A1 突击步枪
+                </h4>
+                <span className="text-[9px] font-bold uppercase tracking-widest bg-zinc-100 px-1.5 py-0.5 rounded border border-zinc-200/60">AR</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="flex-1 px-2 py-1.5 rounded-lg bg-white dark:bg-[#0b0b0c] border border-zinc-200/80 dark:border-zinc-800 flex items-center overflow-hidden">
+                  <code className="text-[10px] font-mono font-bold truncate" style={{ color: draft.gunCodeColorLight || undefined }}>
+                    0x9F3A2B1C4D5E6F7A8B9C0D1E2F3A4B5
+                  </code>
+                </div>
+                <div className="shrink-0 p-1.5 rounded-lg border border-zinc-200 shadow-sm bg-white">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                </div>
+              </div>
+              <div className="text-[9px] font-medium flex items-center justify-between" style={{ color: draft.gunSourceColorLight || undefined }}>
+                <span>来源: 马坤 · 视频日期: 2026-05-05</span>
+                <span className="inline-flex items-center gap-0.5">原视频</span>
+              </div>
             </div>
           </div>
         </div>

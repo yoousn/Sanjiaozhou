@@ -90,9 +90,12 @@ export const DEFAULT_APPEARANCE_CONFIG: AppearanceConfig = {
   opacity: 95,
   radius: 12,
   glow: 8,
-  gunCardOpacity: 85,
-  gunCardColorLight: '#ffffff',
-  gunCardColorDark: '#121214',
+  gunTextColorLight: '',
+  gunTextColorDark: '',
+  gunCodeColorLight: '',
+  gunCodeColorDark: '',
+  gunSourceColorLight: '',
+  gunSourceColorDark: '',
 };
 
 export { buildModelOptionValue, parseModelOptionValue } from '../shared/modelOption';

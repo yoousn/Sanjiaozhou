@@ -98,12 +98,13 @@ export async function uploadToCF(buffer: Buffer, filename: string): Promise<Uplo
     const baseUrl = CF_UPLOAD_URL.replace(/\/+$/, "");
     const url = `${baseUrl}/${key}`;
 
-    // 上传原图
+    // 上传原图（Cache-Control 设 1 年 immutable，URL 含时间戳天然不可变）
     const res = await fetch(url, {
       method: "PUT",
       headers: {
         Authorization: CF_AUTH_TOKEN,
         "Content-Type": "application/octet-stream",
+        "Cache-Control": "public, max-age=31536000, immutable",
       },
       body: new Uint8Array(processedBuffer),
     });
@@ -125,6 +126,7 @@ export async function uploadToCF(buffer: Buffer, filename: string): Promise<Uplo
           headers: {
             Authorization: CF_AUTH_TOKEN,
             "Content-Type": "application/octet-stream",
+            "Cache-Control": "public, max-age=31536000, immutable",
           },
           body: new Uint8Array(thumbBuffer),
         });

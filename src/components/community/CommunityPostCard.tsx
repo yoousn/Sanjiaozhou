@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "../../utils";
 import type { CommunityPost, CommunityReactions } from "../../types";
@@ -66,6 +66,35 @@ export const CommunityPostCard = React.memo(function CommunityPostCard({
   const [reacting, setReacting] = useState<string | null>(null);
   const [showComments, setShowComments] = useState(true);
   const [previewImage, setPreviewImage] = useState(false);
+  const [imgScale, setImgScale] = useState(1);
+  const [imgPos, setImgPos] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [posAtDragStart, setPosAtDragStart] = useState({ x: 0, y: 0 });
+  const overlayRef = useRef<HTMLDivElement>(null);
+
+  const closePreview = useCallback(() => {
+    setPreviewImage(false);
+    setImgScale(1);
+    setImgPos({ x: 0, y: 0 });
+  }, []);
+
+  // Non-passive wheel listener so preventDefault works
+  useEffect(() => {
+    const el = overlayRef.current;
+    if (!el || !previewImage) return;
+    const handler = (e: WheelEvent) => {
+      e.preventDefault();
+      setImgScale((prev) => {
+        const delta = e.deltaY > 0 ? -0.15 : 0.15;
+        const next = Math.min(Math.max(prev + delta, 1), 8);
+        if (next <= 1) setImgPos({ x: 0, y: 0 });
+        return next;
+      });
+    };
+    el.addEventListener('wheel', handler, { passive: false });
+    return () => el.removeEventListener('wheel', handler);
+  }, [previewImage]);
   const [commentContent, setCommentContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [loadingComments, setLoadingComments] = useState(false);
@@ -288,12 +317,47 @@ export const CommunityPostCard = React.memo(function CommunityPostCard({
         )}
       </div>
       {post.imageUrl && previewImage && createPortal(
-        <div className="fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center" onClick={() => setPreviewImage(false)}>
+        <div
+          ref={overlayRef}
+          className="fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center select-none"
+          style={{ cursor: imgScale > 1 ? (isDragging ? 'grabbing' : 'grab') : 'pointer' }}
+          onClick={(e) => {
+            if (!isDragging) closePreview();
+          }}
+          onMouseMove={(e) => {
+            if (isDragging && imgScale > 1) {
+              setImgPos({
+                x: posAtDragStart.x + (e.clientX - dragStart.x) / imgScale,
+                y: posAtDragStart.y + (e.clientY - dragStart.y) / imgScale,
+              });
+            }
+          }}
+          onMouseUp={() => {
+            if (isDragging) setIsDragging(false);
+          }}
+        >
           <img
             src={post.imageUrl}
             alt={post.description || "帖子图片"}
-            className="max-w-[95vw] max-h-[90vh] rounded-2xl object-contain"
-            onClick={(e) => e.stopPropagation()}
+            className="max-w-[95vw] max-h-[90vh] rounded-2xl object-contain transition-transform duration-150"
+            style={{
+              transform: `scale(${imgScale}) translate(${imgPos.x}px, ${imgPos.y}px)`,
+              pointerEvents: imgScale > 1 ? 'none' : 'auto',
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (imgScale <= 1) closePreview();
+            }}
+            onMouseDown={(e) => {
+              if (imgScale > 1) {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsDragging(true);
+                setDragStart({ x: e.clientX, y: e.clientY });
+                setPosAtDragStart({ ...imgPos });
+              }
+            }}
+            draggable={false}
           />
         </div>,
         document.body

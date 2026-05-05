@@ -4,9 +4,20 @@ import cookieParser from "cookie-parser";
 import expressStaticGzip from "express-static-gzip";
 import { createServer as createViteServer } from "vite";
 import path from "path";
+import fs from "fs";
 import { fileURLToPath } from "url";
 import { SESSION_SECRET } from "./server/lib/auth.js";
 import { logger } from "./server/lib/logger.js";
+
+function readAppearance() {
+  try {
+    const file = path.join(process.cwd(), "runtime", "appearance.json");
+    if (fs.existsSync(file)) {
+      return JSON.parse(fs.readFileSync(file, "utf-8"));
+    }
+  } catch { /* ignore */ }
+  return {};
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -34,6 +45,10 @@ async function startServer() {
     app.use("/api/daily-password", dailyPasswordRouter);
     app.use("/api/community", communityRouter);
     app.use("/api/auth", authRouter);
+
+    const appearanceRouter = (await import("./server/routes/appearance.js")).default;
+    app.use("/api/appearance", appearanceRouter);
+    app.use("/uploads", express.static(path.join(process.cwd(), "runtime", "uploads")));
 
     app.post("/api/model/test", async (req, res) => {
       try {
@@ -91,11 +106,25 @@ async function startServer() {
         })
       );
       app.get("*", (req, res) => {
-        // API 路径未匹配时返回 JSON 而非 HTML，避免前端 .json() 解析报错
         if (req.path.startsWith("/api/")) {
           return res.status(404).json({ error: "Not Found" });
         }
-        res.sendFile(path.join(distPath, "index.html"));
+        const appearance = readAppearance();
+        let html = fs.readFileSync(path.join(distPath, "index.html"), "utf-8");
+        const siteName = appearance.siteName || "坤坤改枪码";
+        const faviconUrl = appearance.faviconUrl || "";
+        html = html.replace(/<title>.*?<\/title>/, `<title>${siteName}</title>`);
+        if (faviconUrl) {
+          html = html.replace(/<link rel="icon"[^>]*>/, `<link rel="icon" href="${faviconUrl}" />`);
+        }
+        if (appearance.customHead) {
+          html = html.replace("</head>", appearance.customHead + "</head>");
+        }
+        if (appearance.customBody) {
+          html = html.replace("</body>", appearance.customBody + "</body>");
+        }
+        res.setHeader("Content-Type", "text/html; charset=utf-8");
+        res.send(html);
       });
     }
 

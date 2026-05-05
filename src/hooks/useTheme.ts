@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { UiPreferences } from '../types';
-import { DEFAULT_UI_PREFERENCES } from '../utils';
+import { AppearanceConfig, UiPreferences } from '../types';
+import { DEFAULT_UI_PREFERENCES, DEFAULT_APPEARANCE_CONFIG } from '../utils';
 
 export type CustomTheme = {
   themeColor: string;
@@ -44,6 +44,17 @@ export function useTheme() {
     }
   });
 
+  const [appearanceConfig, setAppearanceConfig] = useState<AppearanceConfig>(() => {
+    try {
+      const saved = localStorage.getItem('appearanceConfig');
+      if (!saved) return DEFAULT_APPEARANCE_CONFIG;
+      const parsed = JSON.parse(saved) as Partial<AppearanceConfig>;
+      return { ...DEFAULT_APPEARANCE_CONFIG, ...parsed };
+    } catch {
+      return DEFAULT_APPEARANCE_CONFIG;
+    }
+  });
+
   useEffect(() => {
     if (isDarkMode) document.documentElement.classList.add('dark');
     else document.documentElement.classList.remove('dark');
@@ -58,11 +69,20 @@ export function useTheme() {
     localStorage.setItem('uiPreferences', JSON.stringify(uiPreferences));
   }, [uiPreferences]);
 
+  useEffect(() => {
+    localStorage.setItem('appearanceConfig', JSON.stringify(appearanceConfig));
+  }, [appearanceConfig]);
+
   const updateUiPreference = <K extends keyof UiPreferences>(key: K, value: UiPreferences[K]) => {
     setUiPreferences((prev: UiPreferences) => ({ ...prev, [key]: value }));
   };
 
+  const updateAppearance = <K extends keyof AppearanceConfig>(key: K, value: AppearanceConfig[K]) => {
+    setAppearanceConfig((prev: AppearanceConfig) => ({ ...prev, [key]: value }));
+  };
+
   const resetTheme = () => setCustomTheme(DEFAULT_THEME);
+  const resetAppearance = () => setAppearanceConfig(DEFAULT_APPEARANCE_CONFIG);
 
   return {
     isDarkMode,
@@ -74,5 +94,9 @@ export function useTheme() {
     updateUiPreference,
     resetTheme,
     DEFAULT_THEME,
+    appearanceConfig,
+    setAppearanceConfig,
+    updateAppearance,
+    resetAppearance,
   };
 }

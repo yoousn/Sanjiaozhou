@@ -1,6 +1,6 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import type { UiButtonStyle, UiCardSize, UiPreferences, UiRadius, UiSidebarWidth } from './types';
+import type { AppearanceConfig, UiButtonStyle, UiCardSize, UiPreferences, UiRadius, UiSidebarWidth } from './types';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -75,5 +75,20 @@ export function getButtonClassName(style: UiButtonStyle, tone: 'default' | 'prim
 
   return palette[tone][style];
 }
+
+export const DEFAULT_APPEARANCE_CONFIG: AppearanceConfig = {
+  siteName: '坤坤改枪码',
+  siteDescription: '专注三角洲行动改枪码分享与收藏',
+  customHead: '',
+  customBody: '',
+  faviconUrl: '',
+  customEnabled: false,
+  backgroundUrl: '',
+  backgroundFixed: true,
+  blurStrength: 8,
+  opacity: 95,
+  radius: 12,
+  glow: 8,
+};
 
 export { buildModelOptionValue, parseModelOptionValue } from '../shared/modelOption';

@@ -20,6 +20,21 @@ export type UiPreferences = {
   categoryWidgetSize?: 'compact' | 'full';
 };
 
+export type AppearanceConfig = {
+  siteName: string;
+  siteDescription: string;
+  customHead: string;
+  customBody: string;
+  faviconUrl: string;
+  customEnabled: boolean;
+  backgroundUrl: string;
+  backgroundFixed: boolean;
+  blurStrength: number;
+  opacity: number;
+  radius: number;
+  glow: number;
+};
+
 export type CollectModelProviderInput = {
   id?: string;
   name: string;

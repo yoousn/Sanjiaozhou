@@ -1,4 +1,4 @@
-import { Home, Settings, Users, LogIn, LogOut, User } from 'lucide-react';
+import { Home, Settings, Users, LogIn, LogOut, User, Palette } from 'lucide-react';
 import { cn, getButtonClassName, radiusClassMap, sidebarWidthClassMap } from '../utils';
 import type { UiButtonStyle, UiRadius, UiSidebarWidth } from '../types';
 
@@ -8,6 +8,7 @@ export function Sidebar({
   activeTab,
   setActiveTab,
   onOpenSettings,
+  onOpenAppearance,
   sidebarWidth,
   controlRadius,
   buttonStyle,
@@ -18,6 +19,7 @@ export function Sidebar({
   activeTab: string,
   setActiveTab: (tab: string) => void,
   onOpenSettings: () => void,
+  onOpenAppearance: () => void,
   sidebarWidth: UiSidebarWidth,
   controlRadius: UiRadius,
   buttonStyle: UiButtonStyle,
@@ -102,6 +104,20 @@ export function Sidebar({
               <span className="hidden lg:block text-[13px] font-bold">登录/注册</span>
             </button>
           )}
+
+          <button
+            onClick={onOpenAppearance}
+            className={cn(
+              "flex items-center lg:justify-start justify-center gap-3 px-3 py-2.5 transition duration-200 outline-none hover:bg-black/5 dark:hover:bg-white/5 w-full group",
+              radiusClass,
+              activeTab === 'appearance'
+                ? cn(getButtonClassName(buttonStyle === 'outline' ? 'solid' : buttonStyle, 'default'), 'dark:bg-zinc-100 dark:text-zinc-900 text-zinc-900')
+                : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
+            )}
+          >
+            <Palette size={16} strokeWidth={activeTab === 'appearance' ? 2.5 : 2} className={cn("transition-transform duration-300", activeTab === 'appearance' && "scale-110")} />
+            <span className={cn("hidden lg:block text-[13px]", activeTab === 'appearance' ? "font-bold" : "font-semibold")}>外观设置</span>
+          </button>
 
           <button
             onClick={onOpenSettings}

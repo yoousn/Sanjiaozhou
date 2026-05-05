@@ -21,6 +21,7 @@ import { ModelConfigModal } from './components/ModelConfigModal';
 
 const CommunityPage = React.lazy(() => import('./pages/CommunityPage').then(m => ({ default: m.CommunityPage })));
 const SettingsPage = React.lazy(() => import('./components/SettingsPage').then(m => ({ default: m.SettingsPage })));
+const AppearanceSettingsPage = React.lazy(() => import('./components/AppearanceSettingsPage').then(m => ({ default: m.AppearanceSettingsPage })));
 
 import { useToast } from './hooks/useToast';
 import { useDailyPassword } from './hooks/useDailyPassword';
@@ -568,9 +569,20 @@ export default function App() {
 
   return (
     <>
-      <style>{`:root { --color-emerald-500: ${theme.customTheme.themeColor}; --color-emerald-600: ${theme.customTheme.themeColor}; --color-emerald-50: ${theme.customTheme.themeColor}1A; }`}</style>
-      <div className="flex min-h-screen bg-[#F8F9FA] dark:bg-[#0b0b0c] selection:bg-zinc-200 dark:selection:bg-zinc-800 transition-colors duration-300" style={{ color: theme.isDarkMode ? theme.customTheme.textColorDark : theme.customTheme.textColorLight, '--user-gun-color': theme.isDarkMode ? theme.customTheme.gunNameColorDark : theme.customTheme.gunNameColorLight } as React.CSSProperties}>
-        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} onOpenSettings={() => setActiveTab('settings')} sidebarWidth={theme.uiPreferences.sidebarWidth} controlRadius={theme.uiPreferences.controlRadius} buttonStyle={theme.uiPreferences.buttonStyle} auth={auth} onOpenAuth={() => setActiveModal('auth')} onLogout={async () => { await auth.logout(); showToast('已退出登录'); }} />
+      <style>{`:root { --color-emerald-500: ${theme.customTheme.themeColor}; --color-emerald-600: ${theme.customTheme.themeColor}; --color-emerald-50: ${theme.customTheme.themeColor}1A; --app-blur: ${theme.appearanceConfig.blurStrength}px; --app-opacity: ${theme.appearanceConfig.opacity}; --app-radius: ${theme.appearanceConfig.radius}px; --app-glow: ${theme.appearanceConfig.glow}px; }`}</style>
+      {theme.appearanceConfig.customEnabled && theme.appearanceConfig.backgroundUrl && (
+        <div
+          className="fixed inset-0 z-0"
+          style={{
+            backgroundImage: `url(${theme.appearanceConfig.backgroundUrl})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundAttachment: theme.appearanceConfig.backgroundFixed ? 'fixed' : 'scroll',
+          }}
+        />
+      )}
+      <div className="flex min-h-screen bg-[#F8F9FA] dark:bg-[#0b0b0c] selection:bg-zinc-200 dark:selection:bg-zinc-800 transition-colors duration-300 relative z-10" style={{ color: theme.isDarkMode ? theme.customTheme.textColorDark : theme.customTheme.textColorLight, '--user-gun-color': theme.isDarkMode ? theme.customTheme.gunNameColorDark : theme.customTheme.gunNameColorLight } as React.CSSProperties}>
+        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} onOpenSettings={() => setActiveTab('settings')} onOpenAppearance={() => setActiveTab('appearance')} sidebarWidth={theme.uiPreferences.sidebarWidth} controlRadius={theme.uiPreferences.controlRadius} buttonStyle={theme.uiPreferences.buttonStyle} auth={auth} onOpenAuth={() => setActiveModal('auth')} onLogout={async () => { await auth.logout(); showToast('已退出登录'); }} />
         <main className={cn('flex-1 p-4 md:p-6 lg:p-8 pb-32', sidebarWidthClasses.main)}>
           <div className="md:hidden fixed left-4 bottom-24 z-40 pointer-events-none">
             <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400/90 dark:text-zinc-500/90">{mobileVersionLabel}</span>
@@ -596,6 +608,15 @@ export default function App() {
                 handleRefreshDailyPwd={daily.handleRefreshDailyPwd}
                 onClearDailyPwdLogs={handleClearDailyPwdLogs}
               />
+              </React.Suspense>
+            ) : activeTab === 'appearance' ? (
+              <React.Suspense fallback={<div className="flex flex-col items-center justify-center py-24 animate-fade-in"><Loader2 size={24} className="animate-spin text-zinc-400 mb-4" /><p className="text-[13px] font-bold text-zinc-500">正在加载外观设置...</p></div>}>
+                <AppearanceSettingsPage
+                  appearanceConfig={theme.appearanceConfig}
+                  updateAppearance={theme.updateAppearance}
+                  resetAppearance={theme.resetAppearance}
+                  uiPreferences={theme.uiPreferences}
+                />
               </React.Suspense>
             ) : (
               <>

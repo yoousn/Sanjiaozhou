@@ -26,6 +26,44 @@ function normalizeMapName(value: unknown) {
   return (GODSPOT_MAPS as readonly string[]).includes(mapName) ? mapName : GODSPOT_MAPS[0];
 }
 
+function extractBilibiliUrl(value: unknown) {
+  const text = String(value || "").trim();
+  const match = text.match(/https?:\/\/(?:www\.)?(?:bilibili\.com\/video\/[A-Za-z0-9?=&_./%-]+|b23\.tv\/[A-Za-z0-9]+)/i);
+  return match?.[0] || "";
+}
+
+function cleanBilibiliTitle(value: unknown) {
+  return String(value || "")
+    .replace(/[\r\n\t]+/g, " ")
+    .replace(/_哔哩哔哩_bilibili.*$/i, "")
+    .replace(/- 哔哩哔哩.*$/i, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 80);
+}
+
+async function fetchBilibiliTitle(url: string) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 10000);
+  try {
+    const res = await fetch(url, {
+      redirect: "follow",
+      signal: controller.signal,
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        Referer: "https://www.bilibili.com",
+      },
+    });
+    const html = await res.text();
+    const ogTitle = html.match(/<meta\s+property=["']og:title["']\s+content=["']([^"']+)["']/i)?.[1]
+      || html.match(/<meta\s+content=["']([^"']+)["']\s+property=["']og:title["']/i)?.[1]
+      || html.match(/<title>([\s\S]*?)<\/title>/i)?.[1];
+    return cleanBilibiliTitle(ogTitle);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 type ParsedVideoUpload = {
   tempPath: string;
   filename: string;
@@ -125,6 +163,21 @@ router.get("/videos", (req, res) => {
   } catch (e) {
     logger.error("API GODSPOT GET VIDEOS Error", { error: e instanceof Error ? e.message : String(e) });
     res.status(500).json({ success: false, error: "获取神人点位视频失败" });
+  }
+});
+
+router.post("/resolve-bilibili", requireAuth, rateLimit(30, 60 * 60 * 1000, "链接识别过于频繁，请 1 小时后再试"), async (req, res) => {
+  try {
+    const url = extractBilibiliUrl(req.body?.url);
+    if (!url) return res.status(400).json({ success: false, error: "请粘贴有效的 B 站视频链接" });
+
+    const title = await fetchBilibiliTitle(url);
+    if (!title) return res.status(400).json({ success: false, error: "未识别到视频标题，请手动填写" });
+
+    res.json({ success: true, data: { title, url } });
+  } catch (e) {
+    logger.error("API GODSPOT RESOLVE BILIBILI Error", { error: e instanceof Error ? e.message : String(e) });
+    res.status(500).json({ success: false, error: "识别 B 站链接失败，请手动填写标题" });
   }
 });
 

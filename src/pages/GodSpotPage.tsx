@@ -49,6 +49,8 @@ export function GodSpotPage({ auth, onOpenAuth, showToast }: { auth: any; onOpen
   const [videos, setVideos] = useState<GodspotVideo[]>([]);
   const [activeMap, setActiveMap] = useState("全部");
   const [displayName, setDisplayName] = useState("");
+  const [bilibiliUrl, setBilibiliUrl] = useState("");
+  const [resolvingBilibili, setResolvingBilibili] = useState(false);
   const [mapName, setMapName] = useState("零号🚌");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(true);
@@ -86,7 +88,41 @@ export function GodSpotPage({ auth, onOpenAuth, showToast }: { auth: any; onOpen
     void fetchVideos(activeMap);
   }, [activeMap]);
 
-  const handleUpload = async (event: React.FormEvent) => {
+  const handleResolveBilibili = async () => {
+    const url = bilibiliUrl.trim();
+    if (!url) {
+      showToast("请先粘贴 B 站视频链接", "warn");
+      return;
+    }
+    if (!auth.isAuthenticated) {
+      showToast("请先登录后再识别链接", "warn");
+      onOpenAuth();
+      return;
+    }
+
+    try {
+      setResolvingBilibili(true);
+      const res = await fetch("/api/godspot/resolve-bilibili", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+      });
+      const data = await readJson(res);
+      if (!res.ok) throw new Error(data?.error || "识别失败");
+      const title = String(data?.data?.title || "").trim();
+      if (!title) throw new Error("未识别到视频标题，请手动填写");
+      if (!displayName.trim()) setDisplayName(title);
+      showToast(displayName.trim() ? "已识别标题，可按需替换当前标题" : "已自动填写视频标题", "success");
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : "识别失败，请手动填写标题", "warn");
+    } finally {
+      setResolvingBilibili(false);
+    }
+  };
+
+
+  const handleUpload = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!auth.isAuthenticated) {
       showToast("请先登录后再上传", "warn");
@@ -163,7 +199,83 @@ export function GodSpotPage({ auth, onOpenAuth, showToast }: { auth: any; onOpen
         </div>
       </div>
 
-      <div className="grid grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_320px] gap-6 items-start">
+      <div className="grid grid-cols-1 2xl:grid-cols-[320px_minmax(0,1fr)] gap-6 items-start">
+        <form onSubmit={handleUpload} className="rounded-[2rem] border border-white/70 dark:border-zinc-800 bg-white/80 dark:bg-[#121214]/90 p-4 shadow-sm backdrop-blur-xl space-y-3 2xl:sticky 2xl:top-4">
+          <div>
+            <h3 className="text-[14px] font-black text-zinc-900 dark:text-white mb-1">上传视频</h3>
+            <p className="text-[11px] text-zinc-500">压缩后上传，支持 MP4/WebM/MOV/MKV/AVI。</p>
+          </div>
+
+          <label className="block">
+            <span className="text-[11px] font-bold text-zinc-500 mb-1.5 block">B 站链接识别</span>
+            <div className="flex gap-2">
+              <input
+                value={bilibiliUrl}
+                onChange={(e) => setBilibiliUrl(e.target.value)}
+                onBlur={() => { if (bilibiliUrl.trim() && !displayName.trim()) void handleResolveBilibili(); }}
+                placeholder="粘贴 BV / b23.tv 链接"
+                className="min-w-0 flex-1 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900 px-3.5 py-2.5 text-[12px] font-semibold outline-none focus:ring-2 focus:ring-zinc-900/10 dark:text-white"
+              />
+              <button
+                type="button"
+                onClick={() => void handleResolveBilibili()}
+                disabled={resolvingBilibili}
+                className="shrink-0 rounded-2xl bg-zinc-100 dark:bg-zinc-900 px-3 text-[11px] font-black text-zinc-600 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white disabled:opacity-60 transition"
+              >
+                {resolvingBilibili ? <Loader2 size={13} className="animate-spin" /> : "识别"}
+              </button>
+            </div>
+            <p className="mt-1.5 text-[10px] leading-relaxed text-zinc-400">识别成功后会自动填写标题；不满意可以继续手动改。</p>
+          </label>
+
+          <label className="block">
+            <span className="text-[11px] font-bold text-zinc-500 mb-1.5 block">视频名称</span>
+            <input
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              placeholder="例如：巴克什二楼窗口"
+              className="w-full rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900 px-3.5 py-2.5 text-[12px] font-semibold outline-none focus:ring-2 focus:ring-zinc-900/10 dark:text-white"
+            />
+          </label>
+
+          <label className="block">
+            <span className="text-[11px] font-bold text-zinc-500 mb-1.5 block">关联地图</span>
+            <select
+              value={mapName}
+              onChange={(e) => setMapName(e.target.value)}
+              className="w-full rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900 px-3.5 py-2.5 text-[12px] font-bold outline-none focus:ring-2 focus:ring-zinc-900/10 dark:text-white"
+            >
+              {MAPS.filter((item) => item !== "全部").map((item) => <option key={item} value={item}>{item}</option>)}
+            </select>
+          </label>
+
+          <label className="rounded-2xl border border-dashed border-zinc-300 dark:border-zinc-700 bg-zinc-50/80 dark:bg-zinc-900/60 p-4 flex items-center gap-3 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-900 transition">
+            <div className="w-10 h-10 rounded-2xl bg-white dark:bg-zinc-800 flex items-center justify-center shrink-0 shadow-sm">
+              <CloudUpload size={20} className="text-zinc-400" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[12px] font-black text-zinc-800 dark:text-zinc-100 truncate">{selectedFile ? selectedFile.name : "选择视频文件"}</p>
+              <p className="text-[10px] text-zinc-500 mt-0.5">{selectedFile ? formatSize(selectedFile.size) : "默认最大 500MB"}</p>
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="video/mp4,video/webm,video/quicktime,video/x-matroska,video/x-msvideo"
+              className="hidden"
+              onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+            />
+          </label>
+
+          <button
+            type="submit"
+            disabled={uploading}
+            className="w-full rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 py-2.5 text-[12px] font-black hover:opacity-90 disabled:opacity-60 transition flex items-center justify-center gap-2"
+          >
+            {uploading ? <Loader2 size={15} className="animate-spin" /> : <CloudUpload size={15} />}
+            {uploading ? "上传/处理中..." : "上传视频"}
+          </button>
+        </form>
+
         <div className="min-w-0 space-y-5">
           <div className="rounded-[2rem] border border-white/70 dark:border-zinc-800 bg-white/80 dark:bg-[#121214]/90 p-4 md:p-5 shadow-sm backdrop-blur-xl">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
@@ -259,60 +371,6 @@ export function GodSpotPage({ auth, onOpenAuth, showToast }: { auth: any; onOpen
             </div>
           )}
         </div>
-
-        <form onSubmit={handleUpload} className="rounded-[2rem] border border-white/70 dark:border-zinc-800 bg-white/80 dark:bg-[#121214]/90 p-4 shadow-sm backdrop-blur-xl space-y-3 2xl:sticky 2xl:top-4">
-          <div>
-            <h3 className="text-[14px] font-black text-zinc-900 dark:text-white mb-1">上传视频</h3>
-            <p className="text-[11px] text-zinc-500">压缩后上传，支持 MP4/WebM/MOV/MKV/AVI。</p>
-          </div>
-
-          <label className="block">
-            <span className="text-[11px] font-bold text-zinc-500 mb-1.5 block">视频名称</span>
-            <input
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="例如：巴克什二楼窗口"
-              className="w-full rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900 px-3.5 py-2.5 text-[12px] font-semibold outline-none focus:ring-2 focus:ring-zinc-900/10 dark:text-white"
-            />
-          </label>
-
-          <label className="block">
-            <span className="text-[11px] font-bold text-zinc-500 mb-1.5 block">关联地图</span>
-            <select
-              value={mapName}
-              onChange={(e) => setMapName(e.target.value)}
-              className="w-full rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900 px-3.5 py-2.5 text-[12px] font-bold outline-none focus:ring-2 focus:ring-zinc-900/10 dark:text-white"
-            >
-              {MAPS.filter((item) => item !== "全部").map((item) => <option key={item} value={item}>{item}</option>)}
-            </select>
-          </label>
-
-          <label className="rounded-2xl border border-dashed border-zinc-300 dark:border-zinc-700 bg-zinc-50/80 dark:bg-zinc-900/60 p-4 flex items-center gap-3 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-900 transition">
-            <div className="w-10 h-10 rounded-2xl bg-white dark:bg-zinc-800 flex items-center justify-center shrink-0 shadow-sm">
-              <CloudUpload size={20} className="text-zinc-400" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-[12px] font-black text-zinc-800 dark:text-zinc-100 truncate">{selectedFile ? selectedFile.name : "选择视频文件"}</p>
-              <p className="text-[10px] text-zinc-500 mt-0.5">{selectedFile ? formatSize(selectedFile.size) : "默认最大 500MB"}</p>
-            </div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="video/mp4,video/webm,video/quicktime,video/x-matroska,video/x-msvideo"
-              className="hidden"
-              onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-            />
-          </label>
-
-          <button
-            type="submit"
-            disabled={uploading}
-            className="w-full rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 py-2.5 text-[12px] font-black hover:opacity-90 disabled:opacity-60 transition flex items-center justify-center gap-2"
-          >
-            {uploading ? <Loader2 size={15} className="animate-spin" /> : <CloudUpload size={15} />}
-            {uploading ? "上传/处理中..." : "上传视频"}
-          </button>
-        </form>
       </div>
     </motion.div>
   );

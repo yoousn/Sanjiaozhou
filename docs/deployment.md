@@ -74,9 +74,13 @@ docker-compose down
 工作流行为：
 1. GitHub Runner 执行 `npm ci` 与 `npm run build`
 2. 通过 SSH 登录服务器
-3. 在 `/opt/xiujiao-era` 执行远程部署脚本：
+3. 在 `/opt/xiujiao-era` 先执行内联安全同步，保证服务器工作副本更新到最新 `origin/main` 后，再运行远程部署脚本：
+   - `git fetch origin main`
+   - `git checkout main`
+   - 若服务器本地 `main` 可快进，则重置到 `origin/main`
+   - 若服务器本地 `main` 与 `origin/main` 分叉，则先创建 `deploy-backup/main-时间戳` 备份分支，再重置到 `origin/main`
    - `bash scripts/deploy_remote.sh`
-4. 远程脚本会先执行安全同步：
+4. 远程脚本会再次执行同样的安全同步，保证手动部署与自动部署逻辑一致：
    - `git fetch origin main`
    - `git checkout main`
    - 若服务器本地 `main` 可快进，则重置到 `origin/main`

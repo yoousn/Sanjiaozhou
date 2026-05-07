@@ -235,3 +235,4 @@ v1.3.0   日期2026.5.7---1
 - **流式上传与安全校验**：上传采用 busboy 流式写临时文件，避免大视频全量进内存；增加视频 MIME 白名单和大小限制
 - **运行态持久化**：视频元数据写入 `runtime/godspot/metadata.json`，本地视频通过 `/godspot-files` 静态目录访问，切换云存储后旧本地文件仍可播放
 - **部署分叉修复**：远程部署脚本遇到服务器 `main` 与 `origin/main` 分叉时，会先创建 `deploy-backup/main-时间戳` 备份分支，再同步到最新远端，避免 `git pull --ff-only` 导致构建失败
+- **Actions 引导同步修复**：GitHub Actions 在调用服务器部署脚本前会先内联同步服务器仓库，避免服务器旧版 `deploy_remote.sh` 尚未更新时继续执行旧的 `git pull --ff-only`

@@ -74,7 +74,7 @@ jobs:
           PRUNE_IMAGES: ${{ secrets.PRUNE_IMAGES }}
         run: |
           ssh -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
-            "set -e; export DEPLOY_PATH='$DEPLOY_PATH' PRUNE_IMAGES='${PRUNE_IMAGES:-true}' DEPLOY_BRANCH='main'; bash '$DEPLOY_PATH/scripts/deploy_remote.sh'"
+            "set -e; cd '$DEPLOY_PATH'; git fetch origin main; git checkout main; LOCAL_HEAD=\$(git rev-parse main); REMOTE_HEAD=\$(git rev-parse origin/main); if git merge-base --is-ancestor \"\$LOCAL_HEAD\" \"\$REMOTE_HEAD\"; then git reset --hard origin/main; else BACKUP_BRANCH=deploy-backup/main-\$(date +%Y%m%d%H%M%S); git branch \"\$BACKUP_BRANCH\" \"\$LOCAL_HEAD\"; echo \"Deploy branch diverged. Saved local commit as \$BACKUP_BRANCH\"; git reset --hard origin/main; fi; export DEPLOY_PATH='$DEPLOY_PATH' PRUNE_IMAGES='${PRUNE_IMAGES:-true}' DEPLOY_BRANCH='main'; bash '$DEPLOY_PATH/scripts/deploy_remote.sh'"
 
       - name: Check existing release tag
         id: tag_check

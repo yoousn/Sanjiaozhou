@@ -45,6 +45,7 @@ async function startServer() {
     app.use("/api/config", configRouter);
     app.use("/api/daily-password", dailyPasswordRouter);
     app.use("/api/community", communityRouter);
+    app.use("/api/godspot", godspotRouter);
     app.use("/api/auth", authRouter);
 
     const appearanceRouter = (await import("./server/routes/appearance.js")).default;

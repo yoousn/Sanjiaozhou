@@ -216,7 +216,7 @@ export default function App() {
       fetchCookieStatus();
       daily.fetchDailyPwdLogs();
     }
-  }, [activeTab, fetchCookieStatus, daily]);
+  }, [activeTab, fetchCookieStatus, daily.fetchDailyPwdLogs]);
 
   useEffect(() => {
     if (activeModal === 'auto-collect') {

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { safeJson } from '../utils/collect';
 
 export function useDailyPassword(showToast: (msg: string, type?: 'success' | 'warn' | 'error') => void) {
@@ -188,7 +188,7 @@ export function useDailyPassword(showToast: (msg: string, type?: 'success' | 'wa
     };
   }, [syncDailyPwd, isDailyPwdForToday, shouldRefreshDailyPwd, stopDailyPwdPolling]);
 
-  return {
+  return useMemo(() => ({
     dailyPwd,
     dailyPwdLogs,
     isRefreshingDailyPwd,
@@ -197,5 +197,14 @@ export function useDailyPassword(showToast: (msg: string, type?: 'success' | 'wa
     handleCopyDailyPwd,
     fetchDailyPwdLogs,
     syncDailyPwd,
-  };
+  }), [
+    dailyPwd,
+    dailyPwdLogs,
+    isRefreshingDailyPwd,
+    copiedDailyPwdKey,
+    handleRefreshDailyPwd,
+    handleCopyDailyPwd,
+    fetchDailyPwdLogs,
+    syncDailyPwd,
+  ]);
 }

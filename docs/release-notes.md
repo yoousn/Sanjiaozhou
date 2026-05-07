@@ -236,3 +236,4 @@ v1.3.0   日期2026.5.7---1
 - **运行态持久化**：视频元数据写入 `runtime/godspot/metadata.json`，本地视频通过 `/godspot-files` 静态目录访问，切换云存储后旧本地文件仍可播放
 - **部署分叉修复**：远程部署脚本遇到服务器 `main` 与 `origin/main` 分叉时，会先创建 `deploy-backup/main-时间戳` 备份分支，再同步到最新远端，避免 `git pull --ff-only` 导致构建失败
 - **Actions 引导同步修复**：GitHub Actions 在调用服务器部署脚本前会先内联同步服务器仓库，避免服务器旧版 `deploy_remote.sh` 尚未更新时继续执行旧的 `git pull --ff-only`
+- **Docker 构建稳定性修复**：Dockerfile 中构建依赖与生产依赖的 `npm ci` 增加缓存优先与多次重试，减少 npm 镜像源网络 `ETIMEDOUT` 导致的部署失败

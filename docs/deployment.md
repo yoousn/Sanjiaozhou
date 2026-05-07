@@ -88,6 +88,7 @@ docker-compose down
 5. 远程脚本继续执行：
    - 初始化 `runtime/` 缺失文件
    - `docker-compose build`
+   - Docker 构建阶段的 `npm ci` 已加入缓存优先与多次重试，降低镜像源网络抖动导致的 `ETIMEDOUT` 失败概率
    - `docker-compose up -d`
    - 默认执行 `docker image prune -f`
 6. 若本次 push 对应的是正式版本号更新，工作流会在部署成功后自动创建并推送 `v版本号` tag；同名 tag 已存在时会自动跳过

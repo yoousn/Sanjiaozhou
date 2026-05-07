@@ -9,6 +9,8 @@ RUN --mount=type=cache,target=/root/.npm,id=npm-cache \
 
 COPY package*.json ./
 RUN --mount=type=cache,target=/root/.npm,id=npm-cache \
+    npm ci --no-audit --no-fund --prefer-offline || \
+    npm ci --no-audit --no-fund --prefer-offline || \
     npm ci --no-audit --no-fund
 
 COPY . .
@@ -33,6 +35,8 @@ RUN set -eux; \
 COPY package*.json ./
 RUN --mount=type=cache,target=/root/.npm,id=npm-cache \
     printf 'registry=https://registry.npmmirror.com\nstrict-ssl=false\nfetch-retries=5\nfetch-retry-mintimeout=20000\nfetch-retry-maxtimeout=120000\nprefer-offline=true\n' > .npmrc && \
+    npm ci --omit=dev --no-audit --no-fund --prefer-offline || \
+    npm ci --omit=dev --no-audit --no-fund --prefer-offline || \
     npm ci --omit=dev --no-audit --no-fund
 
 # 复制构建产物与运行时代码

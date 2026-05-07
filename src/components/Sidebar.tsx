@@ -1,4 +1,4 @@
-import { Home, Settings, Users, LogIn, LogOut, User, Palette } from 'lucide-react';
+import { Home, Settings, Users, LogIn, LogOut, Palette, Crosshair } from 'lucide-react';
 import { cn, getButtonClassName, radiusClassMap, sidebarWidthClassMap } from '../utils';
 import type { UiButtonStyle, UiRadius, UiSidebarWidth } from '../types';
 
@@ -76,6 +76,20 @@ export function Sidebar({
           >
             <Users size={16} strokeWidth={activeTab === 'community' ? 2.5 : 2} className={cn("transition-transform duration-300", activeTab === 'community' && "scale-110")} />
             <span className={cn("hidden lg:block text-[13px]", activeTab === 'community' ? "font-bold" : "font-semibold")}>社区</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('godspot')}
+            className={cn(
+              "flex items-center lg:justify-start justify-center gap-3 px-3 py-2.5 transition duration-200 outline-none hover:bg-black/5 dark:hover:bg-white/5 w-full group mb-1",
+              radiusClass,
+              activeTab === 'godspot'
+                ? cn(getButtonClassName(buttonStyle === 'outline' ? 'solid' : buttonStyle, 'default'), 'dark:bg-zinc-100 dark:text-zinc-900 text-zinc-900')
+                : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white",
+            )}
+          >
+            <Crosshair size={16} strokeWidth={activeTab === 'godspot' ? 2.5 : 2} className={cn("transition-transform duration-300", activeTab === 'godspot' && "scale-110")} />
+            <span className={cn("hidden lg:block text-[13px]", activeTab === 'godspot' ? "font-bold" : "font-semibold")}>神人点位</span>
           </button>
         </div>
 
@@ -166,6 +180,20 @@ export function Sidebar({
           <Users size={16} strokeWidth={activeTab === 'community' ? 2.5 : 2} />
           {activeTab === 'community' && (
             <span className="text-[11px] font-bold whitespace-nowrap">社区</span>
+          )}
+        </button>
+
+        <button
+          onClick={() => setActiveTab('godspot')}
+          className={cn(
+            "flex items-center justify-center px-3 py-2 outline-none transition duration-200 active:scale-95",
+            activeTab === 'godspot' ? cn(getButtonClassName(buttonStyle === 'outline' ? 'solid' : buttonStyle, 'default'), 'shadow-sm') : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white",
+            radiusClass
+          )}
+        >
+          <Crosshair size={16} strokeWidth={activeTab === 'godspot' ? 2.5 : 2} />
+          {activeTab === 'godspot' && (
+            <span className="text-[11px] font-bold whitespace-nowrap">点位</span>
           )}
         </button>
 

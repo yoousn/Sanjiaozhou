@@ -35,6 +35,7 @@ async function startServer() {
     const configRouter = (await import("./server/routes/config.js")).default;
     const { default: dailyPasswordRouter, startDailyPwdJob } = await import("./server/routes/dailyPassword.js");
     const communityRouter = (await import("./server/routes/community.js")).default;
+    const godspotRouter = (await import("./server/routes/godspot.js")).default;
     const authRouter = (await import("./server/routes/auth.js")).default;
     const { testModel, chatWithModel } = await import("./server/lib/collector.js");
     const { readCollectSettings } = await import("./server/lib/collectSettings.js");
@@ -49,6 +50,7 @@ async function startServer() {
     const appearanceRouter = (await import("./server/routes/appearance.js")).default;
     app.use("/api/appearance", appearanceRouter);
     app.use("/uploads", express.static(path.join(process.cwd(), "runtime", "uploads")));
+    app.use("/godspot-files", express.static(path.join(process.cwd(), "runtime", "godspot", "videos")));
 
     app.post("/api/model/test", async (req, res) => {
       try {

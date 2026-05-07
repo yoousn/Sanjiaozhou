@@ -20,6 +20,7 @@ import { AuthModal } from './components/AuthModal';
 import { ModelConfigModal } from './components/ModelConfigModal';
 
 const CommunityPage = React.lazy(() => import('./pages/CommunityPage').then(m => ({ default: m.CommunityPage })));
+const GodSpotPage = React.lazy(() => import('./pages/GodSpotPage').then(m => ({ default: m.GodSpotPage })));
 const SettingsPage = React.lazy(() => import('./components/SettingsPage').then(m => ({ default: m.SettingsPage })));
 const AppearanceSettingsPage = React.lazy(() => import('./components/AppearanceSettingsPage').then(m => ({ default: m.AppearanceSettingsPage })));
 
@@ -691,6 +692,10 @@ export default function App() {
             {activeTab === 'community' ? (
               <React.Suspense fallback={<div className="flex flex-col items-center justify-center py-24 animate-fade-in"><Loader2 size={24} className="animate-spin text-zinc-400 mb-4" /><p className="text-[13px] font-bold text-zinc-500">正在加载社区模块...</p></div>}>
                 <CommunityPage auth={auth} onOpenAuth={() => setActiveModal('auth')} showToast={showToast} />
+              </React.Suspense>
+            ) : activeTab === 'godspot' ? (
+              <React.Suspense fallback={<div className="flex flex-col items-center justify-center py-24 animate-fade-in"><Loader2 size={24} className="animate-spin text-zinc-400 mb-4" /><p className="text-[13px] font-bold text-zinc-500">正在加载神人点位...</p></div>}>
+                <GodSpotPage auth={auth} onOpenAuth={() => setActiveModal('auth')} showToast={showToast} />
               </React.Suspense>
             ) : activeTab === 'settings' ? (
               <React.Suspense fallback={<div className="flex flex-col items-center justify-center py-24 animate-fade-in"><Loader2 size={24} className="animate-spin text-zinc-400 mb-4" /><p className="text-[13px] font-bold text-zinc-500">正在加载设置模块...</p></div>}>

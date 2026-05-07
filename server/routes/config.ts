@@ -5,6 +5,7 @@ import { fileURLToPath } from "url";
 import { runCollector } from "../lib/collector.js";
 import { readCollectSettings, COLLECT_SETTINGS_FILE } from "../lib/collectSettings.js";
 import { requireAdmin } from "../lib/auth.js";
+import { getGodspotStorageSettings, saveGodspotStorageSettings, toPublicGodspotStorageSettings } from "../lib/godspotSettings.js";
 import { logger } from "../lib/logger.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -35,6 +36,32 @@ router.post("/cookie", requireAdmin, async (req, res) => {
   } catch (e) {
     logger.error("API COOKIE UPLOAD Error", { error: e instanceof Error ? e.message : String(e) });
     res.status(500).json({ success: false, message: e instanceof Error ? e.message : "测试失败" });
+  }
+});
+
+router.get("/godspot/storage", (req, res) => {
+  try {
+    res.json(toPublicGodspotStorageSettings(getGodspotStorageSettings()));
+  } catch (e) {
+    logger.error("API GET godspot storage settings Error", { error: e instanceof Error ? e.message : String(e) });
+    res.status(500).json({ error: "读取神人点位存储设置失败" });
+  }
+});
+
+router.post("/godspot/storage", requireAdmin, (req, res) => {
+  try {
+    const body = req.body || {};
+    const settings = saveGodspotStorageSettings({
+      storageType: body.storageType,
+      cfUploadUrl: body.cfUploadUrl,
+      cfAuthToken: body.cfAuthToken,
+      publicBaseUrl: body.publicBaseUrl,
+      keepExistingToken: Boolean(body.keepExistingToken),
+    });
+    res.json({ success: true, settings });
+  } catch (e) {
+    logger.error("API SAVE godspot storage settings Error", { error: e instanceof Error ? e.message : String(e) });
+    res.status(400).json({ success: false, error: e instanceof Error ? e.message : "保存神人点位存储设置失败" });
   }
 });
 

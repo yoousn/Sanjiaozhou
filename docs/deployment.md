@@ -17,6 +17,9 @@
 - `/opt/xiujiao-era/runtime/daily_pwd_logs.json`
 - `/opt/xiujiao-era/runtime/auto_processed_videos.json`
 - `/opt/xiujiao-era/runtime/cookies.txt`
+- `/opt/xiujiao-era/runtime/godspot/settings.json`：神人点位视频存储规则（服务器本地 / Cloudflare R2）
+- `/opt/xiujiao-era/runtime/godspot/metadata.json`：神人点位视频元数据
+- `/opt/xiujiao-era/runtime/godspot/videos/`：神人点位本地视频文件
 
 其中最关键的是：
 - `data.json`：网站主数据
@@ -89,7 +92,7 @@ docker-compose down
    - 初始化 `runtime/` 缺失文件
    - `docker-compose build`
    - Docker 构建阶段的 `npm ci` 已加入缓存优先与多次重试，降低镜像源网络抖动导致的 `ETIMEDOUT` 失败概率
-   - `docker-compose up -d`
+   - `docker-compose up -d`（`runtime/godspot` 会挂载到容器内，服务器本地视频和存储设置不会随容器重建丢失）
    - 默认执行 `docker image prune -f`
 6. 若本次 push 对应的是正式版本号更新，工作流会在部署成功后自动创建并推送 `v版本号` tag；同名 tag 已存在时会自动跳过
 

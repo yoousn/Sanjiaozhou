@@ -237,3 +237,5 @@ v1.3.0   日期2026.5.7---1
 - **部署分叉修复**：远程部署脚本遇到服务器 `main` 与 `origin/main` 分叉时，会先创建 `deploy-backup/main-时间戳` 备份分支，再同步到最新远端，避免 `git pull --ff-only` 导致构建失败
 - **Actions 引导同步修复**：GitHub Actions 在调用服务器部署脚本前会先内联同步服务器仓库，避免服务器旧版 `deploy_remote.sh` 尚未更新时继续执行旧的 `git pull --ff-only`
 - **Docker 构建稳定性修复**：Dockerfile 中构建依赖与生产依赖的 `npm ci` 增加缓存优先与多次重试，减少 npm 镜像源网络 `ETIMEDOUT` 导致的部署失败
+- **神人点位存储后台设置**：系统设置新增“神人点位视频存储”，管理员可选择服务器本地存储或 Cloudflare R2 / 对象存储，并保存上传地址、公开地址和 Token 到运行态配置
+- **神人点位运行态挂载**：`docker-compose.yml` 挂载 `runtime/godspot` 到容器内，确保服务器本地视频和存储设置不会随容器重建丢失

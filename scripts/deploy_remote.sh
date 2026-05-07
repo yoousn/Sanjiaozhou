@@ -44,6 +44,7 @@ for file in \
   community_activity.json \
   community_comments.json \
   appearance.json \
+  godspot/settings.json \
   godspot/metadata.json
  do
   target="$RUNTIME_DIR/$file"
@@ -87,6 +88,9 @@ for file in \
         ;;
       appearance.json)
         printf '{}\n' > "$target"
+        ;;
+      godspot/settings.json)
+        printf '{"storageType":"local","cfUploadUrl":"","cfAuthToken":"","publicBaseUrl":""}\n' > "$target"
         ;;
     esac
   fi

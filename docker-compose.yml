@@ -19,6 +19,7 @@ services:
       - ${RUNTIME_DIR:-./runtime}/community_posts.json:/app/scripts/community_posts.json
       - ${RUNTIME_DIR:-./runtime}/community_activity.json:/app/scripts/community_activity.json
       - ${RUNTIME_DIR:-./runtime}/community_comments.json:/app/scripts/community_comments.json
+      - ${RUNTIME_DIR:-./runtime}/godspot:/app/runtime/godspot
     environment:
       - NODE_ENV=production
       - PORT=3000

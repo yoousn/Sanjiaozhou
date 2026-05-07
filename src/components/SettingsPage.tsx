@@ -1,8 +1,22 @@
-import React, { useState } from 'react';
-import { Loader2, CheckCircle2, AlertCircle, Trash2 } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Loader2, CheckCircle2, AlertCircle, Trash2, Save } from 'lucide-react';
 import { cn, radiusClassMap, getButtonClassName } from '../utils';
 import { UiPreferences } from '../types';
 import { CustomTheme } from '../hooks/useTheme';
+
+type GodspotStorageSettings = {
+  storageType: 'local' | 'cloudflare';
+  cfUploadUrl: string;
+  publicBaseUrl: string;
+  hasCfAuthToken: boolean;
+};
+
+const DEFAULT_GODSPOT_STORAGE_SETTINGS: GodspotStorageSettings = {
+  storageType: 'local',
+  cfUploadUrl: '',
+  publicBaseUrl: '',
+  hasCfAuthToken: false,
+};
 
 export type SettingsPageProps = {
   uiPreferences: UiPreferences;
@@ -17,6 +31,8 @@ export type SettingsPageProps = {
   isRefreshingDailyPwd: boolean;
   handleRefreshDailyPwd: () => Promise<void>;
   onClearDailyPwdLogs?: (days: string) => Promise<void>;
+  isAdmin?: boolean;
+  showToast?: (message: string, type?: 'success' | 'warn') => void;
 };
 
 export function SettingsPage({
@@ -32,11 +48,70 @@ export function SettingsPage({
   isRefreshingDailyPwd,
   handleRefreshDailyPwd,
   onClearDailyPwdLogs,
+  isAdmin = false,
+  showToast,
 }: SettingsPageProps) {
   const [showClearDialog, setShowClearDialog] = useState(false);
   const [clearTarget, setClearTarget] = useState<string | null>(null);
   const [isClearing, setIsClearing] = useState(false);
+  const [storageSettings, setStorageSettings] = useState<GodspotStorageSettings>(DEFAULT_GODSPOT_STORAGE_SETTINGS);
+  const [cfAuthToken, setCfAuthToken] = useState('');
+  const [isLoadingStorage, setIsLoadingStorage] = useState(true);
+  const [isSavingStorage, setIsSavingStorage] = useState(false);
 
+  useEffect(() => {
+    let cancelled = false;
+    setIsLoadingStorage(true);
+    fetch('/api/config/godspot/storage')
+      .then(async res => {
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data?.error || '读取神人点位存储设置失败');
+        return data;
+      })
+      .then(data => {
+        if (cancelled) return;
+        setStorageSettings({ ...DEFAULT_GODSPOT_STORAGE_SETTINGS, ...data });
+        setCfAuthToken('');
+      })
+      .catch(error => {
+        if (!cancelled) showToast?.(error instanceof Error ? error.message : '读取神人点位存储设置失败', 'warn');
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingStorage(false);
+      });
+    return () => { cancelled = true; };
+  }, [showToast]);
+
+  const handleSaveStorageSettings = async () => {
+    if (!isAdmin) {
+      showToast?.('只有管理员可以修改神人点位存储设置', 'warn');
+      return;
+    }
+    setIsSavingStorage(true);
+    try {
+      const res = await fetch('/api/config/godspot/storage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          storageType: storageSettings.storageType,
+          cfUploadUrl: storageSettings.cfUploadUrl,
+          publicBaseUrl: storageSettings.publicBaseUrl,
+          cfAuthToken,
+          keepExistingToken: !cfAuthToken && storageSettings.hasCfAuthToken,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || '保存神人点位存储设置失败');
+      setStorageSettings({ ...DEFAULT_GODSPOT_STORAGE_SETTINGS, ...(data.settings || {}) });
+      setCfAuthToken('');
+      showToast?.('神人点位存储设置已保存');
+    } catch (error) {
+      showToast?.(error instanceof Error ? error.message : '保存神人点位存储设置失败', 'warn');
+    } finally {
+      setIsSavingStorage(false);
+    }
+  };
   const clearOptions = [
     { label: '全部', value: 'all' },
     { label: '1个月', value: '30' },
@@ -77,7 +152,97 @@ export function SettingsPage({
       </h2>
 
       <div className={settingsPanelClass}>
-        <h3 className="text-lg font-black mb-2 text-zinc-900 dark:text-white">Bilibili 采集 Cookie</h3>
+        <div className="mb-5 flex items-start justify-between gap-4">
+          <div>
+            <h3 className="text-lg font-black mb-2 text-zinc-900 dark:text-white">神人点位视频存储</h3>
+            <p className="text-[13px] text-zinc-500">设置新上传视频保存到服务器本地，或上传到 Cloudflare R2 / S3 兼容对象存储。已上传的视频不会自动迁移。</p>
+          </div>
+          {isLoadingStorage && <Loader2 size={16} className="animate-spin text-zinc-400 shrink-0 mt-1" />}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
+          <button
+            type="button"
+            onClick={() => setStorageSettings(prev => ({ ...prev, storageType: 'local' }))}
+            className={cn(
+              'p-4 text-left border transition',
+              radiusClass,
+              storageSettings.storageType === 'local'
+                ? 'border-zinc-900 dark:border-white bg-zinc-900 text-white dark:bg-white dark:text-zinc-950'
+                : 'border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-[#18181b] text-zinc-700 dark:text-zinc-300 hover:border-zinc-300 dark:hover:border-zinc-700'
+            )}
+          >
+            <div className="text-[13px] font-black mb-1">服务器本地存储</div>
+            <div className={cn('text-[11px] leading-relaxed', storageSettings.storageType === 'local' ? 'opacity-75' : 'text-zinc-500')}>保存到服务器 runtime/godspot/videos/，简单稳定，但会占用服务器硬盘。</div>
+          </button>
+          <button
+            type="button"
+            onClick={() => setStorageSettings(prev => ({ ...prev, storageType: 'cloudflare' }))}
+            className={cn(
+              'p-4 text-left border transition',
+              radiusClass,
+              storageSettings.storageType === 'cloudflare'
+                ? 'border-zinc-900 dark:border-white bg-zinc-900 text-white dark:bg-white dark:text-zinc-950'
+                : 'border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-[#18181b] text-zinc-700 dark:text-zinc-300 hover:border-zinc-300 dark:hover:border-zinc-700'
+            )}
+          >
+            <div className="text-[13px] font-black mb-1">Cloudflare R2 / 对象存储</div>
+            <div className={cn('text-[11px] leading-relaxed', storageSettings.storageType === 'cloudflare' ? 'opacity-75' : 'text-zinc-500')}>适合大量视频，节省服务器磁盘，需要填写上传地址、公开地址和 Token。</div>
+          </button>
+        </div>
+
+        {storageSettings.storageType === 'cloudflare' && (
+          <div className="space-y-4 mb-5">
+            <div>
+              <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">上传地址</label>
+              <input
+                type="url"
+                value={storageSettings.cfUploadUrl}
+                onChange={e => setStorageSettings(prev => ({ ...prev, cfUploadUrl: e.target.value }))}
+                placeholder="例如：https://xxx.r2.cloudflarestorage.com/bucket/prefix"
+                className={cn('w-full px-4 py-3 bg-zinc-50 dark:bg-[#18181b] border border-zinc-200 dark:border-zinc-800 text-[13px] font-bold outline-none focus:border-zinc-900 dark:focus:border-white', radiusClass)}
+              />
+            </div>
+            <div>
+              <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">公开访问地址</label>
+              <input
+                type="url"
+                value={storageSettings.publicBaseUrl}
+                onChange={e => setStorageSettings(prev => ({ ...prev, publicBaseUrl: e.target.value }))}
+                placeholder="例如：https://cdn.example.com/godspot"
+                className={cn('w-full px-4 py-3 bg-zinc-50 dark:bg-[#18181b] border border-zinc-200 dark:border-zinc-800 text-[13px] font-bold outline-none focus:border-zinc-900 dark:focus:border-white', radiusClass)}
+              />
+            </div>
+            <div>
+              <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">授权 Token</label>
+              <input
+                type="password"
+                value={cfAuthToken}
+                onChange={e => setCfAuthToken(e.target.value)}
+                placeholder={storageSettings.hasCfAuthToken ? '已保存 Token；留空则继续使用原 Token' : '请输入 Authorization Token'}
+                className={cn('w-full px-4 py-3 bg-zinc-50 dark:bg-[#18181b] border border-zinc-200 dark:border-zinc-800 text-[13px] font-bold outline-none focus:border-zinc-900 dark:focus:border-white', radiusClass)}
+              />
+            </div>
+          </div>
+        )}
+
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-zinc-100 dark:border-zinc-800">
+          <span className="text-[12px] font-bold text-zinc-500">
+            当前：{storageSettings.storageType === 'local' ? '服务器本地存储' : 'Cloudflare R2 / 对象存储'}
+          </span>
+          <button
+            type="button"
+            onClick={handleSaveStorageSettings}
+            disabled={!isAdmin || isSavingStorage}
+            className={cn(settingsActionButtonClass, 'px-5')}
+          >
+            {isSavingStorage ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+            {isSavingStorage ? '保存中...' : isAdmin ? '保存存储设置' : '仅管理员可保存'}
+          </button>
+        </div>
+      </div>
+
+      <div className={settingsPanelClass}>
         <p className="text-[13px] text-zinc-500 mb-6">上传 Netscape 格式的 cookies.txt 文件以更新采集凭证。上传后会自动进行一次抓取测试以验证有效性。</p>
 
         {cookieStatus && (

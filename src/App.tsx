@@ -712,6 +712,8 @@ export default function App() {
                 isRefreshingDailyPwd={daily.isRefreshingDailyPwd}
                 handleRefreshDailyPwd={daily.handleRefreshDailyPwd}
                 onClearDailyPwdLogs={handleClearDailyPwdLogs}
+                isAdmin={auth.isAdmin}
+                showToast={showToast}
               />
               </React.Suspense>
             ) : activeTab === 'appearance' ? (

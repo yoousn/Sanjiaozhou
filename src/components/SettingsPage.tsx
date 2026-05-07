@@ -214,14 +214,15 @@ export function SettingsPage({
               />
             </div>
             <div>
-              <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">授权 Token</label>
+              <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">授权信息</label>
               <input
                 type="password"
                 value={cfAuthToken}
                 onChange={e => setCfAuthToken(e.target.value)}
-                placeholder={storageSettings.hasCfAuthToken ? '已保存 Token；留空则继续使用原 Token' : '请输入 Authorization Token'}
+                placeholder={storageSettings.hasCfAuthToken ? '已保存；留空则继续使用原授权信息' : 'Worker Token，或 S3 密钥：AccessKeyId:SecretAccessKey[:region]'}
                 className={cn('w-full px-4 py-3 bg-zinc-50 dark:bg-[#18181b] border border-zinc-200 dark:border-zinc-800 text-[13px] font-bold outline-none focus:border-zinc-900 dark:focus:border-white', radiusClass)}
               />
+              <p className="mt-2 text-[11px] font-bold leading-relaxed text-zinc-400">直连 R2 / S3 地址时请填写访问密钥，格式为 AccessKeyId:SecretAccessKey，R2 区域默认 auto；如上传地址是自建 Worker，则继续填写原 Authorization Token。</p>
             </div>
           </div>
         )}

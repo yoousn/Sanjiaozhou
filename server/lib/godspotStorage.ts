@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { createHash } from "crypto";
+import { createHash, createHmac } from "crypto";
 import { getGodspotConfig, type GodspotStorageType } from "./godspotConfig.js";
 import { logger } from "./logger.js";
 
@@ -13,12 +13,114 @@ export type StoreObjectResult = {
   error?: string;
 };
 
+type S3Credentials = {
+  accessKeyId: string;
+  secretAccessKey: string;
+  region: string;
+  service: string;
+};
+
 function ensureDir(dir: string) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 }
 
-function sha256Hex(buffer: Buffer) {
-  return createHash("sha256").update(buffer).digest("hex");
+function sha256Hex(data: Buffer | string) {
+  return createHash("sha256").update(data).digest("hex");
+}
+
+function hmac(key: Buffer | string, value: string) {
+  return createHmac("sha256", key).update(value).digest();
+}
+
+function hmacHex(key: Buffer | string, value: string) {
+  return createHmac("sha256", key).update(value).digest("hex");
+}
+
+function normalizeAmzDate(date = new Date()) {
+  const iso = date.toISOString().replace(/[:-]|\.\d{3}/g, "");
+  return { amzDate: iso, dateStamp: iso.slice(0, 8) };
+}
+
+function encodeCanonicalPath(pathname: string) {
+  return pathname.split("/").map(part => encodeURIComponent(decodeURIComponent(part))).join("/") || "/";
+}
+
+function parseS3Credentials(token: string): S3Credentials | null {
+  const text = token.trim();
+  if (!text) return null;
+
+  if (text.startsWith("{")) {
+    try {
+      const raw = JSON.parse(text);
+      const accessKeyId = String(raw.accessKeyId || raw.accessKey || raw.AWS_ACCESS_KEY_ID || "").trim();
+      const secretAccessKey = String(raw.secretAccessKey || raw.secretKey || raw.AWS_SECRET_ACCESS_KEY || "").trim();
+      if (!accessKeyId || !secretAccessKey) return null;
+      return {
+        accessKeyId,
+        secretAccessKey,
+        region: String(raw.region || "auto").trim() || "auto",
+        service: String(raw.service || "s3").trim() || "s3",
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  const parts = text.split(":");
+  if (parts.length < 2 || /^Bearer\s+/i.test(text) || /^Basic\s+/i.test(text) || /^AWS4-HMAC-SHA256\s+/i.test(text)) return null;
+  const [accessKeyId, secretAccessKey, region = "auto", service = "s3"] = parts.map(part => part.trim());
+  if (!accessKeyId || !secretAccessKey) return null;
+  return { accessKeyId, secretAccessKey, region: region || "auto", service: service || "s3" };
+}
+
+function buildS3SignedHeaders(method: "PUT" | "DELETE", url: string, bodyHash: string, contentType?: string): Record<string, string> {
+  const config = getGodspotConfig();
+  const credentials = parseS3Credentials(config.cfAuthToken);
+  const target = new URL(url);
+  const { amzDate, dateStamp } = normalizeAmzDate();
+
+  if (!credentials) {
+    return {
+      Authorization: config.cfAuthToken,
+      ...(contentType ? { "Content-Type": contentType } : {}),
+      ...(method === "PUT" ? { "Cache-Control": "public, max-age=31536000, immutable" } : {}),
+      "x-amz-content-sha256": bodyHash,
+      "x-amz-date": amzDate,
+      Date: new Date().toUTCString(),
+    };
+  }
+
+  const baseHeaders: Record<string, string> = {
+    host: target.host,
+    "x-amz-content-sha256": bodyHash,
+    "x-amz-date": amzDate,
+  };
+  if (contentType) baseHeaders["content-type"] = contentType;
+  if (method === "PUT") baseHeaders["cache-control"] = "public, max-age=31536000, immutable";
+
+  const sortedHeaderNames = Object.keys(baseHeaders).sort();
+  const canonicalHeaders = sortedHeaderNames.map(name => `${name}:${baseHeaders[name].trim()}\n`).join("");
+  const signedHeaders = sortedHeaderNames.join(";");
+  const canonicalRequest = [
+    method,
+    encodeCanonicalPath(target.pathname),
+    target.searchParams.toString(),
+    canonicalHeaders,
+    signedHeaders,
+    bodyHash,
+  ].join("\n");
+  const credentialScope = `${dateStamp}/${credentials.region}/${credentials.service}/aws4_request`;
+  const stringToSign = ["AWS4-HMAC-SHA256", amzDate, credentialScope, sha256Hex(canonicalRequest)].join("\n");
+  const signingKey = hmac(hmac(hmac(hmac(`AWS4${credentials.secretAccessKey}`, dateStamp), credentials.region), credentials.service), "aws4_request");
+  const signature = hmacHex(signingKey, stringToSign);
+
+  return {
+    ...(contentType ? { "Content-Type": contentType } : {}),
+    ...(method === "PUT" ? { "Cache-Control": "public, max-age=31536000, immutable" } : {}),
+    "x-amz-content-sha256": bodyHash,
+    "x-amz-date": amzDate,
+    Authorization: `AWS4-HMAC-SHA256 Credential=${credentials.accessKeyId}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`,
+  };
 }
 
 async function storeLocalObject(sourcePath: string, key: string): Promise<StoreObjectResult> {
@@ -45,14 +147,10 @@ async function storeCloudflareObject(sourcePath: string, key: string, contentTyp
   const baseUrl = config.cfUploadUrl.replace(/\/+$/, "");
   const uploadUrl = `${baseUrl}/${encodeURIComponent(key)}`;
   const buffer = fs.readFileSync(sourcePath);
+  const bodyHash = sha256Hex(buffer);
   const res = await fetch(uploadUrl, {
     method: "PUT",
-    headers: {
-      Authorization: config.cfAuthToken,
-      "Content-Type": contentType || "application/octet-stream",
-      "Cache-Control": "public, max-age=31536000, immutable",
-      "x-amz-content-sha256": sha256Hex(buffer),
-    },
+    headers: buildS3SignedHeaders("PUT", uploadUrl, bodyHash, contentType || "application/octet-stream"),
     body: new Uint8Array(buffer),
   });
 
@@ -90,9 +188,10 @@ export async function deleteObject(storageType: GodspotStorageType, key: string)
     if (storageType === "cloudflare") {
       if (!config.cfUploadUrl || !config.cfAuthToken) return false;
       const baseUrl = config.cfUploadUrl.replace(/\/+$/, "");
-      const res = await fetch(`${baseUrl}/${encodeURIComponent(key)}`, {
+      const deleteUrl = `${baseUrl}/${encodeURIComponent(key)}`;
+      const res = await fetch(deleteUrl, {
         method: "DELETE",
-        headers: { Authorization: config.cfAuthToken },
+        headers: buildS3SignedHeaders("DELETE", deleteUrl, sha256Hex("")),
       });
       return res.ok || res.status === 404;
     }

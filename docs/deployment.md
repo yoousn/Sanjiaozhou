@@ -74,17 +74,19 @@ docker-compose down
 工作流行为：
 1. GitHub Runner 执行 `npm ci` 与 `npm run build`
 2. 通过 SSH 登录服务器
-3. 在 `/opt/xiujiao-era` 执行：
+3. 在 `/opt/xiujiao-era` 执行远程部署脚本：
+   - `bash scripts/deploy_remote.sh`
+4. 远程脚本会先执行安全同步：
    - `git fetch origin main`
    - `git checkout main`
-   - `git pull --ff-only origin main`
-   - `bash scripts/deploy_remote.sh`
-4. 远程脚本继续执行：
+   - 若服务器本地 `main` 可快进，则重置到 `origin/main`
+   - 若服务器本地 `main` 与 `origin/main` 分叉，则先创建 `deploy-backup/main-时间戳` 备份分支，再重置到 `origin/main`
+5. 远程脚本继续执行：
    - 初始化 `runtime/` 缺失文件
    - `docker-compose build`
    - `docker-compose up -d`
    - 默认执行 `docker image prune -f`
-5. 若本次 push 对应的是正式版本号更新，工作流会在部署成功后自动创建并推送 `v版本号` tag；同名 tag 已存在时会自动跳过
+6. 若本次 push 对应的是正式版本号更新，工作流会在部署成功后自动创建并推送 `v版本号` tag；同名 tag 已存在时会自动跳过
 
 ## GitHub Secrets
 仓库 Actions Secrets 需要配置：

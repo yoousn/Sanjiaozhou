@@ -244,3 +244,8 @@ v1.3.1   日期2026.5.7---2
 说明
 - **修复系统设置页无限请求**：系统设置页进入时不再依赖每日密码 Hook 整体对象，避免每次日志更新触发重复 `status` / `logs` 请求，解决浏览器 `ERR_INSUFFICIENT_RESOURCES` 和 `Failed to fetch` 问题
 - **修复神人点位接口 404**：补齐服务端 `/api/godspot` 路由挂载，解决神人点位页面请求 `/api/godspot/videos` 返回 404 的问题
+
+v1.3.2   日期2026.5.7---3
+说明
+- **修复神人点位云存储上传 400**：直连 Cloudflare R2 / S3 兼容对象存储上传视频时自动计算并附加 `x-amz-content-sha256`，解决 `Missing x-amz-content-sha256` 导致 `/api/godspot/upload` 返回 500 的问题
+

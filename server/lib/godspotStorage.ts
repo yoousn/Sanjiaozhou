@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { createHash } from "crypto";
 import { getGodspotConfig, type GodspotStorageType } from "./godspotConfig.js";
 import { logger } from "./logger.js";
 
@@ -14,6 +15,10 @@ export type StoreObjectResult = {
 
 function ensureDir(dir: string) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+}
+
+function sha256Hex(buffer: Buffer) {
+  return createHash("sha256").update(buffer).digest("hex");
 }
 
 async function storeLocalObject(sourcePath: string, key: string): Promise<StoreObjectResult> {
@@ -46,6 +51,7 @@ async function storeCloudflareObject(sourcePath: string, key: string, contentTyp
       Authorization: config.cfAuthToken,
       "Content-Type": contentType || "application/octet-stream",
       "Cache-Control": "public, max-age=31536000, immutable",
+      "x-amz-content-sha256": sha256Hex(buffer),
     },
     body: new Uint8Array(buffer),
   });

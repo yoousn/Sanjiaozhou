@@ -249,5 +249,8 @@ v1.3.2   日期2026.5.7---3
 说明
 - **彻底修复神人点位云存储上传 400**：直连 Cloudflare R2 / S3 兼容对象存储上传视频时自动计算 `x-amz-content-sha256`，并补齐 `x-amz-date` 与 AWS SigV4 签名，解决 `Missing x-amz-content-sha256`、`No date provided in x-amz-date nor date header` 导致 `/api/godspot/upload` 返回 500 的问题
 - **兼容两类云存储授权方式**：自建 Worker 上传地址继续支持原 `Authorization Token`；直连 R2 / S3 地址支持 `AccessKeyId:SecretAccessKey[:region]` 或 JSON 格式密钥，删除云端视频时也使用同一套签名逻辑
+- **优化神人点位页面布局**：预览播放器改为主视觉大卡片，上传表单收窄为右侧紧凑面板，视频列表卡片增加当前预览高亮，整体观感更聚焦
+
+
 
 

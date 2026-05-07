@@ -163,91 +163,48 @@ export function GodSpotPage({ auth, onOpenAuth, showToast }: { auth: any; onOpen
         </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[360px_1fr] gap-6">
-        <div className="space-y-4">
-          <form onSubmit={handleUpload} className="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#121214] p-5 shadow-sm space-y-4">
-            <div>
-              <h3 className="text-[15px] font-black text-zinc-900 dark:text-white mb-1">上传视频</h3>
-              <p className="text-[12px] text-zinc-500">请先在本地压缩，再上传 MP4/WebM/MOV/MKV/AVI。</p>
-            </div>
-
-            <label className="block">
-              <span className="text-[12px] font-bold text-zinc-500 mb-2 block">视频名称</span>
-              <input
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="例如：巴克什二楼窗口点位"
-                className="w-full rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 px-4 py-3 text-[13px] font-semibold outline-none focus:ring-2 focus:ring-zinc-900/10 dark:text-white"
-              />
-            </label>
-
-            <label className="block">
-              <span className="text-[12px] font-bold text-zinc-500 mb-2 block">关联地图</span>
-              <select
-                value={mapName}
-                onChange={(e) => setMapName(e.target.value)}
-                className="w-full rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 px-4 py-3 text-[13px] font-bold outline-none focus:ring-2 focus:ring-zinc-900/10 dark:text-white"
-              >
-                {MAPS.filter((item) => item !== "全部").map((item) => <option key={item} value={item}>{item}</option>)}
-              </select>
-            </label>
-
-            <label className="rounded-3xl border border-dashed border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900/60 p-5 flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-900 transition">
-              <CloudUpload size={28} className="text-zinc-400" />
-              <div className="text-center">
-                <p className="text-[13px] font-black text-zinc-800 dark:text-zinc-100">{selectedFile ? selectedFile.name : "选择视频文件"}</p>
-                <p className="text-[11px] text-zinc-500 mt-1">{selectedFile ? formatSize(selectedFile.size) : "最大大小由服务端配置控制，默认 500MB"}</p>
+      <div className="grid grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_320px] gap-6 items-start">
+        <div className="min-w-0 space-y-5">
+          <div className="rounded-[2rem] border border-white/70 dark:border-zinc-800 bg-white/80 dark:bg-[#121214]/90 p-4 md:p-5 shadow-sm backdrop-blur-xl">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {MAPS.map((item) => (
+                  <button
+                    key={item}
+                    onClick={() => setActiveMap(item)}
+                    className={cn(
+                      "shrink-0 px-4 py-2 rounded-2xl text-[13px] font-black border transition active:scale-95",
+                      activeMap === item
+                        ? "bg-zinc-900 text-white border-zinc-900 dark:bg-white dark:text-zinc-900 dark:border-white shadow-sm"
+                        : "bg-white/70 dark:bg-zinc-900/70 text-zinc-500 border-zinc-200 dark:border-zinc-800 hover:text-zinc-900 dark:hover:text-white"
+                    )}
+                  >
+                    {item}
+                  </button>
+                ))}
               </div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="video/mp4,video/webm,video/quicktime,video/x-matroska,video/x-msvideo"
-                className="hidden"
-                onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-              />
-            </label>
-
-            <button
-              type="submit"
-              disabled={uploading}
-              className="w-full rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 py-3 text-[13px] font-black hover:opacity-90 disabled:opacity-60 transition flex items-center justify-center gap-2"
-            >
-              {uploading ? <Loader2 size={16} className="animate-spin" /> : <CloudUpload size={16} />}
-              {uploading ? "正在上传/处理中..." : "上传视频"}
-            </button>
-          </form>
-
-          <div className="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#121214] p-4 shadow-sm">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[13px] font-black text-zinc-900 dark:text-white">快速预览</span>
-              <button onClick={() => void fetchVideos(activeMap)} className="p-2 rounded-xl text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition" title="刷新">
+              <button onClick={() => void fetchVideos(activeMap)} className="self-start lg:self-auto px-3 py-2 rounded-2xl text-[12px] font-black text-zinc-500 bg-zinc-100/80 dark:bg-zinc-900 hover:text-zinc-900 dark:hover:text-white transition flex items-center gap-2" title="刷新">
                 <RefreshCw size={14} />
+                刷新
               </button>
             </div>
-            {previewVideo ? (
-              <video key={previewVideo.id} src={previewVideo.videoUrl} controls preload="metadata" className="w-full aspect-video rounded-2xl bg-black object-contain" />
-            ) : (
-              <div className="aspect-video rounded-2xl bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center text-[12px] font-bold text-zinc-400">暂无可预览视频</div>
-            )}
-          </div>
-        </div>
 
-        <div className="min-w-0">
-          <div className="flex gap-2 overflow-x-auto pb-3 mb-4">
-            {MAPS.map((item) => (
-              <button
-                key={item}
-                onClick={() => setActiveMap(item)}
-                className={cn(
-                  "shrink-0 px-4 py-2 rounded-2xl text-[13px] font-black border transition active:scale-95",
-                  activeMap === item
-                    ? "bg-zinc-900 text-white border-zinc-900 dark:bg-white dark:text-zinc-900 dark:border-white"
-                    : "bg-white dark:bg-[#121214] text-zinc-500 border-zinc-200 dark:border-zinc-800 hover:text-zinc-900 dark:hover:text-white"
-                )}
-              >
-                {item}
-              </button>
-            ))}
+            <div className="relative overflow-hidden rounded-[1.75rem] bg-black shadow-2xl shadow-zinc-900/10">
+              {previewVideo ? (
+                <video key={previewVideo.id} src={previewVideo.videoUrl} controls preload="metadata" className="w-full aspect-[16/9] max-h-[62vh] bg-black object-contain" />
+              ) : (
+                <div className="aspect-[16/9] min-h-[320px] bg-zinc-950 flex items-center justify-center text-[13px] font-bold text-zinc-500">暂无可预览视频</div>
+              )}
+              {previewVideo && (
+                <div className="pointer-events-none absolute left-0 right-0 top-0 p-4 bg-gradient-to-b from-black/65 to-transparent">
+                  <div className="flex flex-wrap items-center gap-2 text-white">
+                    <span className="px-3 py-1 rounded-full bg-white/18 backdrop-blur text-[12px] font-black">{previewVideo.mapName}</span>
+                    <span className="text-[14px] md:text-[16px] font-black drop-shadow">{previewVideo.displayName}</span>
+                    <span className="text-[11px] font-bold text-white/70">{formatSize(previewVideo.size)}</span>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           {loading && videos.length === 0 ? (
@@ -262,42 +219,100 @@ export function GodSpotPage({ auth, onOpenAuth, showToast }: { auth: any; onOpen
               <button onClick={() => void fetchVideos(activeMap)} className="px-4 py-2 bg-zinc-900 text-white text-[12px] font-bold rounded-xl hover:bg-zinc-800 transition">重试</button>
             </div>
           ) : filteredVideos.length === 0 ? (
-            <div className="rounded-3xl border border-dashed border-zinc-200 dark:border-zinc-800 py-24 text-center">
+            <div className="rounded-3xl border border-dashed border-zinc-200 dark:border-zinc-800 py-24 text-center bg-white/50 dark:bg-[#121214]/70">
               <Video size={28} className="mx-auto text-zinc-300 mb-3" />
               <p className="text-[13px] font-black text-zinc-500">当前地图暂无视频</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {filteredVideos.map((video) => (
-                <motion.div key={video.id} className="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#121214] overflow-hidden shadow-sm hover:shadow-md transition" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-                  <button onClick={() => setPreviewId(video.id)} className="relative w-full aspect-video bg-black group block text-left">
-                    <video src={video.videoUrl} preload="metadata" muted className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition" />
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/15 group-hover:bg-black/5 transition">
-                      <div className="w-12 h-12 rounded-full bg-white/90 text-zinc-900 flex items-center justify-center shadow-lg">
-                        <Play size={20} fill="currentColor" />
+              {filteredVideos.map((video) => {
+                const active = previewVideo?.id === video.id;
+                return (
+                  <motion.div key={video.id} className={cn("rounded-[1.5rem] border bg-white/85 dark:bg-[#121214]/90 overflow-hidden shadow-sm hover:shadow-lg transition backdrop-blur-xl", active ? "border-zinc-900 dark:border-white ring-2 ring-zinc-900/10 dark:ring-white/10" : "border-white/70 dark:border-zinc-800")} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+                    <button onClick={() => setPreviewId(video.id)} className="relative w-full aspect-video bg-black group block text-left">
+                      <video src={video.videoUrl} preload="metadata" muted className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition" />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/15 group-hover:bg-black/5 transition">
+                        <div className="w-11 h-11 rounded-full bg-white/90 text-zinc-900 flex items-center justify-center shadow-lg scale-90 group-hover:scale-100 transition">
+                          <Play size={18} fill="currentColor" />
+                        </div>
+                      </div>
+                      {active && <span className="absolute left-3 top-3 px-2.5 py-1 rounded-full bg-white text-zinc-900 text-[10px] font-black shadow-sm">预览中</span>}
+                    </button>
+                    <div className="p-3.5">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <h3 className="text-[13px] font-black text-zinc-900 dark:text-white truncate" title={video.displayName}>{video.displayName}</h3>
+                          <p className="text-[11px] font-bold text-zinc-500 mt-1">{video.mapName} · {formatSize(video.size)}</p>
+                        </div>
+                        <button onClick={() => void handleDelete(video)} className="p-2 rounded-xl text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition" title="删除">
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                      <div className="mt-2.5 flex items-center justify-between text-[10px] font-bold text-zinc-400">
+                        <span>{video.storageType === "cloudflare" ? "云端" : "本地"}</span>
+                        <span>{formatDate(video.createdAt)}</span>
                       </div>
                     </div>
-                  </button>
-                  <div className="p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <h3 className="text-[14px] font-black text-zinc-900 dark:text-white truncate" title={video.displayName}>{video.displayName}</h3>
-                        <p className="text-[11px] font-bold text-zinc-500 mt-1">{video.mapName} · {formatSize(video.size)}</p>
-                      </div>
-                      <button onClick={() => void handleDelete(video)} className="p-2 rounded-xl text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition" title="删除">
-                        <Trash2 size={15} />
-                      </button>
-                    </div>
-                    <div className="mt-3 flex items-center justify-between text-[10px] font-bold text-zinc-400">
-                      <span>{video.storageType === "cloudflare" ? "云端" : "本地"}</span>
-                      <span>{formatDate(video.createdAt)}</span>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
+                  </motion.div>
+                );
+              })}
             </div>
           )}
         </div>
+
+        <form onSubmit={handleUpload} className="rounded-[2rem] border border-white/70 dark:border-zinc-800 bg-white/80 dark:bg-[#121214]/90 p-4 shadow-sm backdrop-blur-xl space-y-3 2xl:sticky 2xl:top-4">
+          <div>
+            <h3 className="text-[14px] font-black text-zinc-900 dark:text-white mb-1">上传视频</h3>
+            <p className="text-[11px] text-zinc-500">压缩后上传，支持 MP4/WebM/MOV/MKV/AVI。</p>
+          </div>
+
+          <label className="block">
+            <span className="text-[11px] font-bold text-zinc-500 mb-1.5 block">视频名称</span>
+            <input
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              placeholder="例如：巴克什二楼窗口"
+              className="w-full rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900 px-3.5 py-2.5 text-[12px] font-semibold outline-none focus:ring-2 focus:ring-zinc-900/10 dark:text-white"
+            />
+          </label>
+
+          <label className="block">
+            <span className="text-[11px] font-bold text-zinc-500 mb-1.5 block">关联地图</span>
+            <select
+              value={mapName}
+              onChange={(e) => setMapName(e.target.value)}
+              className="w-full rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900 px-3.5 py-2.5 text-[12px] font-bold outline-none focus:ring-2 focus:ring-zinc-900/10 dark:text-white"
+            >
+              {MAPS.filter((item) => item !== "全部").map((item) => <option key={item} value={item}>{item}</option>)}
+            </select>
+          </label>
+
+          <label className="rounded-2xl border border-dashed border-zinc-300 dark:border-zinc-700 bg-zinc-50/80 dark:bg-zinc-900/60 p-4 flex items-center gap-3 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-900 transition">
+            <div className="w-10 h-10 rounded-2xl bg-white dark:bg-zinc-800 flex items-center justify-center shrink-0 shadow-sm">
+              <CloudUpload size={20} className="text-zinc-400" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[12px] font-black text-zinc-800 dark:text-zinc-100 truncate">{selectedFile ? selectedFile.name : "选择视频文件"}</p>
+              <p className="text-[10px] text-zinc-500 mt-0.5">{selectedFile ? formatSize(selectedFile.size) : "默认最大 500MB"}</p>
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="video/mp4,video/webm,video/quicktime,video/x-matroska,video/x-msvideo"
+              className="hidden"
+              onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+            />
+          </label>
+
+          <button
+            type="submit"
+            disabled={uploading}
+            className="w-full rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 py-2.5 text-[12px] font-black hover:opacity-90 disabled:opacity-60 transition flex items-center justify-center gap-2"
+          >
+            {uploading ? <Loader2 size={15} className="animate-spin" /> : <CloudUpload size={15} />}
+            {uploading ? "上传/处理中..." : "上传视频"}
+          </button>
+        </form>
       </div>
     </motion.div>
   );

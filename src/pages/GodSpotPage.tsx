@@ -271,28 +271,6 @@ export function GodSpotPage({ auth, onOpenAuth, showToast }: { auth: any; onOpen
           </div>
 
           <label className="block">
-            <span className="text-[11px] font-bold text-zinc-500 mb-1.5 block">B 站链接识别</span>
-            <div className="flex gap-2">
-              <input
-                value={bilibiliUrl}
-                onChange={(e) => setBilibiliUrl(e.target.value)}
-                onBlur={() => { if (bilibiliUrl.trim() && !displayName.trim()) void handleResolveBilibili(); }}
-                placeholder="粘贴 BV / b23.tv 链接"
-                className="min-w-0 flex-1 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900 px-3.5 py-2.5 text-[12px] font-semibold outline-none focus:ring-2 focus:ring-zinc-900/10 dark:text-white"
-              />
-              <button
-                type="button"
-                onClick={() => void handleResolveBilibili()}
-                disabled={resolvingBilibili}
-                className="shrink-0 rounded-2xl bg-zinc-100 dark:bg-zinc-900 px-3 text-[11px] font-black text-zinc-600 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white disabled:opacity-60 transition"
-              >
-                {resolvingBilibili ? <Loader2 size={13} className="animate-spin" /> : "识别"}
-              </button>
-            </div>
-            <p className="mt-1.5 text-[10px] leading-relaxed text-zinc-400">识别成功后会自动填写标题；不满意可以继续手动改。</p>
-          </label>
-
-          <label className="block">
             <span className="text-[11px] font-bold text-zinc-500 mb-1.5 block">视频名称</span>
             <input
               value={displayName}
@@ -343,6 +321,27 @@ export function GodSpotPage({ auth, onOpenAuth, showToast }: { auth: any; onOpen
             </>
           ) : (
             <>
+              <label className="block">
+                <span className="text-[11px] font-bold text-zinc-500 mb-1.5 block">B 站链接</span>
+                <div className="flex gap-2">
+                  <input
+                    value={bilibiliUrl}
+                    onChange={(e) => setBilibiliUrl(e.target.value)}
+                    onBlur={() => { if (bilibiliUrl.trim() && !displayName.trim()) void handleResolveBilibili(); }}
+                    placeholder="粘贴 BV / b23.tv 链接"
+                    className="min-w-0 flex-1 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900 px-3.5 py-2.5 text-[12px] font-semibold outline-none focus:ring-2 focus:ring-zinc-900/10 dark:text-white"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void handleResolveBilibili()}
+                    disabled={resolvingBilibili}
+                    className="shrink-0 rounded-2xl bg-zinc-100 dark:bg-zinc-900 px-3 text-[11px] font-black text-zinc-600 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white disabled:opacity-60 transition"
+                  >
+                    {resolvingBilibili ? <Loader2 size={13} className="animate-spin" /> : "识别"}
+                  </button>
+                </div>
+              </label>
+
               <div className="rounded-2xl bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/30 p-3">
                 <p className="text-[11px] leading-relaxed text-amber-700 dark:text-amber-300/80 font-medium">
                   该模式不会下载视频，只保存链接并使用 B 站播放器嵌入播放。
@@ -390,20 +389,22 @@ export function GodSpotPage({ auth, onOpenAuth, showToast }: { auth: any; onOpen
               {previewVideo ? (
                 previewVideo.sourceType === "bilibili" && previewVideo.bvid ? (
                   <>
-                    <iframe
-                      src={`https://player.bilibili.com/player.html?bvid=${previewVideo.bvid}&page=1&autoplay=0&high_quality=1`}
-                      allowFullScreen
-                      className="w-full aspect-[16/9] max-h-[62vh] bg-black"
-                      style={{ pointerEvents: "auto" }}
-                    />
-                    <div className="pointer-events-none absolute left-0 right-0 bottom-0 p-3 bg-gradient-to-t from-black/65 to-transparent flex justify-end">
-                      <a
-                        href={previewVideo.sourceUrl || `https://www.bilibili.com/video/${previewVideo.bvid}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="pointer-events-auto px-3 py-1.5 rounded-full bg-white/20 backdrop-blur text-white text-[11px] font-black hover:bg-white/30 transition"
-                        onClick={(e) => e.stopPropagation()}
-                      >打开原视频</a>
+                    <div className="relative w-full aspect-[16/9] max-h-[62vh] bg-black">
+                      <iframe
+                        src={`https://player.bilibili.com/player.html?bvid=${previewVideo.bvid}&page=1&autoplay=0&high_quality=1`}
+                        allowFullScreen
+                        sandbox="allow-scripts allow-same-origin allow-presentation"
+                        className="w-full h-full bg-black"
+                        style={{ pointerEvents: "auto" }}
+                      />
+                      <div className="absolute left-1/2 top-4 -translate-x-1/2 z-10">
+                        <a
+                          href={previewVideo.sourceUrl || `https://www.bilibili.com/video/${previewVideo.bvid}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex px-4 py-2 rounded-full bg-white/20 backdrop-blur text-white text-[12px] font-black hover:bg-white/35 transition shadow-lg"
+                        >打开原视频</a>
+                      </div>
                     </div>
                   </>
                 ) : (

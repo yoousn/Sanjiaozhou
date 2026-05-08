@@ -3,7 +3,7 @@ import path from "path";
 import { writeJsonAtomic } from "./atomicJson.js";
 import { logger } from "./logger.js";
 
-export type GodspotStorageType = "local" | "cloudflare";
+export type GodspotStorageType = "local" | "cloudflare" | "external";
 
 export type GodspotStorageSettings = {
   storageType: GodspotStorageType;

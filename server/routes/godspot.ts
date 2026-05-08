@@ -32,6 +32,12 @@ function extractBilibiliUrl(value: unknown) {
   return match?.[0] || "";
 }
 
+function extractBvid(value: unknown): string {
+  const text = String(value || "").trim();
+  const match = text.match(/BV[A-Za-z0-9]{10,}/);
+  return match?.[0] || "";
+}
+
 function cleanBilibiliTitle(value: unknown) {
   return String(value || "")
     .replace(/[\r\n\t]+/g, " ")
@@ -42,7 +48,12 @@ function cleanBilibiliTitle(value: unknown) {
     .slice(0, 80);
 }
 
-async function fetchBilibiliTitle(url: string) {
+function cleanBilibiliCoverUrl(raw: string): string {
+  const match = raw.match(/https?:\/\/[^"'\s]+/i);
+  return match?.[0] || "";
+}
+
+async function fetchBilibiliPage(url: string): Promise<{ title: string; url: string; bvid: string; coverUrl: string }> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 10000);
   try {
@@ -54,11 +65,21 @@ async function fetchBilibiliTitle(url: string) {
         Referer: "https://www.bilibili.com",
       },
     });
+    const finalUrl = res.url;
     const html = await res.text();
+    const bvid = extractBvid(finalUrl) || extractBvid(html) || "";
+
     const ogTitle = html.match(/<meta\s+property=["']og:title["']\s+content=["']([^"']+)["']/i)?.[1]
       || html.match(/<meta\s+content=["']([^"']+)["']\s+property=["']og:title["']/i)?.[1]
       || html.match(/<title>([\s\S]*?)<\/title>/i)?.[1];
-    return cleanBilibiliTitle(ogTitle);
+    const title = cleanBilibiliTitle(ogTitle || "");
+
+    const ogImage = html.match(/<meta\s+property=["']og:image["']\s+content=["']([^"']+)["']/i)?.[1]
+      || html.match(/<meta\s+content=["']([^"']+)["']\s+property=["']og:image["']/i)?.[1];
+    const coverUrl = cleanBilibiliCoverUrl(ogImage || "");
+
+    const canonicalUrl = bvid ? `https://www.bilibili.com/video/${bvid}` : finalUrl;
+    return { title, url: canonicalUrl, bvid, coverUrl };
   } finally {
     clearTimeout(timer);
   }
@@ -168,16 +189,89 @@ router.get("/videos", (req, res) => {
 
 router.post("/resolve-bilibili", requireAuth, rateLimit(30, 60 * 60 * 1000, "链接识别过于频繁，请 1 小时后再试"), async (req, res) => {
   try {
-    const url = extractBilibiliUrl(req.body?.url);
+    let url = extractBilibiliUrl(req.body?.url);
     if (!url) return res.status(400).json({ success: false, error: "请粘贴有效的 B 站视频链接" });
 
-    const title = await fetchBilibiliTitle(url);
-    if (!title) return res.status(400).json({ success: false, error: "未识别到视频标题，请手动填写" });
+    // 处理 b23.tv 短链：先重定向获取真实 URL
+    if (/b23\.tv/i.test(url)) {
+      try {
+        const redirectRes = await fetch(url, {
+          method: "HEAD",
+          redirect: "follow",
+          headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" },
+        });
+        url = redirectRes.url || url;
+      } catch {
+        // 如果短链解析失败，仍用原 URL 尝试
+      }
+    }
 
-    res.json({ success: true, data: { title, url } });
+    const result = await fetchBilibiliPage(url);
+    if (!result.title) return res.status(400).json({ success: false, error: "未识别到视频标题，请手动填写" });
+    if (!result.bvid) return res.status(400).json({ success: false, error: "未识别到 BV 号，请确认链接有效" });
+
+    res.json({ success: true, data: result });
   } catch (e) {
     logger.error("API GODSPOT RESOLVE BILIBILI Error", { error: e instanceof Error ? e.message : String(e) });
     res.status(500).json({ success: false, error: "识别 B 站链接失败，请手动填写标题" });
+  }
+});
+
+router.post("/save-bilibili", requireAuth, rateLimit(20, 60 * 60 * 1000, "操作过于频繁，请 1 小时后再试"), async (req, res) => {
+  try {
+    const { url, displayName, mapName } = req.body || {};
+    const rawUrl = extractBilibiliUrl(url) || String(url || "").trim();
+    if (!rawUrl) return res.status(400).json({ success: false, error: "请提供有效的 B 站视频链接" });
+
+    let bvid = extractBvid(rawUrl);
+    let title = "";
+    let coverUrl = "";
+
+    if (!bvid) {
+      // 短链或无法直接提取 bvid 时，通过页面解析获取
+      try {
+        const result = await fetchBilibiliPage(rawUrl);
+        bvid = result.bvid;
+        title = result.title;
+        coverUrl = result.coverUrl;
+      } catch {
+        // 解析失败也继续，bvid 为空时后续会报错
+      }
+    } else if (!String(displayName || "").trim()) {
+      // 有 bvid 且没给标题时，自动解析标题
+      try {
+        const result = await fetchBilibiliPage(`https://www.bilibili.com/video/${bvid}`);
+        title = result.title;
+        coverUrl = result.coverUrl;
+      } catch {
+        // 静默失败
+      }
+    }
+
+    if (!bvid) return res.status(400).json({ success: false, error: "无法识别 BV 号，请确认链接有效" });
+
+    const user = (req as any).authUser;
+    const video = createGodspotVideo({
+      displayName: sanitizeDisplayName(displayName || title, `B站视频_${bvid}`),
+      mapName: normalizeMapName(mapName),
+      originalFilename: bvid,
+      mimeType: "text/html",
+      size: 0,
+      videoKey: bvid,
+      videoUrl: "",
+      storageType: "external",
+      sourceType: "bilibili",
+      sourceUrl: `https://www.bilibili.com/video/${bvid}`,
+      bvid,
+      coverUrl: coverUrl || undefined,
+      uploader: user?.username || "匿名",
+    });
+
+    res.json({ success: true, data: video });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "保存 B 站视频异常";
+    logger.error("API GODSPOT SAVE BILIBILI Error", { error: message });
+    res.status(500).json({ success: false, error: message });
   }
 });
 
@@ -206,6 +300,7 @@ router.post("/upload", requireAuth, rateLimit(10, 60 * 60 * 1000, "上传请求�
       videoKey: stored.key,
       videoUrl: stored.url,
       storageType: stored.storageType,
+      sourceType: "upload",
       uploader: user?.username || "匿名",
     });
 

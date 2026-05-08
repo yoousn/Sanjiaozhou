@@ -106,11 +106,14 @@ export function GodSpotPage({ auth, onOpenAuth, showToast }: { auth: any; onOpen
       return;
     }
 
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), 18000);
     try {
       setResolvingExternal(true);
       const res = await fetch("/api/godspot/resolve-external", {
         method: "POST",
         credentials: "same-origin",
+        signal: controller.signal,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url }),
       });
@@ -120,8 +123,9 @@ export function GodSpotPage({ auth, onOpenAuth, showToast }: { auth: any; onOpen
       if (title && !displayName.trim()) setDisplayName(title);
       if (!silent) showToast(title ? (displayName.trim() ? "已识别标题，可按需替换当前标题" : "已自动填写视频标题") : "未识别到标题，可手动填写后保存", title ? "success" : "warn");
     } catch (e) {
-      if (!silent) showToast(e instanceof Error ? e.message : "识别失败，请手动填写标题", "warn");
+      if (!silent) showToast(e instanceof DOMException && e.name === "AbortError" ? "识别超时，可手动填写标题后保存" : e instanceof Error ? e.message : "识别失败，请手动填写标题", "warn");
     } finally {
+      window.clearTimeout(timer);
       setResolvingExternal(false);
     }
   };

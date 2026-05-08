@@ -1,9 +1,20 @@
 from playwright.sync_api import sync_playwright
 import json
+import os
 import re
 import sys
+import threading
 
-CHROMIUM_EXECUTABLE_PATH = "/usr/bin/chromium"
+CHROMIUM_EXECUTABLE_PATH = os.environ.get("CHROMIUM_EXECUTABLE_PATH", "/usr/bin/chromium")
+SCRIPT_TIMEOUT_SECONDS = 14
+
+
+class TimeoutError(Exception):
+    pass
+
+
+def fail_fast():
+    os._exit(124)
 
 
 def clean_title(value):
@@ -41,8 +52,12 @@ def video_id(raw):
 
 
 def first_url(value):
-    if isinstance(value, str) and value.startswith(("http://", "https://", "//")):
-        return "https:" + value if value.startswith("//") else value.replace("http://", "https://", 1)
+    if isinstance(value, str):
+        value = value.replace("\\u002F", "/").replace("&amp;", "&")
+        if value.startswith(("http://", "https://", "//")):
+            return "https:" + value if value.startswith("//") else value.replace("http://", "https://", 1)
+        m = re.search(r"https?://[^\"'\\\s<>]+", value)
+        return m.group(0).replace("http://", "https://", 1) if m else ""
     if isinstance(value, list):
         for item in value:
             found = first_url(item)
@@ -62,7 +77,7 @@ def walk(obj):
     cover = ""
     stack = [obj]
     seen = 0
-    while stack and seen < 3000:
+    while stack and seen < 2000:
         seen += 1
         cur = stack.pop()
         if isinstance(cur, dict):
@@ -93,25 +108,42 @@ def resolve(raw):
         return {"success": False, "title": fallback_title, "url": "", "coverUrl": "", "error": "no url"}
 
     result = {"success": True, "title": fallback_title, "url": url, "coverUrl": ""}
+    browser = None
     try:
         with sync_playwright() as p:
             browser = p.chromium.launch(
                 executable_path=CHROMIUM_EXECUTABLE_PATH,
                 headless=True,
-                args=["--disable-gpu", "--disable-dev-shm-usage", "--no-sandbox", "--disable-extensions", "--mute-audio"],
+                args=[
+                    "--disable-gpu",
+                    "--disable-dev-shm-usage",
+                    "--no-sandbox",
+                    "--disable-extensions",
+                    "--mute-audio",
+                    "--single-process",
+                ],
             )
             context = browser.new_context(
-                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-                viewport={"width": 1365, "height": 768},
+                user_agent="Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+                viewport={"width": 390, "height": 844},
                 locale="zh-CN",
+                java_script_enabled=True,
             )
             page = context.new_page()
-            page.route("**/*", lambda route: route.abort() if route.request.resource_type in ["image", "stylesheet", "font", "media"] else route.continue_())
+            page.set_default_timeout(3000)
+            page.set_default_navigation_timeout(8000)
+            page.route(
+                "**/*",
+                lambda route: route.abort()
+                if route.request.resource_type in ["image", "stylesheet", "font", "media"]
+                else route.continue_(),
+            )
 
             def handle_response(response):
                 if result["title"] and result["coverUrl"]:
                     return
-                if not any(k in response.url.lower() for k in ["aweme", "detail", "item", "modal", "video"]):
+                lower_url = response.url.lower()
+                if not any(k in lower_url for k in ["aweme", "detail", "item", "modal", "video"]):
                     return
                 try:
                     ct = response.headers.get("content-type", "")
@@ -128,8 +160,8 @@ def resolve(raw):
 
             page.on("response", handle_response)
             try:
-                page.goto(url, wait_until="domcontentloaded", timeout=18000)
-                page.wait_for_timeout(6000)
+                page.goto(url, wait_until="commit", timeout=8000)
+                page.wait_for_timeout(2500)
             except Exception:
                 pass
 
@@ -144,10 +176,14 @@ def resolve(raw):
                     result["coverUrl"] = first_url(page.locator("meta[property='og:image']").get_attribute("content") or "")
             except Exception:
                 pass
-
-            browser.close()
     except Exception as e:
         result["error"] = str(e)
+    finally:
+        try:
+            if browser:
+                browser.close()
+        except Exception:
+            pass
 
     if not result["title"]:
         result["title"] = fallback_title
@@ -157,5 +193,11 @@ def resolve(raw):
 
 
 if __name__ == "__main__":
+    timer = threading.Timer(SCRIPT_TIMEOUT_SECONDS, fail_fast)
+    timer.daemon = True
+    timer.start()
     raw = " ".join(sys.argv[1:])
-    print(json.dumps(resolve(raw), ensure_ascii=False))
+    try:
+        print(json.dumps(resolve(raw), ensure_ascii=False), flush=True)
+    finally:
+        timer.cancel()

@@ -53,27 +53,7 @@ function extractDouyinUrl(value: unknown) {
   return match?.[0] || "";
 }
 
-async function resolveDouyinUrl(url: string) {
-  if (!/v\.douyin\.com/i.test(url)) return url;
-  try {
-    const res = await fetch(url, {
-      method: "HEAD",
-      redirect: "follow",
-      headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" },
-    });
-    return res.url || url;
-  } catch {
-    try {
-      const res = await fetch(url, {
-        redirect: "follow",
-        headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" },
-      });
-      return res.url || url;
-    } catch {
-      return url;
-    }
-  }
-}
+
 
 
 
@@ -409,8 +389,7 @@ router.post("/resolve-external", requireAuth, rateLimit(30, 60 * 60 * 1000, "链
     }
 
     // douyin
-    let url = extractDouyinUrl(rawUrl) || rawUrl;
-    url = await resolveDouyinUrl(url);
+    const url = extractDouyinUrl(rawUrl) || rawUrl;
     if (!url) return res.json({ success: true, data: { platform: "douyin", title: "", url: rawUrl, coverUrl: "" } });
 
     const result = await resolveDouyinWithPlaywright(rawUrl);
@@ -467,7 +446,6 @@ router.post("/save-external", requireAuth, rateLimit(20, 60 * 60 * 1000, "操作
 
     // douyin
     let dyUrl = extractDouyinUrl(rawUrl) || rawUrl;
-    dyUrl = await resolveDouyinUrl(dyUrl);
     let title = "";
     let coverUrl = "";
     try {

@@ -34,7 +34,8 @@ function extractBilibiliUrl(value: unknown) {
 
 function extractDouyinUrl(value: unknown) {
   const text = String(value || "").trim();
-  const match = text.match(/https?:\/\/(?:www\.)?(?:douyin\.com\/video\/[A-Za-z0-9?=&_./%-]+|v\.douyin\.com\/[A-Za-z0-9]+)/i);
+  // 支持: douyin.com/video/xxx, douyin.com/jingxuan?modal_id=xxx, v.douyin.com/xxx
+  const match = text.match(/https?:\/\/(?:www\.)?(?:douyin\.com\/(?:video\/[A-Za-z0-9?=&_./%-]+|jingxuan[?/][A-Za-z0-9?=&_./%-]+)|v\.douyin\.com\/[A-Za-z0-9_\/-]+)/i);
   return match?.[0] || "";
 }
 
@@ -68,7 +69,7 @@ function cleanBilibiliCoverUrl(raw: string): string {
 
 async function fetchBilibiliPage(url: string): Promise<{ title: string; url: string; bvid: string; coverUrl: string }> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 10000);
+  const timer = setTimeout(() => controller.abort(), 15000);
   try {
     const res = await fetch(url, {
       redirect: "follow",
@@ -76,6 +77,8 @@ async function fetchBilibiliPage(url: string): Promise<{ title: string; url: str
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
         Referer: "https://www.bilibili.com",
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
       },
     });
     const finalUrl = res.url;
@@ -87,9 +90,30 @@ async function fetchBilibiliPage(url: string): Promise<{ title: string; url: str
       || html.match(/<title>([\s\S]*?)<\/title>/i)?.[1];
     const title = cleanBilibiliTitle(ogTitle || "");
 
+    let coverUrl = "";
     const ogImage = html.match(/<meta\s+property=["']og:image["']\s+content=["']([^"']+)["']/i)?.[1]
       || html.match(/<meta\s+content=["']([^"']+)["']\s+property=["']og:image["']/i)?.[1];
-    const coverUrl = cleanBilibiliCoverUrl(ogImage || "");
+    if (ogImage) {
+      coverUrl = cleanBilibiliCoverUrl(ogImage);
+    }
+
+    // 如果 HTML 解析没拿到封面，尝试用 B 站 API 获取
+    if (!coverUrl && bvid) {
+      try {
+        const apiRes = await fetch(`https://api.bilibili.com/x/web-interface/view?bvid=${bvid}`, {
+          signal: AbortSignal.timeout(5000),
+          headers: { "User-Agent": "Mozilla/5.0" },
+        });
+        if (apiRes.ok) {
+          const apiData = await apiRes.json() as any;
+          if (apiData?.data?.pic) {
+            coverUrl = String(apiData.data.pic).trim();
+          }
+        }
+      } catch {
+        // API 失败不影响主流程
+      }
+    }
 
     const canonicalUrl = bvid ? `https://www.bilibili.com/video/${bvid}` : finalUrl;
     return { title, url: canonicalUrl, bvid, coverUrl };
@@ -100,7 +124,7 @@ async function fetchBilibiliPage(url: string): Promise<{ title: string; url: str
 
 async function fetchDouyinPage(url: string): Promise<{ title: string; url: string; coverUrl: string }> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 10000);
+  const timer = setTimeout(() => controller.abort(), 15000);
   try {
     const res = await fetch(url, {
       redirect: "follow",
@@ -108,13 +132,17 @@ async function fetchDouyinPage(url: string): Promise<{ title: string; url: strin
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
         Referer: "https://www.douyin.com",
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
       },
     });
     const html = await res.text();
 
+    // 从 <title> 提取标题
+    const titleMatch = html.match(/<title>([\s\S]*?)<\/title>/i);
     const ogTitle = html.match(/<meta\s+property=["']og:title["']\s+content=["']([^"']+)["']/i)?.[1]
       || html.match(/<meta\s+content=["']([^"']+)["']\s+property=["']og:title["']/i)?.[1]
-      || html.match(/<title>([\s\S]*?)<\/title>/i)?.[1];
+      || titleMatch?.[1];
     const title = String(ogTitle || "")
       .replace(/[\r\n\t]+/g, " ")
       .replace(/ - 抖音.*$/i, "")
@@ -122,6 +150,7 @@ async function fetchDouyinPage(url: string): Promise<{ title: string; url: strin
       .trim()
       .slice(0, 80);
 
+    // 从 og:image 提取封面
     const ogImage = html.match(/<meta\s+property=["']og:image["']\s+content=["']([^"']+)["']/i)?.[1]
       || html.match(/<meta\s+content=["']([^"']+)["']\s+property=["']og:image["']/i)?.[1];
     const coverUrl = (ogImage || "").match(/https?:\/\/[^"'\s]+/i)?.[0] || "";
@@ -263,7 +292,7 @@ router.post("/resolve-external", requireAuth, rateLimit(30, 60 * 60 * 1000, "链
     }
 
     // douyin
-    let url = extractDouyinUrl(rawUrl);
+    let url = extractDouyinUrl(rawUrl) || rawUrl;
     if (!url) return res.status(400).json({ success: false, error: "请粘贴有效的抖音视频链接" });
 
     const result = await fetchDouyinPage(url);

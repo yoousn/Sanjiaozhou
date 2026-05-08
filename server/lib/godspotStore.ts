@@ -8,7 +8,7 @@ import { deleteObject } from "./godspotStorage.js";
 const GODSPOT_DIR = path.join(process.cwd(), "runtime", "godspot");
 const GODSPOT_META_FILE = path.join(GODSPOT_DIR, "metadata.json");
 
-export type GodspotSourceType = "upload" | "bilibili";
+export type GodspotSourceType = "upload" | "bilibili" | "douyin";
 
 export type GodspotVideo = {
   id: string;
@@ -37,17 +37,18 @@ function normalizeMapName(value: string) {
 }
 
 function normalizeVideo(raw: Partial<GodspotVideo>): GodspotVideo {
-  const sourceType = raw.sourceType === "bilibili" ? "bilibili" as const : "upload" as const;
+  const isExternal = raw.sourceType === "bilibili" || raw.sourceType === "douyin";
+  const sourceType = isExternal ? raw.sourceType as GodspotSourceType : "upload" as const;
   return {
     id: String(raw.id || ""),
     displayName: String(raw.displayName || raw.originalFilename || "未命名视频").trim().slice(0, 80),
     mapName: normalizeMapName(String(raw.mapName || GODSPOT_MAPS[0])),
     originalFilename: String(raw.originalFilename || "").trim().slice(0, 160),
-    mimeType: sourceType === "bilibili" ? "text/html" : String(raw.mimeType || "video/mp4"),
+    mimeType: isExternal ? "text/html" : String(raw.mimeType || "video/mp4"),
     size: Math.max(0, Number(raw.size) || 0),
-    videoKey: String(raw.videoKey || raw.bvid || ""),
+    videoKey: String(raw.videoKey || ""),
     videoUrl: String(raw.videoUrl || ""),
-    storageType: sourceType === "bilibili" ? "external" as const : (raw.storageType === "cloudflare" ? "cloudflare" as const : "local" as const),
+    storageType: isExternal ? "external" as const : (raw.storageType === "cloudflare" ? "cloudflare" as const : "local" as const),
     sourceType,
     sourceUrl: raw.sourceUrl ? String(raw.sourceUrl).trim().slice(0, 500) : undefined,
     bvid: sourceType === "bilibili" ? String(raw.bvid || "").trim() : undefined,
@@ -63,7 +64,7 @@ export function readGodspotVideos(): GodspotVideo[] {
   try {
     const parsed = JSON.parse(fs.readFileSync(GODSPOT_META_FILE, "utf-8") || "[]");
     return Array.isArray(parsed)
-      ? parsed.map(normalizeVideo).filter((item) => item.id && (item.sourceType === "bilibili" ? !!item.bvid : !!(item.videoUrl && item.videoKey)))
+      ? parsed.map(normalizeVideo).filter((item) => item.id && (item.sourceType === "bilibili" || item.sourceType === "douyin" ? !!item.sourceUrl : !!(item.videoUrl && item.videoKey)))
       : [];
   } catch {
     return [];
@@ -102,7 +103,7 @@ export async function deleteGodspotVideo(id: string): Promise<GodspotVideo | nul
   const video = videos.find((item) => item.id === id);
   if (!video) return null;
 
-  if (video.sourceType !== "bilibili") {
+  if (video.sourceType === "upload") {
     await deleteObject(video.storageType, video.videoKey);
   }
   writeGodspotVideos(videos.filter((item) => item.id !== id));

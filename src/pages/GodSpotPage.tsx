@@ -15,7 +15,7 @@ type GodspotVideo = {
   videoKey: string;
   videoUrl: string;
   storageType: "local" | "cloudflare" | "external";
-  sourceType: "upload" | "bilibili";
+  sourceType: "upload" | "bilibili" | "douyin";
   sourceUrl?: string;
   bvid?: string;
   coverUrl?: string;
@@ -53,14 +53,14 @@ export function GodSpotPage({ auth, onOpenAuth, showToast }: { auth: any; onOpen
   const [videos, setVideos] = useState<GodspotVideo[]>([]);
   const [activeMap, setActiveMap] = useState("全部");
   const [displayName, setDisplayName] = useState("");
-  const [bilibiliUrl, setBilibiliUrl] = useState("");
-  const [resolvingBilibili, setResolvingBilibili] = useState(false);
+  const [externalUrl, setExternalUrl] = useState("");
+  const [resolvingExternal, setResolvingExternal] = useState(false);
   const [mapName, setMapName] = useState("零号🚌");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
-  const [savingBilibili, setSavingBilibili] = useState(false);
-  const [uploadMode, setUploadMode] = useState<"upload" | "bilibili">("upload");
+  const [savingExternal, setSavingExternal] = useState(false);
+  const [uploadMode, setUploadMode] = useState<"upload" | "external">("upload");
   const [error, setError] = useState<string | null>(null);
   const [previewId, setPreviewId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -94,10 +94,10 @@ export function GodSpotPage({ auth, onOpenAuth, showToast }: { auth: any; onOpen
     void fetchVideos(activeMap);
   }, [activeMap]);
 
-  const handleResolveBilibili = async () => {
-    const url = bilibiliUrl.trim();
+  const handleResolveExternal = async () => {
+    const url = externalUrl.trim();
     if (!url) {
-      showToast("请先粘贴 B 站视频链接", "warn");
+      showToast("请先粘贴视频链接", "warn");
       return;
     }
     if (!auth.isAuthenticated) {
@@ -107,8 +107,8 @@ export function GodSpotPage({ auth, onOpenAuth, showToast }: { auth: any; onOpen
     }
 
     try {
-      setResolvingBilibili(true);
-      const res = await fetch("/api/godspot/resolve-bilibili", {
+      setResolvingExternal(true);
+      const res = await fetch("/api/godspot/resolve-external", {
         method: "POST",
         credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
@@ -123,7 +123,7 @@ export function GodSpotPage({ auth, onOpenAuth, showToast }: { auth: any; onOpen
     } catch (e) {
       showToast(e instanceof Error ? e.message : "识别失败，请手动填写标题", "warn");
     } finally {
-      setResolvingBilibili(false);
+      setResolvingExternal(false);
     }
   };
 
@@ -168,21 +168,21 @@ export function GodSpotPage({ auth, onOpenAuth, showToast }: { auth: any; onOpen
     }
   };
 
-  const handleSaveBilibili = async () => {
+  const handleSaveExternal = async () => {
     if (!auth.isAuthenticated) {
       showToast("请先登录后再保存", "warn");
       onOpenAuth();
       return;
     }
-    const url = bilibiliUrl.trim();
+    const url = externalUrl.trim();
     if (!url) {
-      showToast("请先粘贴 B 站视频链接", "warn");
+      showToast("请先粘贴视频链接", "warn");
       return;
     }
 
     try {
-      setSavingBilibili(true);
-      const res = await fetch("/api/godspot/save-bilibili", {
+      setSavingExternal(true);
+      const res = await fetch("/api/godspot/save-external", {
         method: "POST",
         credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
@@ -191,15 +191,15 @@ export function GodSpotPage({ auth, onOpenAuth, showToast }: { auth: any; onOpen
       const data = await readJson(res);
       if (!res.ok) throw new Error(data?.error || "保存失败");
 
-      showToast("B 站视频已保存", "success");
+      showToast("外链视频已保存", "success");
       setDisplayName("");
-      setBilibiliUrl("");
+      setExternalUrl("");
       await fetchVideos(activeMap);
       if (data?.data?.id) setPreviewId(data.data.id);
     } catch (e) {
       showToast(e instanceof Error ? e.message : "保存失败", "error");
     } finally {
-      setSavingBilibili(false);
+      setSavingExternal(false);
     }
   };
 
@@ -241,7 +241,7 @@ export function GodSpotPage({ auth, onOpenAuth, showToast }: { auth: any; onOpen
       </div>
 
       <div className="grid grid-cols-1 2xl:grid-cols-[320px_minmax(0,1fr)] gap-6 items-start">
-        <form onSubmit={uploadMode === "upload" ? handleUpload : (e) => { e.preventDefault(); void handleSaveBilibili(); }} className="rounded-[2rem] border border-white/70 dark:border-zinc-800 bg-white/80 dark:bg-[#121214]/90 p-4 shadow-sm backdrop-blur-xl space-y-3 2xl:sticky 2xl:top-4">
+        <form onSubmit={uploadMode === "upload" ? handleUpload : (e) => { e.preventDefault(); void handleSaveExternal(); }} className="rounded-[2rem] border border-white/70 dark:border-zinc-800 bg-white/80 dark:bg-[#121214]/90 p-4 shadow-sm backdrop-blur-xl space-y-3 2xl:sticky 2xl:top-4">
           <div>
             <h3 className="text-[14px] font-black text-zinc-900 dark:text-white mb-1">上传视频</h3>
             <p className="text-[11px] text-zinc-500">压缩后上传，支持 MP4/WebM/MOV/MKV/AVI。</p>
@@ -260,14 +260,14 @@ export function GodSpotPage({ auth, onOpenAuth, showToast }: { auth: any; onOpen
             >本地上传</button>
             <button
               type="button"
-              onClick={() => setUploadMode("bilibili")}
+              onClick={() => setUploadMode("external")}
               className={cn(
                 "flex-1 py-2 rounded-xl text-[12px] font-black transition",
-                uploadMode === "bilibili"
+                uploadMode === "external"
                   ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm"
                   : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
               )}
-            >B站外链</button>
+            >B站/抖音外链</button>
           </div>
 
           <label className="block">
@@ -322,39 +322,39 @@ export function GodSpotPage({ auth, onOpenAuth, showToast }: { auth: any; onOpen
           ) : (
             <>
               <label className="block">
-                <span className="text-[11px] font-bold text-zinc-500 mb-1.5 block">B 站链接</span>
+                <span className="text-[11px] font-bold text-zinc-500 mb-1.5 block">视频链接（B站 / 抖音）</span>
                 <div className="flex gap-2">
                   <input
-                    value={bilibiliUrl}
-                    onChange={(e) => setBilibiliUrl(e.target.value)}
-                    onBlur={() => { if (bilibiliUrl.trim() && !displayName.trim()) void handleResolveBilibili(); }}
-                    placeholder="粘贴 BV / b23.tv 链接"
+                    value={externalUrl}
+                    onChange={(e) => setExternalUrl(e.target.value)}
+                    onBlur={() => { if (externalUrl.trim() && !displayName.trim()) void handleResolveExternal(); }}
+                    placeholder="粘贴 B站 / 抖音视频链接"
                     className="min-w-0 flex-1 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900 px-3.5 py-2.5 text-[12px] font-semibold outline-none focus:ring-2 focus:ring-zinc-900/10 dark:text-white"
                   />
                   <button
                     type="button"
-                    onClick={() => void handleResolveBilibili()}
-                    disabled={resolvingBilibili}
+                    onClick={() => void handleResolveExternal()}
+                    disabled={resolvingExternal}
                     className="shrink-0 rounded-2xl bg-zinc-100 dark:bg-zinc-900 px-3 text-[11px] font-black text-zinc-600 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white disabled:opacity-60 transition"
                   >
-                    {resolvingBilibili ? <Loader2 size={13} className="animate-spin" /> : "识别"}
+                    {resolvingExternal ? <Loader2 size={13} className="animate-spin" /> : "识别"}
                   </button>
                 </div>
               </label>
 
               <div className="rounded-2xl bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/30 p-3">
                 <p className="text-[11px] leading-relaxed text-amber-700 dark:text-amber-300/80 font-medium">
-                  该模式不会下载视频，只保存链接并使用 B 站播放器嵌入播放。
+                  该模式不会下载视频，只保存链接。B 站用官方播放器嵌入，抖音展示封面并跳转观看。
                 </p>
               </div>
 
               <button
                 type="submit"
-                disabled={savingBilibili}
+                disabled={savingExternal}
                 className="w-full rounded-2xl bg-sky-600 dark:bg-sky-500 text-white py-2.5 text-[12px] font-black hover:opacity-90 disabled:opacity-60 transition flex items-center justify-center gap-2"
               >
-                {savingBilibili ? <Loader2 size={15} className="animate-spin" /> : <Play size={15} />}
-                {savingBilibili ? "保存中..." : "保存 B站视频"}
+                {savingExternal ? <Loader2 size={15} className="animate-spin" /> : <Play size={15} />}
+                {savingExternal ? "保存中..." : "保存视频"}
               </button>
             </>
           )}
@@ -388,25 +388,39 @@ export function GodSpotPage({ auth, onOpenAuth, showToast }: { auth: any; onOpen
             <div className="relative overflow-hidden rounded-[1.75rem] bg-black shadow-2xl shadow-zinc-900/10">
               {previewVideo ? (
                 previewVideo.sourceType === "bilibili" && previewVideo.bvid ? (
-                  <>
-                    <div className="relative w-full aspect-[16/9] max-h-[62vh] bg-black">
-                      <iframe
-                        src={`https://player.bilibili.com/player.html?bvid=${previewVideo.bvid}&page=1&autoplay=0&high_quality=1`}
-                        allowFullScreen
-                        sandbox="allow-scripts allow-same-origin allow-presentation"
-                        className="w-full h-full bg-black"
-                        style={{ pointerEvents: "auto" }}
-                      />
-                      <div className="absolute left-1/2 top-4 -translate-x-1/2 z-10">
-                        <a
-                          href={previewVideo.sourceUrl || `https://www.bilibili.com/video/${previewVideo.bvid}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex px-4 py-2 rounded-full bg-white/20 backdrop-blur text-white text-[12px] font-black hover:bg-white/35 transition shadow-lg"
-                        >打开原视频</a>
-                      </div>
+                  <div className="relative w-full aspect-[16/9] max-h-[62vh] bg-black">
+                    <iframe
+                      src={`https://player.bilibili.com/player.html?bvid=${previewVideo.bvid}&page=1&autoplay=0&high_quality=1`}
+                      allowFullScreen
+                      sandbox="allow-scripts allow-same-origin allow-presentation"
+                      className="w-full h-full bg-black"
+                      style={{ pointerEvents: "auto" }}
+                    />
+                    <div className="absolute left-1/2 top-4 -translate-x-1/2 z-10">
+                      <a
+                        href={previewVideo.sourceUrl || `https://www.bilibili.com/video/${previewVideo.bvid}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex px-4 py-2 rounded-full bg-white/20 backdrop-blur text-white text-[12px] font-black hover:bg-white/35 transition shadow-lg"
+                      >打开原视频</a>
                     </div>
-                  </>
+                  </div>
+                ) : previewVideo.sourceType === "douyin" ? (
+                  <div className="relative w-full aspect-[16/9] max-h-[62vh] bg-zinc-950 flex items-center justify-center">
+                    {previewVideo.coverUrl ? (
+                      <img src={previewVideo.coverUrl} alt={previewVideo.displayName} className="w-full h-full object-cover" />
+                    ) : (
+                      <Play size={48} className="text-zinc-600" />
+                    )}
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                      <a
+                        href={previewVideo.sourceUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-6 py-3 rounded-full bg-white/20 backdrop-blur text-white text-[14px] font-black hover:bg-white/35 transition shadow-lg"
+                      >打开抖音观看</a>
+                    </div>
+                  </div>
                 ) : (
                   <video key={previewVideo.id} src={previewVideo.videoUrl} controls preload="metadata" className="w-full aspect-[16/9] max-h-[62vh] bg-black object-contain" />
                 )
@@ -420,8 +434,11 @@ export function GodSpotPage({ auth, onOpenAuth, showToast }: { auth: any; onOpen
                     {previewVideo.sourceType === "bilibili" && (
                       <span className="px-3 py-1 rounded-full bg-sky-500/60 backdrop-blur text-[11px] font-black">B站</span>
                     )}
+                    {previewVideo.sourceType === "douyin" && (
+                      <span className="px-3 py-1 rounded-full bg-pink-500/60 backdrop-blur text-[11px] font-black">抖音</span>
+                    )}
                     <span className="text-[14px] md:text-[16px] font-black drop-shadow">{previewVideo.displayName}</span>
-                    {previewVideo.sourceType !== "bilibili" && (
+                    {previewVideo.sourceType === "upload" && (
                       <span className="text-[11px] font-bold text-white/70">{formatSize(previewVideo.size)}</span>
                     )}
                   </div>
@@ -453,7 +470,7 @@ export function GodSpotPage({ auth, onOpenAuth, showToast }: { auth: any; onOpen
                 return (
                   <motion.div key={video.id} className={cn("rounded-[1.5rem] border bg-white/85 dark:bg-[#121214]/90 overflow-hidden shadow-sm hover:shadow-lg transition backdrop-blur-xl", active ? "border-zinc-900 dark:border-white ring-2 ring-zinc-900/10 dark:ring-white/10" : "border-white/70 dark:border-zinc-800")} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
                     <button onClick={() => setPreviewId(video.id)} className="relative w-full aspect-video bg-black group block text-left">
-                      {video.sourceType === "bilibili" ? (
+                      {video.sourceType === "bilibili" || video.sourceType === "douyin" ? (
                         video.coverUrl ? (
                           <img src={video.coverUrl} alt={video.displayName} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition" loading="lazy" />
                         ) : (
@@ -473,19 +490,22 @@ export function GodSpotPage({ auth, onOpenAuth, showToast }: { auth: any; onOpen
                       {video.sourceType === "bilibili" && (
                         <span className="absolute right-3 top-3 px-2.5 py-1 rounded-full bg-sky-600/80 text-white text-[10px] font-black shadow-sm">B站外链</span>
                       )}
+                      {video.sourceType === "douyin" && (
+                        <span className="absolute right-3 top-3 px-2.5 py-1 rounded-full bg-pink-500/80 text-white text-[10px] font-black shadow-sm">抖音</span>
+                      )}
                     </button>
                     <div className="p-3.5">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <h3 className="text-[13px] font-black text-zinc-900 dark:text-white truncate" title={video.displayName}>{video.displayName}</h3>
-                          <p className="text-[11px] font-bold text-zinc-500 mt-1">{video.mapName}{video.sourceType !== "bilibili" ? ` · ${formatSize(video.size)}` : ""}</p>
+                          <p className="text-[11px] font-bold text-zinc-500 mt-1">{video.mapName}{video.sourceType === "upload" ? ` · ${formatSize(video.size)}` : ""}</p>
                         </div>
                         <button onClick={() => void handleDelete(video)} className="p-2 rounded-xl text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition" title="删除">
                           <Trash2 size={14} />
                         </button>
                       </div>
                       <div className="mt-2.5 flex items-center justify-between text-[10px] font-bold text-zinc-400">
-                        <span>{video.sourceType === "bilibili" ? "B站外链" : video.storageType === "cloudflare" ? "云端" : "本地"}</span>
+                        <span>{video.sourceType === "bilibili" ? "B站外链" : video.sourceType === "douyin" ? "抖音" : video.storageType === "cloudflare" ? "云端" : "本地"}</span>
                         <span>{formatDate(video.createdAt)}</span>
                       </div>
                     </div>

@@ -32,11 +32,79 @@ function extractBilibiliUrl(value: unknown) {
   return match?.[0] || "";
 }
 
+function normalizeBilibiliImageUrl(value: string): string {
+  const url = cleanBilibiliCoverUrl(value).replace(/&amp;/g, "&");
+  if (!url) return "";
+  if (url.startsWith("//")) return `https:${url}`;
+  return url.replace(/^http:\/\//i, "https://");
+}
+
 function extractDouyinUrl(value: unknown) {
   const text = String(value || "").trim();
   // 支持: douyin.com/video/xxx, douyin.com/jingxuan?modal_id=xxx, v.douyin.com/xxx
-  const match = text.match(/https?:\/\/(?:www\.)?(?:douyin\.com\/(?:video\/[A-Za-z0-9?=&_./%-]+|jingxuan[?/][A-Za-z0-9?=&_./%-]+)|v\.douyin\.com\/[A-Za-z0-9_\/-]+)/i);
+  const match = text.match(/https?:\/\/(?:www\.)?(?:douyin\.com\/(?:video\/\d+|jingxuan\?modal_id=\d+|jingxuan[^\s]*)|v\.douyin\.com\/[A-Za-z0-9_\/-]+)/i);
   return match?.[0] || "";
+}
+
+function extractDouyinVideoId(value: unknown) {
+  const text = String(value || "");
+  return text.match(/douyin\.com\/video\/(\d+)/i)?.[1]
+    || text.match(/[?&]modal_id=(\d+)/i)?.[1]
+    || "";
+}
+
+function cleanDouyinTitle(value: unknown) {
+  return String(value || "")
+    .replace(/&quot;/g, "\"")
+    .replace(/&#39;/g, "'")
+    .replace(/&amp;/g, "&")
+    .replace(/[\r\n\t]+/g, " ")
+    .replace(/\s*-\s*抖音.*$/i, "")
+    .replace(/^抖音\s*-\s*/i, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 80);
+}
+
+function extractDouyinTitleFromShareText(value: unknown) {
+  const text = String(value || "").replace(/https?:\/\/\S+/g, " ").replace(/\s+/g, " ").trim();
+  const bracketTitle = text.match(/【([^】]{2,100})】/)?.[1];
+  return cleanDouyinTitle(bracketTitle || text.replace(/^\S+\s*复制打开抖音，看看/, ""));
+}
+
+function normalizeExternalCoverUrl(raw: string): string {
+  const url = String(raw || "").replace(/\\u002F/g, "/").replace(/&amp;/g, "&").trim();
+  const match = url.match(/https?:\/\/[^"'\\\s<>]+/i) || url.match(/\/\/[^"'\\\s<>]+/i);
+  if (!match) return "";
+  const normalized = match[0].startsWith("//") ? `https:${match[0]}` : match[0];
+  return normalized.replace(/^http:\/\//i, "https://");
+}
+
+function proxiedCoverUrl(value: string) {
+  const url = normalizeExternalCoverUrl(value);
+  return url ? `/api/godspot/cover-proxy?url=${encodeURIComponent(url)}` : "";
+}
+
+function ensureExternalCoverUrl(value: unknown) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  if (text.startsWith("/api/godspot/cover-proxy?")) return text;
+  return proxiedCoverUrl(text);
+}
+
+async function fetchBilibiliCoverByBvid(bvid: string) {
+  if (!bvid) return "";
+  try {
+    const apiRes = await fetch(`https://api.bilibili.com/x/web-interface/view?bvid=${encodeURIComponent(bvid)}`, {
+      signal: AbortSignal.timeout(5000),
+      headers: { "User-Agent": "Mozilla/5.0" },
+    });
+    if (!apiRes.ok) return "";
+    const apiData = await apiRes.json() as any;
+    return apiData?.data?.pic ? proxiedCoverUrl(String(apiData.data.pic)) : "";
+  } catch {
+    return "";
+  }
 }
 
 function detectExternalPlatform(value: unknown): "bilibili" | "douyin" | null {
@@ -94,7 +162,7 @@ async function fetchBilibiliPage(url: string): Promise<{ title: string; url: str
     const ogImage = html.match(/<meta\s+property=["']og:image["']\s+content=["']([^"']+)["']/i)?.[1]
       || html.match(/<meta\s+content=["']([^"']+)["']\s+property=["']og:image["']/i)?.[1];
     if (ogImage) {
-      coverUrl = cleanBilibiliCoverUrl(ogImage);
+      coverUrl = normalizeBilibiliImageUrl(ogImage);
     }
 
     // 如果 HTML 解析没拿到封面，尝试用 B 站 API 获取
@@ -107,7 +175,7 @@ async function fetchBilibiliPage(url: string): Promise<{ title: string; url: str
         if (apiRes.ok) {
           const apiData = await apiRes.json() as any;
           if (apiData?.data?.pic) {
-            coverUrl = String(apiData.data.pic).trim();
+            coverUrl = normalizeBilibiliImageUrl(String(apiData.data.pic).trim());
           }
         }
       } catch {
@@ -122,40 +190,42 @@ async function fetchBilibiliPage(url: string): Promise<{ title: string; url: str
   }
 }
 
-async function fetchDouyinPage(url: string): Promise<{ title: string; url: string; coverUrl: string }> {
+async function fetchDouyinPage(url: string, fallbackText = ""): Promise<{ title: string; url: string; coverUrl: string }> {
+  const videoId = extractDouyinVideoId(url) || extractDouyinVideoId(fallbackText);
+  const canonicalUrl = videoId ? `https://www.douyin.com/video/${videoId}` : url;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 15000);
   try {
-    const res = await fetch(url, {
+    const res = await fetch(canonicalUrl, {
       redirect: "follow",
       signal: controller.signal,
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-        Referer: "https://www.douyin.com",
-        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        Referer: "https://www.douyin.com/",
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
         "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
       },
     });
     const html = await res.text();
 
-    // 从 <title> 提取标题
     const titleMatch = html.match(/<title>([\s\S]*?)<\/title>/i);
     const ogTitle = html.match(/<meta\s+property=["']og:title["']\s+content=["']([^"']+)["']/i)?.[1]
       || html.match(/<meta\s+content=["']([^"']+)["']\s+property=["']og:title["']/i)?.[1]
+      || html.match(/["']desc["']\s*:\s*["']([^"']{2,160})["']/i)?.[1]
+      || html.match(/["']description["']\s*:\s*["']([^"']{2,160})["']/i)?.[1]
       || titleMatch?.[1];
-    const title = String(ogTitle || "")
-      .replace(/[\r\n\t]+/g, " ")
-      .replace(/ - 抖音.*$/i, "")
-      .replace(/\s+/g, " ")
-      .trim()
-      .slice(0, 80);
+    const title = cleanDouyinTitle(ogTitle) || extractDouyinTitleFromShareText(fallbackText);
 
-    // 从 og:image 提取封面
     const ogImage = html.match(/<meta\s+property=["']og:image["']\s+content=["']([^"']+)["']/i)?.[1]
-      || html.match(/<meta\s+content=["']([^"']+)["']\s+property=["']og:image["']/i)?.[1];
-    const coverUrl = (ogImage || "").match(/https?:\/\/[^"'\s]+/i)?.[0] || "";
+      || html.match(/<meta\s+content=["']([^"']+)["']\s+property=["']og:image["']/i)?.[1]
+      || html.match(/["']cover["']\s*:\s*["']([^"']+)["']/i)?.[1]
+      || html.match(/["']origin_cover["']\s*:\s*["']([^"']+)["']/i)?.[1]
+      || html.match(/["']cover_url["']\s*:\s*["']([^"']+)["']/i)?.[1];
+    const coverUrl = proxiedCoverUrl(ogImage || "");
 
-    return { title, url: res.url, coverUrl };
+    return { title, url: canonicalUrl || res.url, coverUrl };
+  } catch {
+    return { title: extractDouyinTitleFromShareText(fallbackText), url: canonicalUrl, coverUrl: "" };
   } finally {
     clearTimeout(timer);
   }
@@ -253,10 +323,41 @@ function parseVideoUpload(req: IncomingMessage): Promise<ParsedVideoUpload> {
   });
 }
 
-router.get("/videos", (req, res) => {
+router.get("/cover-proxy", async (req, res) => {
+  try {
+    const url = String(req.query.url || "").trim();
+    if (!/^https?:\/\//i.test(url)) return res.status(400).end();
+    const host = new URL(url).hostname;
+    if (!/(^|\.)(hdslb\.com|biliimg\.com|douyinpic\.com|douyinstatic\.com|douyincdn\.com|snssdk\.com)$/i.test(host)) {
+      return res.status(403).end();
+    }
+
+    const upstream = await fetch(url, {
+      redirect: "follow",
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        Referer: host.includes("bili") || host.includes("hdslb") ? "https://www.bilibili.com/" : "https://www.douyin.com/",
+        Accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      },
+    });
+    if (!upstream.ok || !upstream.body) return res.status(upstream.status || 404).end();
+    res.setHeader("Cache-Control", "public, max-age=86400");
+    res.setHeader("Content-Type", upstream.headers.get("content-type") || "image/jpeg");
+    const buffer = Buffer.from(await upstream.arrayBuffer());
+    res.send(buffer);
+  } catch {
+    res.status(404).end();
+  }
+});
+
+router.get("/videos", async (req, res) => {
   try {
     const mapName = typeof req.query.mapName === "string" ? req.query.mapName : undefined;
-    res.json({ success: true, data: queryGodspotVideos(mapName), maps: ["全部", ...GODSPOT_MAPS] });
+    const videos = await Promise.all(queryGodspotVideos(mapName).map(async (video) => ({
+      ...video,
+      coverUrl: video.coverUrl ? ensureExternalCoverUrl(video.coverUrl) : video.sourceType === "bilibili" && video.bvid ? await fetchBilibiliCoverByBvid(video.bvid) : video.coverUrl,
+    })));
+    res.json({ success: true, data: videos, maps: ["全部", ...GODSPOT_MAPS] });
   } catch (e) {
     logger.error("API GODSPOT GET VIDEOS Error", { error: e instanceof Error ? e.message : String(e) });
     res.status(500).json({ success: false, error: "获取神人点位视频失败" });
@@ -295,7 +396,7 @@ router.post("/resolve-external", requireAuth, rateLimit(30, 60 * 60 * 1000, "链
     let url = extractDouyinUrl(rawUrl) || rawUrl;
     if (!url) return res.status(400).json({ success: false, error: "请粘贴有效的抖音视频链接" });
 
-    const result = await fetchDouyinPage(url);
+    const result = await fetchDouyinPage(url, rawUrl);
     if (!result.title) return res.status(400).json({ success: false, error: "未识别到视频标题，请手动填写" });
 
     res.json({ success: true, data: { ...result, platform: "douyin" } });
@@ -325,7 +426,7 @@ router.post("/save-external", requireAuth, rateLimit(20, 60 * 60 * 1000, "操作
         const result = await fetchBilibiliPage(bvid ? `https://www.bilibili.com/video/${bvid}` : biliUrl);
         bvid = result.bvid || bvid;
         title = result.title;
-        coverUrl = result.coverUrl;
+        coverUrl = result.coverUrl ? ensureExternalCoverUrl(result.coverUrl) : resolveBilibiliCoverFromBvid(bvid);
       } catch { /* 静默 */ }
 
       if (!bvid) return res.status(400).json({ success: false, error: "无法识别 BV 号，请确认链接有效" });
@@ -354,7 +455,7 @@ router.post("/save-external", requireAuth, rateLimit(20, 60 * 60 * 1000, "操作
     let title = "";
     let coverUrl = "";
     try {
-      const result = await fetchDouyinPage(dyUrl);
+      const result = await fetchDouyinPage(dyUrl, rawUrl);
       title = result.title;
       coverUrl = result.coverUrl;
     } catch { /* 静默 */ }

@@ -94,14 +94,14 @@ export function GodSpotPage({ auth, onOpenAuth, showToast }: { auth: any; onOpen
     void fetchVideos(activeMap);
   }, [activeMap]);
 
-  const handleResolveExternal = async () => {
+  const handleResolveExternal = async (silent = false) => {
     const url = externalUrl.trim();
     if (!url) {
-      showToast("请先粘贴视频链接", "warn");
+      if (!silent) showToast("请先粘贴视频链接", "warn");
       return;
     }
     if (!auth.isAuthenticated) {
-      showToast("请先登录后再识别链接", "warn");
+      if (!silent) showToast("请先登录后再识别链接", "warn");
       onOpenAuth();
       return;
     }
@@ -119,9 +119,9 @@ export function GodSpotPage({ auth, onOpenAuth, showToast }: { auth: any; onOpen
       const title = String(data?.data?.title || "").trim();
       if (!title) throw new Error("未识别到视频标题，请手动填写");
       if (!displayName.trim()) setDisplayName(title);
-      showToast(displayName.trim() ? "已识别标题，可按需替换当前标题" : "已自动填写视频标题", "success");
+      if (!silent) showToast(displayName.trim() ? "已识别标题，可按需替换当前标题" : "已自动填写视频标题", "success");
     } catch (e) {
-      showToast(e instanceof Error ? e.message : "识别失败，请手动填写标题", "warn");
+      if (!silent) showToast(e instanceof Error ? e.message : "识别失败，请手动填写标题", "warn");
     } finally {
       setResolvingExternal(false);
     }
@@ -327,7 +327,7 @@ export function GodSpotPage({ auth, onOpenAuth, showToast }: { auth: any; onOpen
                   <input
                     value={externalUrl}
                     onChange={(e) => setExternalUrl(e.target.value)}
-                    onBlur={() => { if (externalUrl.trim() && !displayName.trim()) void handleResolveExternal(); }}
+                    onBlur={() => { if (externalUrl.trim() && !displayName.trim()) void handleResolveExternal(true); }}
                     placeholder="粘贴 B站 / 抖音视频链接"
                     className="min-w-0 flex-1 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900 px-3.5 py-2.5 text-[12px] font-semibold outline-none focus:ring-2 focus:ring-zinc-900/10 dark:text-white"
                   />

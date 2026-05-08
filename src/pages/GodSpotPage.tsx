@@ -117,9 +117,8 @@ export function GodSpotPage({ auth, onOpenAuth, showToast }: { auth: any; onOpen
       const data = await readJson(res);
       if (!res.ok) throw new Error(data?.error || "识别失败");
       const title = String(data?.data?.title || "").trim();
-      if (!title) throw new Error("未识别到视频标题，请手动填写");
-      if (!displayName.trim()) setDisplayName(title);
-      if (!silent) showToast(displayName.trim() ? "已识别标题，可按需替换当前标题" : "已自动填写视频标题", "success");
+      if (title && !displayName.trim()) setDisplayName(title);
+      if (!silent) showToast(title ? (displayName.trim() ? "已识别标题，可按需替换当前标题" : "已自动填写视频标题") : "未识别到标题，可手动填写后保存", title ? "success" : "warn");
     } catch (e) {
       if (!silent) showToast(e instanceof Error ? e.message : "识别失败，请手动填写标题", "warn");
     } finally {

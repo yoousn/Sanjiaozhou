@@ -1,5 +1,8 @@
 import fs from "fs";
 import path from "path";
+import { execFile } from "child_process";
+import { promisify } from "util";
+import { fileURLToPath } from "url";
 import { Router } from "express";
 import busboy from "busboy";
 import type { IncomingMessage } from "http";
@@ -11,6 +14,10 @@ import { storeObject } from "../lib/godspotStorage.js";
 import { logger } from "../lib/logger.js";
 
 const router = Router();
+const execFileAsync = promisify(execFile);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const DOUYIN_RESOLVER_SCRIPT = path.join(__dirname, "..", "..", "scripts", "resolve_douyin.py");
 
 function ensureDir(dir: string) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
@@ -68,12 +75,7 @@ async function resolveDouyinUrl(url: string) {
   }
 }
 
-function extractDouyinVideoId(value: unknown) {
-  const text = String(value || "");
-  return text.match(/douyin\.com\/video\/(\d+)/i)?.[1]
-    || text.match(/[?&]modal_id=(\d+)/i)?.[1]
-    || "";
-}
+
 
 function cleanDouyinTitle(value: unknown) {
   return String(value || "")
@@ -98,13 +100,7 @@ function extractDouyinTitleFromShareText(value: unknown) {
   return cleanDouyinTitle(candidate);
 }
 
-function isWeakDouyinTitle(value: unknown) {
-  const title = String(value || "").trim();
-  return !title
-    || /^eoq:|^[A-Z]@|复制打开抖音|看看【|抖音$/i.test(title)
-    || /R@[A-Z]\.[A-Z]{1,3}/i.test(title)
-    || /^\d{2}\/\d{2}$/.test(title);
-}
+
 
 function normalizeExternalCoverUrl(raw: string): string {
   const url = String(raw || "").replace(/\\u002F/g, "/").replace(/&amp;/g, "&").trim();
@@ -224,48 +220,32 @@ async function fetchBilibiliPage(url: string): Promise<{ title: string; url: str
   }
 }
 
-async function fetchDouyinPage(url: string, fallbackText = ""): Promise<{ title: string; url: string; coverUrl: string }> {
-  const videoId = extractDouyinVideoId(url) || extractDouyinVideoId(fallbackText);
-  const canonicalUrl = videoId ? `https://www.douyin.com/video/${videoId}` : url;
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 15000);
+type DouyinResolveResult = { title: string; url: string; coverUrl: string };
+
+async function resolveDouyinWithPlaywright(rawUrl: string): Promise<DouyinResolveResult> {
+  const fallbackTitle = extractDouyinTitleFromShareText(rawUrl);
+  const fallbackUrl = extractDouyinUrl(rawUrl) || rawUrl;
   try {
-    const res = await fetch(canonicalUrl, {
-      redirect: "follow",
-      signal: controller.signal,
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-        Referer: "https://www.douyin.com/",
-        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-        "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
-      },
+    const { stdout } = await execFileAsync("python", ["-u", DOUYIN_RESOLVER_SCRIPT, rawUrl], {
+      cwd: path.join(__dirname, "..", ".."),
+      encoding: "utf8",
+      timeout: 25000,
+      maxBuffer: 1024 * 1024 * 2,
+      env: { ...process.env, PYTHONIOENCODING: "utf-8" },
     });
-    const html = await res.text();
-
-    const titleMatch = html.match(/<title>([\s\S]*?)<\/title>/i);
-    const ogTitle = html.match(/<meta\s+property=["']og:title["']\s+content=["']([^"']+)["']/i)?.[1]
-      || html.match(/<meta\s+content=["']([^"']+)["']\s+property=["']og:title["']/i)?.[1]
-      || html.match(/["']desc["']\s*:\s*["']([^"']{2,160})["']/i)?.[1]
-      || html.match(/["']description["']\s*:\s*["']([^"']{2,160})["']/i)?.[1]
-      || titleMatch?.[1];
-    let title = cleanDouyinTitle(ogTitle);
-    const shareTitle = extractDouyinTitleFromShareText(fallbackText);
-    if (isWeakDouyinTitle(title) && shareTitle) title = shareTitle;
-
-    const ogImage = html.match(/<meta\s+property=["']og:image["']\s+content=["']([^"']+)["']/i)?.[1]
-      || html.match(/<meta\s+content=["']([^"']+)["']\s+property=["']og:image["']/i)?.[1]
-      || html.match(/["']cover["']\s*:\s*["']([^"']+)["']/i)?.[1]
-      || html.match(/["']origin_cover["']\s*:\s*["']([^"']+)["']/i)?.[1]
-      || html.match(/["']cover_url["']\s*:\s*["']([^"']+)["']/i)?.[1];
-    const coverUrl = proxiedCoverUrl(ogImage || "");
-
-    return { title, url: canonicalUrl || res.url, coverUrl };
-  } catch {
-    return { title: extractDouyinTitleFromShareText(fallbackText), url: canonicalUrl, coverUrl: "" };
-  } finally {
-    clearTimeout(timer);
+    const parsed = JSON.parse(stdout.trim() || "{}");
+    return {
+      title: cleanDouyinTitle(parsed.title) || fallbackTitle,
+      url: String(parsed.url || fallbackUrl).trim(),
+      coverUrl: proxiedCoverUrl(String(parsed.coverUrl || "")),
+    };
+  } catch (e) {
+    logger.warn("Douyin Playwright resolve failed", { error: e instanceof Error ? e.message : String(e) });
+    return { title: fallbackTitle, url: fallbackUrl, coverUrl: "" };
   }
 }
+
+
 
 type ParsedVideoUpload = {
   tempPath: string;
@@ -431,11 +411,9 @@ router.post("/resolve-external", requireAuth, rateLimit(30, 60 * 60 * 1000, "链
     // douyin
     let url = extractDouyinUrl(rawUrl) || rawUrl;
     url = await resolveDouyinUrl(url);
-    if (!url) return res.status(400).json({ success: false, error: "请粘贴有效的抖音视频链接" });
+    if (!url) return res.json({ success: true, data: { platform: "douyin", title: "", url: rawUrl, coverUrl: "" } });
 
-    const result = await fetchDouyinPage(url, rawUrl);
-    if (!result.title) return res.status(400).json({ success: false, error: "未识别到视频标题，请手动填写" });
-
+    const result = await resolveDouyinWithPlaywright(rawUrl);
     res.json({ success: true, data: { ...result, platform: "douyin" } });
   } catch (e) {
     logger.error("API GODSPOT RESOLVE EXTERNAL Error", { error: e instanceof Error ? e.message : String(e) });
@@ -493,7 +471,8 @@ router.post("/save-external", requireAuth, rateLimit(20, 60 * 60 * 1000, "操作
     let title = "";
     let coverUrl = "";
     try {
-      const result = await fetchDouyinPage(dyUrl, rawUrl);
+      const result = await resolveDouyinWithPlaywright(rawUrl);
+      dyUrl = result.url || dyUrl;
       title = result.title;
       coverUrl = result.coverUrl;
     } catch { /* 静默 */ }

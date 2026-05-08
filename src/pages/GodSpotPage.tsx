@@ -410,7 +410,10 @@ export function GodSpotPage({ auth, onOpenAuth, showToast }: { auth: any; onOpen
                     {previewVideo.coverUrl ? (
                       <img src={previewVideo.coverUrl} alt={previewVideo.displayName} className="w-full h-full object-cover" />
                     ) : (
-                      <Play size={48} className="text-zinc-600" />
+                      <div className="flex flex-col items-center gap-3 text-zinc-400">
+                        <Play size={48} className="text-zinc-600" />
+                        <span className="text-[12px] font-bold">抖音未返回封面，点击打开观看</span>
+                      </div>
                     )}
                     <div className="absolute inset-0 flex items-center justify-center bg-black/30">
                       <a
@@ -474,8 +477,9 @@ export function GodSpotPage({ auth, onOpenAuth, showToast }: { auth: any; onOpen
                         video.coverUrl ? (
                           <img src={video.coverUrl} alt={video.displayName} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition" loading="lazy" />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-zinc-900">
+                          <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-zinc-900 text-zinc-500">
                             <Play size={32} className="text-zinc-600" />
+                            {video.sourceType === "douyin" && <span className="text-[10px] font-bold">无封面</span>}
                           </div>
                         )
                       ) : (

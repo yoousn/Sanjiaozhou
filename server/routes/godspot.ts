@@ -46,6 +46,28 @@ function extractDouyinUrl(value: unknown) {
   return match?.[0] || "";
 }
 
+async function resolveDouyinUrl(url: string) {
+  if (!/v\.douyin\.com/i.test(url)) return url;
+  try {
+    const res = await fetch(url, {
+      method: "HEAD",
+      redirect: "follow",
+      headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" },
+    });
+    return res.url || url;
+  } catch {
+    try {
+      const res = await fetch(url, {
+        redirect: "follow",
+        headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" },
+      });
+      return res.url || url;
+    } catch {
+      return url;
+    }
+  }
+}
+
 function extractDouyinVideoId(value: unknown) {
   const text = String(value || "");
   return text.match(/douyin\.com\/video\/(\d+)/i)?.[1]
@@ -67,9 +89,21 @@ function cleanDouyinTitle(value: unknown) {
 }
 
 function extractDouyinTitleFromShareText(value: unknown) {
-  const text = String(value || "").replace(/https?:\/\/\S+/g, " ").replace(/\s+/g, " ").trim();
-  const bracketTitle = text.match(/【([^】]{2,100})】/)?.[1];
-  return cleanDouyinTitle(bracketTitle || text.replace(/^\S+\s*复制打开抖音，看看/, ""));
+  const raw = String(value || "").replace(/\s+/g, " ").trim();
+  const bracketTitle = raw.match(/【([^】]{2,100})】/)?.[1] || "";
+  const afterBracket = raw.match(/】\s*([^@#，,。！!？?\n]{4,120})/)?.[1] || "";
+  const beforeUrl = raw.replace(/https?:\/\/\S+.*/i, "");
+  const afterAuthor = beforeUrl.match(/的作品】\s*([^@#，,。！!？?\n]{4,120})/)?.[1] || "";
+  const candidate = afterAuthor || afterBracket || bracketTitle;
+  return cleanDouyinTitle(candidate);
+}
+
+function isWeakDouyinTitle(value: unknown) {
+  const title = String(value || "").trim();
+  return !title
+    || /^eoq:|^[A-Z]@|复制打开抖音|看看【|抖音$/i.test(title)
+    || /R@[A-Z]\.[A-Z]{1,3}/i.test(title)
+    || /^\d{2}\/\d{2}$/.test(title);
 }
 
 function normalizeExternalCoverUrl(raw: string): string {
@@ -110,7 +144,7 @@ async function fetchBilibiliCoverByBvid(bvid: string) {
 function detectExternalPlatform(value: unknown): "bilibili" | "douyin" | null {
   const text = String(value || "");
   if (/bilibili\.com|b23\.tv/i.test(text)) return "bilibili";
-  if (/douyin\.com/i.test(text)) return "douyin";
+  if (/douyin\.com|v\.douyin\.com/i.test(text)) return "douyin";
   return null;
 }
 
@@ -214,7 +248,9 @@ async function fetchDouyinPage(url: string, fallbackText = ""): Promise<{ title:
       || html.match(/["']desc["']\s*:\s*["']([^"']{2,160})["']/i)?.[1]
       || html.match(/["']description["']\s*:\s*["']([^"']{2,160})["']/i)?.[1]
       || titleMatch?.[1];
-    const title = cleanDouyinTitle(ogTitle) || extractDouyinTitleFromShareText(fallbackText);
+    let title = cleanDouyinTitle(ogTitle);
+    const shareTitle = extractDouyinTitleFromShareText(fallbackText);
+    if (isWeakDouyinTitle(title) && shareTitle) title = shareTitle;
 
     const ogImage = html.match(/<meta\s+property=["']og:image["']\s+content=["']([^"']+)["']/i)?.[1]
       || html.match(/<meta\s+content=["']([^"']+)["']\s+property=["']og:image["']/i)?.[1]
@@ -394,6 +430,7 @@ router.post("/resolve-external", requireAuth, rateLimit(30, 60 * 60 * 1000, "链
 
     // douyin
     let url = extractDouyinUrl(rawUrl) || rawUrl;
+    url = await resolveDouyinUrl(url);
     if (!url) return res.status(400).json({ success: false, error: "请粘贴有效的抖音视频链接" });
 
     const result = await fetchDouyinPage(url, rawUrl);
@@ -426,7 +463,7 @@ router.post("/save-external", requireAuth, rateLimit(20, 60 * 60 * 1000, "操作
         const result = await fetchBilibiliPage(bvid ? `https://www.bilibili.com/video/${bvid}` : biliUrl);
         bvid = result.bvid || bvid;
         title = result.title;
-        coverUrl = result.coverUrl ? ensureExternalCoverUrl(result.coverUrl) : resolveBilibiliCoverFromBvid(bvid);
+        coverUrl = result.coverUrl ? ensureExternalCoverUrl(result.coverUrl) : await fetchBilibiliCoverByBvid(bvid);
       } catch { /* 静默 */ }
 
       if (!bvid) return res.status(400).json({ success: false, error: "无法识别 BV 号，请确认链接有效" });
@@ -451,7 +488,8 @@ router.post("/save-external", requireAuth, rateLimit(20, 60 * 60 * 1000, "操作
     }
 
     // douyin
-    const dyUrl = extractDouyinUrl(rawUrl) || rawUrl;
+    let dyUrl = extractDouyinUrl(rawUrl) || rawUrl;
+    dyUrl = await resolveDouyinUrl(dyUrl);
     let title = "";
     let coverUrl = "";
     try {

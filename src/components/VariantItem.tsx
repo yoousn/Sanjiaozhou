@@ -57,12 +57,23 @@ export function VariantItem({
         <div className="flex gap-1.5 items-center">
           <input className={cn(inputClasses, "py-1 px-1.5 w-9 text-[11px] font-bold text-center bg-white border border-zinc-200")} defaultValue={variant.tier} onBlur={e => handleBlur(e, 'tier')} placeholder="T1" />
           <input className={cn(inputClasses, "py-1 px-1.5 w-14 text-[11px] font-bold bg-white border border-zinc-200")} defaultValue={variant.price} onBlur={e => handleBlur(e, 'price')} placeholder="金额" />
-          <select className={cn(inputClasses, "py-1 px-1.5 flex-1 text-[11px] font-bold bg-white border border-zinc-200 cursor-pointer")} defaultValue={variant.buildType} onBlur={e => handleBlur(e, 'buildType')}>
-            <option value="满改">满改</option>
-            <option value="半改">半改</option>
-            <option value="丐版">丐版</option>
-            <option value="特殊版">特殊版</option>
-          </select>
+          <input
+            className={cn(inputClasses, "py-1 px-1.5 flex-1 text-[11px] font-bold bg-white border border-zinc-200")}
+            defaultValue={variant.buildType}
+            onBlur={e => handleBlur(e, 'buildType')}
+            placeholder="配置方案"
+            list="variant-buildtype-suggestions"
+          />
+          <datalist id="variant-buildtype-suggestions">
+            <option value="满改" />
+            <option value="半改" />
+            <option value="丐版" />
+            <option value="特殊版" />
+            <option value="平民改" />
+            <option value="高性价比" />
+            <option value="竞速" />
+            <option value="潜行" />
+          </datalist>
           <button
             type="button"
             onClick={() => onUpdateVariant(variant.id, 'locked', !variant.locked)}

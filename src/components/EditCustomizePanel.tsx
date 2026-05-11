@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { ChevronDown, ChevronUp, Sliders, RotateCcw } from 'lucide-react';
 import { cn } from '../utils';
 import {
   UiPreferences,
@@ -8,44 +9,92 @@ import {
   UiSidebarWidth,
 } from '../types';
 import {
-  getOptionIndex,
   CARD_SIZE_OPTIONS,
-  CARD_MIN_HEIGHT_OPTIONS,
-  VARIANTS_PER_PAGE_OPTIONS,
-  GRID_COLUMNS_OPTIONS,
-  GRID_GAP_OPTIONS,
-  GROUPS_PER_PAGE_OPTIONS,
   SIDEBAR_WIDTH_OPTIONS,
   RADIUS_OPTIONS,
   BUTTON_STYLE_OPTIONS,
   DENSITY_PRESETS,
 } from '../constants';
 
-type SliderFieldProps = {
+type NumFieldProps = {
   label: string;
-  valueLabel: string;
+  value: number;
   min: number;
   max: number;
-  value: number;
-  onChange: (nextIndex: number) => void;
+  step?: number;
+  suffix?: string;
+  onChange: (next: number) => void;
 };
 
-function SliderField({ label, valueLabel, min, max, value, onChange }: SliderFieldProps) {
+function NumField({ label, value, min, max, step = 1, suffix, onChange }: NumFieldProps) {
+  const clamp = (v: number) => Math.max(min, Math.min(max, v));
+  const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = Number(e.target.value);
+    if (Number.isFinite(raw)) onChange(clamp(Math.round(raw / step) * step));
+  };
   return (
-    <div>
-      <div className="mb-2 flex items-center justify-between gap-3">
-        <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">{label}</label>
-        <span className="text-[12px] font-black text-zinc-900 dark:text-white">{valueLabel}</span>
+    <div className="flex flex-col gap-1">
+      <label className="block text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">{label}</label>
+      <div className="flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={() => onChange(clamp(value - step))}
+          className="shrink-0 h-8 w-8 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-[#18181b] text-zinc-600 dark:text-zinc-300 font-black text-sm hover:bg-zinc-900 hover:text-white hover:border-zinc-900 transition outline-none"
+          aria-label={`${label} 减少`}
+        >−</button>
+        <input
+          type="number"
+          inputMode="numeric"
+          min={min}
+          max={max}
+          step={step}
+          value={value}
+          onChange={handleInput}
+          className="flex-1 min-w-0 h-8 px-2 text-center text-[13px] font-black text-zinc-900 dark:text-white bg-white dark:bg-[#18181b] border border-zinc-200 dark:border-zinc-700 rounded-lg outline-none focus:ring-2 focus:ring-zinc-900/15"
+        />
+        <button
+          type="button"
+          onClick={() => onChange(clamp(value + step))}
+          className="shrink-0 h-8 w-8 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-[#18181b] text-zinc-600 dark:text-zinc-300 font-black text-sm hover:bg-zinc-900 hover:text-white hover:border-zinc-900 transition outline-none"
+          aria-label={`${label} 增加`}
+        >+</button>
+        {suffix && <span className="text-[11px] font-bold text-zinc-400 w-6 text-right">{suffix}</span>}
       </div>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={1}
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full accent-zinc-900 dark:accent-white"
-      />
+    </div>
+  );
+}
+
+type SegmentedProps<T extends string> = {
+  label: string;
+  value: T;
+  options: Array<{ value: T; label: string }>;
+  onChange: (v: T) => void;
+};
+
+function Segmented<T extends string>({ label, value, options, onChange }: SegmentedProps<T>) {
+  return (
+    <div className="flex flex-col gap-1">
+      <label className="block text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">{label}</label>
+      <div className="inline-flex h-8 p-0.5 rounded-lg bg-zinc-100 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700">
+        {options.map((opt) => {
+          const active = opt.value === value;
+          return (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => onChange(opt.value)}
+              className={cn(
+                'flex-1 px-2 text-[11px] font-bold rounded-[6px] transition whitespace-nowrap',
+                active
+                  ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-sm'
+                  : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+              )}
+            >
+              {opt.label}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -61,19 +110,12 @@ export function EditCustomizePanel({
   updateUiPreference,
   resetUiPreferences,
 }: EditCustomizePanelProps) {
-  const settingsPanelClass = cn(
-    'bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 p-4 md:p-6 shadow-sm mb-4',
-    uiPreferences.controlRadius === 'full' ? 'rounded-[2rem]' : 'rounded-3xl'
-  );
-  const settingsSelectClass = cn(
-    'w-full border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#18181b] py-2.5 px-3 text-[13px] font-bold shadow-sm outline-none focus:ring-4 focus:ring-zinc-900/10 dark:focus:ring-white/10',
-    uiPreferences.controlRadius === 'full' ? 'rounded-full' : uiPreferences.controlRadius === 'xl' ? 'rounded-xl' : 'rounded-lg'
-  );
+  const [expanded, setExpanded] = useState(false);
 
-  const cardSizeIndex = getOptionIndex(CARD_SIZE_OPTIONS.map((o) => o.value), uiPreferences.cardSize);
-  const cardMinHeightIndex = getOptionIndex(CARD_MIN_HEIGHT_OPTIONS, uiPreferences.cardMinHeight);
-  const gridGapIndex = getOptionIndex(GRID_GAP_OPTIONS, uiPreferences.gridGap);
-  const radiusIndex = getOptionIndex(RADIUS_OPTIONS.map((o) => o.value), uiPreferences.controlRadius);
+  const panelClass = cn(
+    'bg-white dark:bg-[#121214] border border-zinc-200 dark:border-zinc-800 shadow-sm mb-4 overflow-hidden',
+    uiPreferences.controlRadius === 'full' ? 'rounded-3xl' : 'rounded-2xl'
+  );
 
   const applyDensityPreset = (preset: typeof DENSITY_PRESETS[number]) => {
     updateUiPreference('densityPreset', preset.value);
@@ -85,111 +127,121 @@ export function EditCustomizePanel({
   };
 
   return (
-    <div className={settingsPanelClass}>
-      <div className="mb-5 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h3 className="text-[15px] font-black text-zinc-900 dark:text-white">界面自定义</h3>
-          <p className="text-[13px] text-zinc-500">编辑模式下直接调整卡片大小、列数、间距、圆角和按钮样式，刷新后会自动保留。</p>
+    <div className={panelClass}>
+      {/* 折叠头部：始终可见，紧凑展示密度预设与展开按钮 */}
+      <div className="flex items-center gap-3 px-4 py-3 md:px-5">
+        <div className="flex items-center gap-2 shrink-0">
+          <Sliders size={14} className="text-zinc-500" strokeWidth={2.5} />
+          <span className="text-[13px] font-black text-zinc-900 dark:text-white">界面自定义</span>
         </div>
-        <button onClick={resetUiPreferences} className="text-[13px] font-bold text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition">恢复默认 UI 设置</button>
+        <div className="flex-1 flex flex-wrap items-center gap-1.5 justify-end">
+          {DENSITY_PRESETS.map((preset) => {
+            const active = uiPreferences.densityPreset === preset.value;
+            return (
+              <button
+                key={preset.value}
+                type="button"
+                onClick={() => applyDensityPreset(preset)}
+                title={`${preset.preferences.gridColumns}列 · ${preset.preferences.variantsPerPage}条/卡 · ${preset.preferences.gridGap}px`}
+                className={cn(
+                  'px-2.5 h-7 rounded-lg text-[11px] font-bold transition border',
+                  active
+                    ? 'border-zinc-900 bg-zinc-900 text-white dark:border-white dark:bg-white dark:text-zinc-900'
+                    : 'border-zinc-200 bg-white text-zinc-600 hover:border-zinc-400 dark:border-zinc-800 dark:bg-[#18181b] dark:text-zinc-300'
+                )}
+              >
+                {preset.label}
+              </button>
+            );
+          })}
+          <button
+            type="button"
+            onClick={resetUiPreferences}
+            title="恢复默认"
+            className="ml-1 h-7 w-7 inline-flex items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-700 text-zinc-500 hover:text-zinc-900 hover:border-zinc-400 dark:hover:text-white transition"
+          >
+            <RotateCcw size={12} strokeWidth={2.5} />
+          </button>
+          <button
+            type="button"
+            onClick={() => setExpanded(v => !v)}
+            className="ml-1 h-7 px-2.5 inline-flex items-center gap-1 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-[#18181b] text-[11px] font-bold text-zinc-700 dark:text-zinc-200 hover:border-zinc-400 transition"
+          >
+            {expanded ? <><ChevronUp size={12} strokeWidth={2.5} />收起</> : <><ChevronDown size={12} strokeWidth={2.5} />更多</>}
+          </button>
+        </div>
       </div>
 
-      <div className="mb-4 grid grid-cols-1 gap-2 md:grid-cols-3">
-        {DENSITY_PRESETS.map((preset) => {
-          const active = uiPreferences.densityPreset === preset.value;
-          return (
-            <button
-              key={preset.value}
-              type="button"
-              onClick={() => applyDensityPreset(preset)}
-              className={cn(
-                'rounded-xl border px-3 py-2 text-left transition',
-                active
-                  ? 'border-zinc-900 bg-zinc-900 text-white dark:border-white dark:bg-white dark:text-zinc-900'
-                  : 'border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 dark:border-zinc-800 dark:bg-[#18181b] dark:text-zinc-400'
-              )}
-            >
-              <div className="text-[12px] font-black">{preset.label}</div>
-              <div className="mt-0.5 text-[10px] font-bold opacity-70">{preset.preferences.gridColumns}列 / {preset.preferences.variantsPerPage}条 / {preset.preferences.gridGap}px</div>
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <SliderField
-          label="卡片尺寸"
-          valueLabel={CARD_SIZE_OPTIONS[cardSizeIndex].label}
-          min={0}
-          max={CARD_SIZE_OPTIONS.length - 1}
-          value={cardSizeIndex}
-          onChange={(nextIndex) => updateUiPreference('cardSize', CARD_SIZE_OPTIONS[nextIndex].value as UiCardSize)}
-        />
-        <SliderField
-          label="卡片最小高度"
-          valueLabel={`${CARD_MIN_HEIGHT_OPTIONS[cardMinHeightIndex]} px`}
-          min={0}
-          max={CARD_MIN_HEIGHT_OPTIONS.length - 1}
-          value={cardMinHeightIndex}
-          onChange={(nextIndex) => updateUiPreference('cardMinHeight', CARD_MIN_HEIGHT_OPTIONS[nextIndex])}
-        />
-        <div>
-          <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">每张卡片显示配置数</label>
-          <select value={uiPreferences.variantsPerPage} onChange={(e) => updateUiPreference('variantsPerPage', Number(e.target.value) as 2 | 3 | 4)} className={settingsSelectClass}>
-            {VARIANTS_PER_PAGE_OPTIONS.map((option) => (
-              <option key={option} value={option}>{option}</option>
-            ))}
-          </select>
+      {/* 展开区：高度自定义数值 + 样式切换 */}
+      {expanded && (
+        <div className="border-t border-zinc-100 dark:border-zinc-800 px-4 py-4 md:px-5 md:py-5">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-3">
+            <NumField
+              label="桌面列数"
+              value={uiPreferences.gridColumns}
+              min={1}
+              max={8}
+              onChange={(v) => updateUiPreference('gridColumns', v)}
+            />
+            <NumField
+              label="每页卡片数"
+              value={uiPreferences.groupsPerPage}
+              min={1}
+              max={100}
+              onChange={(v) => updateUiPreference('groupsPerPage', v)}
+            />
+            <NumField
+              label="每卡配置条数"
+              value={uiPreferences.variantsPerPage}
+              min={1}
+              max={20}
+              onChange={(v) => updateUiPreference('variantsPerPage', v)}
+            />
+            <NumField
+              label="卡片间距"
+              value={uiPreferences.gridGap}
+              min={0}
+              max={48}
+              suffix="px"
+              onChange={(v) => updateUiPreference('gridGap', v)}
+            />
+            <NumField
+              label="卡片最小高度"
+              value={uiPreferences.cardMinHeight}
+              min={200}
+              max={800}
+              step={10}
+              suffix="px"
+              onChange={(v) => updateUiPreference('cardMinHeight', v)}
+            />
+            <Segmented
+              label="卡片尺寸"
+              value={uiPreferences.cardSize}
+              options={CARD_SIZE_OPTIONS}
+              onChange={(v) => updateUiPreference('cardSize', v as UiCardSize)}
+            />
+            <Segmented
+              label="控件圆角"
+              value={uiPreferences.controlRadius}
+              options={RADIUS_OPTIONS}
+              onChange={(v) => updateUiPreference('controlRadius', v as UiRadius)}
+            />
+            <Segmented
+              label="按钮样式"
+              value={uiPreferences.buttonStyle}
+              options={BUTTON_STYLE_OPTIONS}
+              onChange={(v) => updateUiPreference('buttonStyle', v as UiButtonStyle)}
+            />
+            <Segmented
+              label="侧栏宽度"
+              value={uiPreferences.sidebarWidth}
+              options={SIDEBAR_WIDTH_OPTIONS}
+              onChange={(v) => updateUiPreference('sidebarWidth', v as UiSidebarWidth)}
+            />
+          </div>
+          <p className="mt-3 text-[11px] text-zinc-400">所有数值均可手动输入或加减，按"取消"会回滚本次编辑期间的全部界面设置。</p>
         </div>
-        <div>
-          <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">桌面列数</label>
-          <select value={uiPreferences.gridColumns} onChange={(e) => updateUiPreference('gridColumns', Number(e.target.value) as 3 | 4)} className={settingsSelectClass}>
-            {GRID_COLUMNS_OPTIONS.map((option) => (
-              <option key={option} value={option}>{option} 列</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">每页卡片数</label>
-          <select value={uiPreferences.groupsPerPage} onChange={(e) => updateUiPreference('groupsPerPage', Number(e.target.value) as 8 | 12 | 16 | 20 | 24)} className={settingsSelectClass}>
-            {GROUPS_PER_PAGE_OPTIONS.map((option) => (
-              <option key={option} value={option}>{option} 张</option>
-            ))}
-          </select>
-        </div>
-        <SliderField
-          label="卡片间距"
-          valueLabel={`${GRID_GAP_OPTIONS[gridGapIndex]} px`}
-          min={0}
-          max={GRID_GAP_OPTIONS.length - 1}
-          value={gridGapIndex}
-          onChange={(nextIndex) => updateUiPreference('gridGap', GRID_GAP_OPTIONS[nextIndex])}
-        />
-        <div>
-          <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">侧栏宽度</label>
-          <select value={uiPreferences.sidebarWidth} onChange={(e) => updateUiPreference('sidebarWidth', e.target.value as UiSidebarWidth)} className={settingsSelectClass}>
-            {SIDEBAR_WIDTH_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>{option.label}</option>
-            ))}
-          </select>
-        </div>
-        <SliderField
-          label="控件圆角"
-          valueLabel={RADIUS_OPTIONS[radiusIndex].label}
-          min={0}
-          max={RADIUS_OPTIONS.length - 1}
-          value={radiusIndex}
-          onChange={(nextIndex) => updateUiPreference('controlRadius', RADIUS_OPTIONS[nextIndex].value as UiRadius)}
-        />
-        <div>
-          <label className="block text-[12px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">按钮样式</label>
-          <select value={uiPreferences.buttonStyle} onChange={(e) => updateUiPreference('buttonStyle', e.target.value as UiButtonStyle)} className={settingsSelectClass}>
-            {BUTTON_STYLE_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>{option.label}</option>
-            ))}
-          </select>
-        </div>
-      </div>
+      )}
     </div>
   );
 }

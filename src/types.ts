@@ -8,11 +8,11 @@ export type UiPreferences = {
   useGlobalAppearance: boolean;
   cardSize: UiCardSize;
   densityPreset?: UiDensityPreset;
-  cardMinHeight: 300 | 330 | 360 | 400;
-  variantsPerPage: 2 | 3 | 4;
-  gridColumns: 3 | 4;
-  gridGap: 12 | 16 | 20 | 24;
-  groupsPerPage: 8 | 12 | 16 | 20 | 24;
+  cardMinHeight: number;
+  variantsPerPage: number;
+  gridColumns: number;
+  gridGap: number;
+  groupsPerPage: number;
   sidebarWidth: UiSidebarWidth;
   controlRadius: UiRadius;
   buttonStyle: UiButtonStyle;

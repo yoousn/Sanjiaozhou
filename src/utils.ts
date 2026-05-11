@@ -38,12 +38,8 @@ export const cardSizeClassMap: Record<UiCardSize, string> = {
   roomy: 'p-5 md:p-6',
 };
 
-export const gridGapClassMap: Record<number, string> = {
-  12: 'gap-3',
-  16: 'gap-4',
-  20: 'gap-5',
-  24: 'gap-6',
-};
+// 注：旧的 gridGapClassMap 已由 App.tsx 中的内联 CSS 注入取代，
+// 现已删除以避免被新代码继续误用。如需获取具体 gap 值，请直接使用 uiPreferences.gridGap (px)。
 
 export const sidebarWidthClassMap: Record<UiSidebarWidth, { nav: string; main: string }> = {
   compact: {

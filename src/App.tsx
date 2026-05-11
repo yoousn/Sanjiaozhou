@@ -34,7 +34,6 @@ import {
   cn,
   buildModelOptionValue,
   parseModelOptionValue,
-  gridGapClassMap,
   sidebarWidthClassMap,
 } from './utils';
 import {
@@ -184,6 +183,8 @@ export default function App() {
   const [isSavingAuto, setIsSavingAuto] = useState(false);
 
   const [draftData, setDraftData] = useState<GunGroup[]>([]);
+  // 进入编辑模式时的 UI 偏好快照；取消时用于回滚标题、卡片布局等本地偏好
+  const [uiPrefsSnapshot, setUiPrefsSnapshot] = useState<import('./types').UiPreferences | null>(null);
 
   const { data: savedData = [], isFetching: isRefreshingData, error: queryError, refetch } = useQuery({
     queryKey: ['builds'],
@@ -400,6 +401,7 @@ export default function App() {
 
   const handleEditStart = () => {
     setDraftData(JSON.parse(JSON.stringify(savedData)));
+    setUiPrefsSnapshot(JSON.parse(JSON.stringify(theme.uiPreferences)));
     setIsEditing(true);
   };
 
@@ -415,6 +417,7 @@ export default function App() {
       const serverData = await safeJson(res);
       setSavedData(Array.isArray(serverData) ? serverData : draftData);
       setIsEditing(false);
+      setUiPrefsSnapshot(null);
       showToast('已保存！');
     } catch (e) {
       showToast('保存失败，请检查网络', 'warn');
@@ -424,6 +427,11 @@ export default function App() {
   const handleCancel = () => {
     setIsEditing(false);
     setDraftData([]);
+    // 回滚编辑期间对本地 UI 偏好（标题/副标题/卡片布局等）的修改
+    if (uiPrefsSnapshot) {
+      theme.setUiPreferences(uiPrefsSnapshot);
+      setUiPrefsSnapshot(null);
+    }
   };
 
   const handleUpdateGroup = (groupId: string, field: keyof GunGroup, value: string) => {
@@ -596,7 +604,15 @@ export default function App() {
   }, [sourceData, searchQuery, activeTab, sortBy]);
 
   const sidebarWidthClasses = sidebarWidthClassMap[theme.uiPreferences.sidebarWidth];
-  const gridClassName = cn('grid grid-cols-1 md:grid-cols-2 relative', theme.uiPreferences.gridColumns === 3 ? 'lg:grid-cols-3' : 'lg:grid-cols-4', gridGapClassMap[theme.uiPreferences.gridGap]);
+  // 用 inline style 支持任意列数 / 间距，避免 Tailwind 安全名单限制
+  const gridColsLg = Math.max(1, Math.min(12, Math.floor(theme.uiPreferences.gridColumns || 4)));
+  const gridGapPx = Math.max(0, Math.min(64, Math.floor(theme.uiPreferences.gridGap || 16)));
+  const gridClassName = 'gun-grid grid relative';
+  const gridInlineCss = `
+    .gun-grid { grid-template-columns: 1fr; gap: ${gridGapPx}px; }
+    @media (min-width: 768px) { .gun-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (min-width: 1024px) { .gun-grid { grid-template-columns: repeat(${gridColsLg}, minmax(0, 1fr)); } }
+  `;
 
   const groupsPerPage = theme.uiPreferences.groupsPerPage || 12;
   const [currentPage, setCurrentPage] = useState(0);
@@ -647,6 +663,7 @@ export default function App() {
   return (
     <>
       <StyleInjector customTheme={theme.customTheme} appearanceConfig={theme.appearanceConfig} />
+      <style dangerouslySetInnerHTML={{ __html: gridInlineCss }} />
       {theme.appearanceConfig.customEnabled && theme.appearanceConfig.backgroundUrl && (
         <>
           {/* 背景图层：blur 直接作用在图上，而非 backdrop-filter 作用在 overlay 上，避免拖慢整个页面合成 */}

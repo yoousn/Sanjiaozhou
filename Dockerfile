@@ -1,23 +1,52 @@
 # syntax=docker/dockerfile:1.4
 
-# ── Builder：构建前端产物 ──
-FROM node:20-bookworm-slim AS builder
+# ────────────────────────────────────────────
+# Stage 1: deps - 仅安装完整依赖（含 dev），用于构建
+# 任何 package.json 未变更的提交都会复用这层缓存
+# ────────────────────────────────────────────
+FROM node:20-bookworm-slim AS deps
 WORKDIR /app
 
-RUN --mount=type=cache,target=/root/.npm,id=npm-cache \
-    printf 'registry=https://registry.npmmirror.com\nstrict-ssl=false\nfetch-retries=5\nfetch-retry-mintimeout=20000\nfetch-retry-maxtimeout=120000\nprefer-offline=true\n' > .npmrc
+RUN printf 'registry=https://registry.npmmirror.com\nstrict-ssl=false\nfetch-retries=5\nfetch-retry-mintimeout=20000\nfetch-retry-maxtimeout=120000\nprefer-offline=true\n' > .npmrc
 
-COPY package*.json ./
+COPY package.json package-lock.json ./
 RUN --mount=type=cache,target=/root/.npm,id=npm-cache \
     npm ci --no-audit --no-fund --prefer-offline || \
     npm ci --no-audit --no-fund --prefer-offline || \
     npm ci --no-audit --no-fund
 
-COPY . .
+# ────────────────────────────────────────────
+# Stage 2: prod-deps - 仅生产依赖，复制到运行镜像
+# ────────────────────────────────────────────
+FROM node:20-bookworm-slim AS prod-deps
+WORKDIR /app
+
+RUN printf 'registry=https://registry.npmmirror.com\nstrict-ssl=false\nfetch-retries=5\nfetch-retry-mintimeout=20000\nfetch-retry-maxtimeout=120000\nprefer-offline=true\n' > .npmrc
+
+COPY package.json package-lock.json ./
+RUN --mount=type=cache,target=/root/.npm,id=npm-cache \
+    npm ci --omit=dev --no-audit --no-fund --prefer-offline || \
+    npm ci --omit=dev --no-audit --no-fund --prefer-offline || \
+    npm ci --omit=dev --no-audit --no-fund
+
+# ────────────────────────────────────────────
+# Stage 3: builder - 构建前端产物
+# 源码改动只重跑 vite build，不再重装依赖
+# ────────────────────────────────────────────
+FROM node:20-bookworm-slim AS builder
+WORKDIR /app
+
+COPY --from=deps /app/node_modules ./node_modules
+COPY package.json package-lock.json ./
+COPY index.html vite.config.ts tsconfig.json ./
+COPY src ./src
+COPY shared ./shared
 RUN npm run build
 
-# ── Runner：精简运行镜像 ──
-FROM node:20-bookworm-slim
+# ────────────────────────────────────────────
+# Stage 4: runner - 最终运行镜像
+# ────────────────────────────────────────────
+FROM node:20-bookworm-slim AS runner
 WORKDIR /app
 
 # 切换 Debian / pip 到国内镜像源，安装 Python 3、pip、Chromium
@@ -31,13 +60,9 @@ RUN set -eux; \
         chromium; \
     rm -rf /var/lib/apt/lists/*
 
-# 仅安装生产 npm 依赖
-COPY package*.json ./
-RUN --mount=type=cache,target=/root/.npm,id=npm-cache \
-    printf 'registry=https://registry.npmmirror.com\nstrict-ssl=false\nfetch-retries=5\nfetch-retry-mintimeout=20000\nfetch-retry-maxtimeout=120000\nprefer-offline=true\n' > .npmrc && \
-    npm ci --omit=dev --no-audit --no-fund --prefer-offline || \
-    npm ci --omit=dev --no-audit --no-fund --prefer-offline || \
-    npm ci --omit=dev --no-audit --no-fund
+# 直接复用 prod-deps 阶段的生产 node_modules，避免重复 npm ci
+COPY --from=prod-deps /app/node_modules ./node_modules
+COPY package.json package-lock.json ./
 
 # 复制构建产物与运行时代码
 COPY --from=builder /app/dist ./dist
@@ -47,7 +72,6 @@ COPY server.ts ./
 COPY scripts ./scripts
 COPY src ./src
 COPY 爬取每日密码.py ./
-COPY scripts/resolve_douyin.py ./scripts/resolve_douyin.py
 
 # 安装 Python 依赖（playwright 使用系统 Chromium，跳过浏览器下载节省约 200MB）
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1

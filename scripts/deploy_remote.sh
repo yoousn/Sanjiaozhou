@@ -103,8 +103,14 @@ export DOCKER_BUILDKIT=1
 export COMPOSE_DOCKER_CLI_BUILD=1
 export BUILDKIT_PROGRESS=plain
 
-docker-compose build --build-arg BUILDKIT_INLINE_CACHE=1
-docker-compose up -d
+if command -v docker-compose >/dev/null 2>&1; then
+  COMPOSE="docker-compose"
+else
+  COMPOSE="docker compose"
+fi
+
+$COMPOSE build --build-arg BUILDKIT_INLINE_CACHE=1
+$COMPOSE up -d
 
 if [ "$PRUNE_IMAGES" = "true" ]; then
   docker image prune -f

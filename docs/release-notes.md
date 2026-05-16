@@ -306,3 +306,8 @@ v1.4.3   日期2026.5.16---4
 - **彻底修复访问日志显示 127.0.0.1**：根因是反代链 `Cloudflare → OpenResty → Node` 多跳转发时，OpenResty 默认不一定向上游写 `X-Forwarded-For`，Express 即使开了 `trust proxy` 也会 fallback 到 socket 上的 127.0.0.1
 - **新增 `server/lib/clientIp.ts`**：实现多级回退，优先读 `cf-connecting-ip`（Cloudflare 边缘节点必发，最可靠），其次 `true-client-ip`、`x-real-ip`、`x-forwarded-for` 最左非私网 IP，最后才是 `req.ip` 与 socket 地址
 - **统一接入**：访问日志、登录注册记录、rateLimiter 全部改用 `getClientIp(req)`，确保整个项目看到的客户端 IP 一致；先前管理面板里 ysn / ysn2 用户的登录 IP 也会跟着拿到真实 IP
+
+v1.4.4   日期2026.5.16---5
+说明
+- **移除 `/api/admin/debug-headers` 临时调试接口**：在解决 frpc 反代真实 IP 透传问题时引入，已配合 PROXY Protocol（frpc → OpenResty）方案落地完成使命，删除避免接口表面积冗余
+- **配套服务器侧改动**（仅记录，不在仓库内）：frpc 为 sjz.yousn.me 单独开了 `sjz_web`（8080）/ `sjz_https`（8443）两条带 `transport.proxyProtocolVersion = "v2"` 的通道，OpenResty 的 sjz 站点 server 块改为 `listen 8080/8443 proxy_protocol`，并通过 `set_real_ip_from 127.0.0.1; real_ip_header proxy_protocol;` 还原 `$remote_addr`，其他 9 个域名走原 frpc 通道完全不受影响

@@ -8,6 +8,7 @@ import fs from "fs";
 import { fileURLToPath } from "url";
 import { SESSION_SECRET, requireAdmin } from "./server/lib/auth.js";
 import { logger } from "./server/lib/logger.js";
+import { accessLogMiddleware } from "./server/lib/accessLog.js";
 
 function readAppearance() {
   try {
@@ -33,6 +34,8 @@ async function startServer() {
   app.use(express.json({ limit: "200kb" }));
   app.use(cookieParser(SESSION_SECRET));
   app.use(compression());
+  // 页面访问日志（不记录 API 和静态资源）
+  app.use(accessLogMiddleware);
 
   try {
     const buildsRouter = (await import("./server/routes/builds.js")).default;
@@ -42,6 +45,7 @@ async function startServer() {
     const communityRouter = (await import("./server/routes/community.js")).default;
     const godspotRouter = (await import("./server/routes/godspot.js")).default;
     const authRouter = (await import("./server/routes/auth.js")).default;
+    const adminRouter = (await import("./server/routes/admin.js")).default;
     const { testModel, chatWithModel } = await import("./server/lib/collector.js");
     const { readCollectSettings } = await import("./server/lib/collectSettings.js");
 
@@ -52,6 +56,7 @@ async function startServer() {
     app.use("/api/community", communityRouter);
     app.use("/api/godspot", godspotRouter);
     app.use("/api/auth", authRouter);
+    app.use("/api/admin", adminRouter);
 
     const appearanceRouter = (await import("./server/routes/appearance.js")).default;
     app.use("/api/appearance", appearanceRouter);

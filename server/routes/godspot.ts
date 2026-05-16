@@ -319,7 +319,7 @@ function parseVideoUpload(req: IncomingMessage): Promise<ParsedVideoUpload> {
   });
 }
 
-router.get("/cover-proxy", async (req, res) => {
+router.get("/cover-proxy", rateLimit(120, 60 * 1000, "封面请求过于频繁，请稍后再试"), async (req, res) => {
   try {
     const url = String(req.query.url || "").trim();
     if (!/^https?:\/\//i.test(url)) return res.status(400).end();

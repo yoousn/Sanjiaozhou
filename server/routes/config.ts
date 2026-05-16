@@ -13,7 +13,7 @@ const __dirname = path.dirname(__filename);
 
 const router = Router();
 
-router.get("/cookie/status", (req, res) => {
+router.get("/cookie/status", requireAdmin, (req, res) => {
   const cookiePath = path.join(__dirname, "..", "..", "scripts", "cookies.txt");
   if (fs.existsSync(cookiePath)) {
     const stats = fs.statSync(cookiePath);
@@ -39,7 +39,7 @@ router.post("/cookie", requireAdmin, async (req, res) => {
   }
 });
 
-router.get("/godspot/storage", (req, res) => {
+router.get("/godspot/storage", requireAdmin, (req, res) => {
   try {
     res.json(toPublicGodspotStorageSettings(getGodspotStorageSettings()));
   } catch (e) {
@@ -65,7 +65,7 @@ router.post("/godspot/storage", requireAdmin, (req, res) => {
   }
 });
 
-router.get("/settings-file", (req, res) => {
+router.get("/settings-file", requireAdmin, (req, res) => {
   try {
     const settings = readCollectSettings();
     res.json(settings);
@@ -75,7 +75,7 @@ router.get("/settings-file", (req, res) => {
   }
 });
 
-router.get("/settings-file/status", (req, res) => {
+router.get("/settings-file/status", requireAdmin, (req, res) => {
   const settingsPath = COLLECT_SETTINGS_FILE;
   if (fs.existsSync(settingsPath)) {
     const stats = fs.statSync(settingsPath);

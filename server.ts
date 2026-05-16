@@ -6,7 +6,7 @@ import { createServer as createViteServer } from "vite";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
-import { SESSION_SECRET } from "./server/lib/auth.js";
+import { SESSION_SECRET, requireAdmin } from "./server/lib/auth.js";
 import { logger } from "./server/lib/logger.js";
 
 function readAppearance() {
@@ -25,7 +25,12 @@ const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
 
 async function startServer() {
   const app = express();
-  app.use(express.json());
+  // 隐藏 Express 指纹，避免泄露技术栈
+  app.disable("x-powered-by");
+  // 在 Cloudflare/OpenResty 反代后，必须信任代理，rateLimiter 才能拿到真实客户端 IP
+  app.set("trust proxy", 1);
+  // 限制 JSON body 大小，避免被刷大请求
+  app.use(express.json({ limit: "200kb" }));
   app.use(cookieParser(SESSION_SECRET));
   app.use(compression());
 
@@ -53,7 +58,7 @@ async function startServer() {
     app.use("/uploads", express.static(path.join(process.cwd(), "runtime", "uploads")));
     app.use("/godspot-files", express.static(path.join(process.cwd(), "runtime", "godspot", "videos")));
 
-    app.post("/api/model/test", async (req, res) => {
+    app.post("/api/model/test", requireAdmin, async (req, res) => {
       try {
         const body = req.body || {};
         const settings = readCollectSettings();
@@ -65,7 +70,7 @@ async function startServer() {
       }
     });
 
-    app.post("/api/model/chat", async (req, res) => {
+    app.post("/api/model/chat", requireAdmin, async (req, res) => {
       try {
         const body = req.body || {};
         const settings = readCollectSettings();
@@ -135,17 +140,13 @@ async function startServer() {
     startAutoCollectJob();
 
   } catch (err) {
-    logger.error("CRITICAL STARTUP ERROR", { error: err instanceof Error ? err.message : String(err) });
-    app.all("/api/*", (req, res) => {
-      res.status(500).json({ error: "Server Startup Error", detail: err instanceof Error ? err.message : String(err) });
+    logger.error("CRITICAL STARTUP ERROR", { error: err instanceof Error ? err.stack || err.message : String(err) });
+    // 启动异常时只对外暴露通用错误，详情仅写日志，避免泄露绝对路径与模块结构
+    app.all("/api/*", (_req, res) => {
+      res.status(500).json({ error: "Server Startup Error" });
     });
-    app.all("*", (req, res) => {
-      res.status(500).send(`
-        <h1>Server Startup Error</h1>
-        <pre style="color: red; white-space: pre-wrap; word-wrap: break-word;">
-${err instanceof Error ? err.stack : String(err)}
-        </pre>
-      `);
+    app.all("*", (_req, res) => {
+      res.status(500).send("<h1>Server Startup Error</h1><p>Service is temporarily unavailable.</p>");
     });
   }
 

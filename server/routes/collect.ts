@@ -29,7 +29,7 @@ import { logger } from "../lib/logger.js";
 
 const router = Router();
 
-router.get("/meta", setFileETag("scripts/collect_settings.json"), (req, res) => {
+router.get("/meta", requireAdmin, setFileETag("scripts/collect_settings.json"), (req, res) => {
   res.json(buildCollectMeta(readCollectSettings()));
 });
 
@@ -160,7 +160,7 @@ router.post("/search/start", requireAdmin, async (req, res) => {
   }
 });
 
-router.get("/search/status/:requestId", (req, res) => {
+router.get("/search/status/:requestId", requireAdmin, (req, res) => {
   const state = searchStreams.get(req.params.requestId || "");
   if (!state) {
     return res.status(404).json({ error: "搜索任务不存在或已过期" });
@@ -223,7 +223,7 @@ router.post("/apply", requireAdmin, (req, res) => {
   }
 });
 
-router.get("/auto", (req, res) => {
+router.get("/auto", requireAdmin, (req, res) => {
   const settings = readCollectSettings();
   const logs = readAutoLogs();
   res.json({ 

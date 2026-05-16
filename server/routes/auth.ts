@@ -12,6 +12,7 @@ import {
 import { setAuthCookie, clearAuthCookie, requireAdmin } from "../lib/auth.js";
 import { rateLimit } from "../lib/rateLimiter.js";
 import { createInvite, listInvites, consumeInvite, deleteInvite } from "../lib/inviteStore.js";
+import { getClientIp } from "../lib/clientIp.js";
 
 const router = Router();
 
@@ -43,7 +44,7 @@ router.post("/register", rateLimit(10, 15 * 60 * 1000, "注册请求过于频繁
       }
     }
 
-    const ip = req.ip;
+    const ip = getClientIp(req);
     const user = await createUser(username, password, { ip });
     // 注册即登录，记录一次登录信息
     recordLogin(user.id, { ip, userAgent: req.headers["user-agent"] });
@@ -72,7 +73,7 @@ router.post("/login", rateLimit(5, 15 * 60 * 1000, "登录请求过于频繁，�
     }
 
     const role = user.role || "user";
-    recordLogin(user.id, { ip: req.ip, userAgent: req.headers["user-agent"] });
+    recordLogin(user.id, { ip: getClientIp(req), userAgent: req.headers["user-agent"] });
     setAuthCookie(res, { id: user.id, username: user.username, role }, req);
     res.json({ success: true, data: { id: user.id, username: user.username, role } });
   } catch (e) {

@@ -1,4 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
+import { getClientIp } from "./clientIp.js";
 
 type RateLimitEntry = {
   count: number;
@@ -8,7 +9,7 @@ type RateLimitEntry = {
 const store = new Map<string, RateLimitEntry>();
 
 function getKey(req: Request, suffix: string): string {
-  const ip = req.ip || req.socket.remoteAddress || "unknown";
+  const ip = getClientIp(req);
   return `${ip}:${suffix}`;
 }
 

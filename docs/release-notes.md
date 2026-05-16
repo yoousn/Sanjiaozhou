@@ -300,3 +300,9 @@ v1.4.2   日期2026.5.16---3
   - 新增 `server/lib/ipGeo.ts`：在 Cloudflare 头未提供地区时，调用 `ip-api.com` 免费接口（中文地区名），24h 内存缓存避免重复查询，失败/私网 IP 缓存 30min；超时 3.5s 不阻塞主流程
   - 私网/本地 IP（127.0.0.1、10.x、192.168.x、172.16-31.x、IPv6 fc00::/fe80::）显示为"本地"
   - 异步补齐：访问记录写入后立即返回，地区信息在后台查到再回填，前端刷新即可看到完整地区
+
+v1.4.3   日期2026.5.16---4
+说明
+- **彻底修复访问日志显示 127.0.0.1**：根因是反代链 `Cloudflare → OpenResty → Node` 多跳转发时，OpenResty 默认不一定向上游写 `X-Forwarded-For`，Express 即使开了 `trust proxy` 也会 fallback 到 socket 上的 127.0.0.1
+- **新增 `server/lib/clientIp.ts`**：实现多级回退，优先读 `cf-connecting-ip`（Cloudflare 边缘节点必发，最可靠），其次 `true-client-ip`、`x-real-ip`、`x-forwarded-for` 最左非私网 IP，最后才是 `req.ip` 与 socket 地址
+- **统一接入**：访问日志、登录注册记录、rateLimiter 全部改用 `getClientIp(req)`，确保整个项目看到的客户端 IP 一致；先前管理面板里 ysn / ysn2 用户的登录 IP 也会跟着拿到真实 IP

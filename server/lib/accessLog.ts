@@ -4,6 +4,7 @@ import type { Request, Response, NextFunction } from "express";
 import { writeJsonAtomic } from "./atomicJson.js";
 import { logger } from "./logger.js";
 import { resolveGeo, presetGeo } from "./ipGeo.js";
+import { getClientIp } from "./clientIp.js";
 
 export type AccessLogEntry = {
   time: string;       // ISO
@@ -87,7 +88,7 @@ export function recordAccess(req: Request) {
   const referer = pickHeader(req, "referer");
   const ua = pickHeader(req, "user-agent");
   const signed = (req as any).signedCookies?.user;
-  const ip = req.ip || req.socket?.remoteAddress || "unknown";
+  const ip = getClientIp(req);
 
   const entry: AccessLogEntry = {
     time: new Date().toISOString(),

@@ -3,6 +3,7 @@ import path from "path";
 import type { Request, Response, NextFunction } from "express";
 import { writeJsonAtomic } from "./atomicJson.js";
 import { logger } from "./logger.js";
+import { resolveGeo, presetGeo } from "./ipGeo.js";
 
 export type AccessLogEntry = {
   time: string;       // ISO
@@ -78,19 +79,22 @@ function shortenUa(ua?: string): string | undefined {
  */
 export function recordAccess(req: Request) {
   loadIfNeeded();
-  const country = pickHeader(req, "cf-ipcountry");
-  const region = pickHeader(req, "cf-region");
-  const city = pickHeader(req, "cf-ipcity");
+  const cfHint = presetGeo({
+    country: pickHeader(req, "cf-ipcountry"),
+    region: pickHeader(req, "cf-region"),
+    city: pickHeader(req, "cf-ipcity"),
+  });
   const referer = pickHeader(req, "referer");
   const ua = pickHeader(req, "user-agent");
   const signed = (req as any).signedCookies?.user;
+  const ip = req.ip || req.socket?.remoteAddress || "unknown";
 
   const entry: AccessLogEntry = {
     time: new Date().toISOString(),
-    ip: req.ip || req.socket?.remoteAddress || "unknown",
-    country: country && country !== "XX" ? country : undefined,
-    region: region || undefined,
-    city: city || undefined,
+    ip,
+    country: cfHint.country,
+    region: cfHint.region,
+    city: cfHint.city,
     path: shortenPath(req.originalUrl || req.url),
     method: req.method,
     referer: referer ? shortenPath(referer) : undefined,
@@ -103,6 +107,17 @@ export function recordAccess(req: Request) {
     buffer.splice(0, buffer.length - MAX_ENTRIES);
   }
   dirty = true;
+
+  // 异步补齐地区信息：CF 头没有时查 ip-api.com
+  if (!entry.country) {
+    void resolveGeo(ip, cfHint).then((geo) => {
+      if (!geo.country && !geo.region && !geo.city) return;
+      entry.country = entry.country || geo.country;
+      entry.region = entry.region || geo.region;
+      entry.city = entry.city || geo.city;
+      dirty = true;
+    }).catch(() => { /* 静默 */ });
+  }
 }
 
 /**

@@ -917,8 +917,8 @@ export default function App() {
             showToast('登录成功，欢迎回来！');
             return result;
           }}
-          onRegister={async (u, p) => {
-            const result = await auth.register(u, p);
+          onRegister={async (u, p, code) => {
+            const result = await auth.register(u, p, code);
             showToast('注册成功，已自动登录！');
             return result;
           }}

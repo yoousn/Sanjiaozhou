@@ -28,8 +28,9 @@ async function startServer() {
   const app = express();
   // 隐藏 Express 指纹，避免泄露技术栈
   app.disable("x-powered-by");
-  // 在 Cloudflare/OpenResty 反代后，必须信任代理，rateLimiter 才能拿到真实客户端 IP
-  app.set("trust proxy", 1);
+  // 在 Cloudflare/OpenResty 反代后，必须信任代理，rateLimiter 与访问日志才能拿到真实客户端 IP
+  // 设为 true 表示信任所有跳数（容器内本来就只能被反代访问，安全风险可控）
+  app.set("trust proxy", true);
   // 限制 JSON body 大小，避免被刷大请求
   app.use(express.json({ limit: "200kb" }));
   app.use(cookieParser(SESSION_SECRET));

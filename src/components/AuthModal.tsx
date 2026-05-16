@@ -122,7 +122,7 @@ export function AuthModal({ isOpen, onClose, onLogin, onRegister, showToast }: A
                     placeholder="XXXX-XXXX-XXXX-XXXX"
                     autoComplete="off"
                   />
-                  <p className="text-[11px] text-zinc-400 font-semibold ml-1 mt-1.5">注册需邀请码，向管理员获取（首位管理员可留空）</p>
+                  <p className="text-[11px] text-zinc-400 font-semibold ml-1 mt-1.5">注册需邀请码，向管理员获取</p>
                 </div>
               )}
 

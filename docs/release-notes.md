@@ -264,3 +264,19 @@ v1.3.3   日期2026.5.11---1
 
 
 
+
+v1.4.0   日期2026.5.16---1
+说明
+- **后端鉴权全面收紧**：补齐 `/api/collect/meta` `/api/collect/auto` `/api/collect/search/status/:id` `/api/config/cookie/status` `/api/config/godspot/storage` `/api/config/settings-file` `/api/config/settings-file/status` 7 个 GET 接口的 `requireAdmin` 中间件，匿名访问一律 401，避免采集设置、cookie 状态、模型配置等敏感信息外泄
+- **模型接口加鉴权**：`/api/model/test` 和 `/api/model/chat` 强制要求管理员身份，杜绝陌生人借服务器 API Key 白嫖模型
+- **反代真实 IP 还原**：`app.set("trust proxy", 1)` 让 rateLimiter 在 Cloudflare/OpenResty 链路下能拿到客户端真实 IP，登录限流不再被错误地共享到全站一桶
+- **隐藏服务器指纹**：`app.disable("x-powered-by")`，移除 `X-Powered-By: Express` 头
+- **请求体大小限制**：`express.json({ limit: "200kb" })`，防止被刷大请求
+- **启动失败兜底脱敏**：服务启动异常时不再向客户端返回 stack trace，仅写入容器日志
+- **封面代理限流**：`/api/godspot/cover-proxy` 加 120 次/分钟限流
+- **邀请码注册体系**：注册新账号必须填写邀请码，仅管理员可生成；邀请码 16 位 + crypto.randomBytes 生成，使用一次即作废，原子写入避免并发抢用；首位用户无邀请码时直接成为引导管理员
+- **登录追踪字段**：`users.json` 新增 `registerIp` `lastLoginAt` `lastLoginIp` `lastLoginUa` `loginCount`，登录/注册同步写入
+- **管理面板独立页**：左侧导航栏新增"管理面板"入口（仅管理员可见），含统计卡（用户总数 / 管理员数 / 邀请码状态）、邀请码管理（生成/复制/备注/删除）、用户列表（角色徽章、注册 IP、上次登录时间/IP/精简 UA、登录次数、提升降级、删除）
+- **自删自降级保护**：管理员无法删除自己也无法取消自己的管理员权限，前后端双重保护
+- **`scripts/users.json` 加入 .gitignore**：防止用户表（含 bcrypt 哈希）随代码意外提交到公开仓库
+- **AuthModal 邀请码输入**：注册页面新增邀请码输入框，自动转大写、占位符提示标准格式 `XXXX-XXXX-XXXX-XXXX`；首位管理员可留空

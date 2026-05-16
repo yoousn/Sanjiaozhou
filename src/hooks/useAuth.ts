@@ -71,12 +71,12 @@ export function useAuth() {
     return data.data;
   }, []);
 
-  const register = useCallback(async (username: string, password: string) => {
+  const register = useCallback(async (username: string, password: string, inviteCode?: string) => {
     const res = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "same-origin",
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ username, password, inviteCode }),
     });
     const ct = res.headers.get("content-type") || "";
     if (!ct.includes("application/json")) {

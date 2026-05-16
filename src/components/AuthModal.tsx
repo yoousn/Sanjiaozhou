@@ -7,7 +7,7 @@ type AuthModalProps = {
   isOpen: boolean;
   onClose: () => void;
   onLogin: (u: string, p: string) => Promise<any>;
-  onRegister: (u: string, p: string) => Promise<any>;
+  onRegister: (u: string, p: string, inviteCode?: string) => Promise<any>;
   showToast?: (msg: string, type?: 'success' | 'warn' | 'error') => void;
 };
 
@@ -15,6 +15,7 @@ export function AuthModal({ isOpen, onClose, onLogin, onRegister, showToast }: A
   const [isRegister, setIsRegister] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [inviteCode, setInviteCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,7 +43,7 @@ export function AuthModal({ isOpen, onClose, onLogin, onRegister, showToast }: A
     setLoading(true);
     try {
       if (isRegister) {
-        await onRegister(username, password);
+        await onRegister(username, password, inviteCode.trim());
       } else {
         await onLogin(username, password);
       }
@@ -109,6 +110,21 @@ export function AuthModal({ isOpen, onClose, onLogin, onRegister, showToast }: A
                   placeholder="输入密码"
                 />
               </div>
+
+              {isRegister && (
+                <div>
+                  <label className="block text-[11px] font-bold text-zinc-400 uppercase tracking-widest mb-1.5 ml-1">邀请码</label>
+                  <input
+                    type="text"
+                    value={inviteCode}
+                    onChange={e => setInviteCode(e.target.value.toUpperCase())}
+                    className="w-full px-4 py-3 bg-zinc-100 dark:bg-zinc-800 border-none rounded-2xl text-[14px] font-bold focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white outline-none transition tracking-wider"
+                    placeholder="XXXX-XXXX-XXXX-XXXX"
+                    autoComplete="off"
+                  />
+                  <p className="text-[11px] text-zinc-400 font-semibold ml-1 mt-1.5">注册需邀请码，向管理员获取（首位管理员可留空）</p>
+                </div>
+              )}
 
               {error && <p className="text-[12px] text-red-500 font-bold ml-1">{error}</p>}
 

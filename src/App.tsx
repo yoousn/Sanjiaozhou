@@ -23,6 +23,7 @@ const CommunityPage = React.lazy(() => import('./pages/CommunityPage').then(m =>
 const GodSpotPage = React.lazy(() => import('./pages/GodSpotPage').then(m => ({ default: m.GodSpotPage })));
 const SettingsPage = React.lazy(() => import('./components/SettingsPage').then(m => ({ default: m.SettingsPage })));
 const AppearanceSettingsPage = React.lazy(() => import('./components/AppearanceSettingsPage').then(m => ({ default: m.AppearanceSettingsPage })));
+const AdminPanel = React.lazy(() => import('./components/AdminPanel').then(m => ({ default: m.AdminPanel })));
 
 import { useToast } from './hooks/useToast';
 import { useDailyPassword } from './hooks/useDailyPassword';
@@ -745,6 +746,17 @@ export default function App() {
                   showToast={showToast}
                 />
               </React.Suspense>
+            ) : activeTab === 'admin' ? (
+              auth.isAdmin ? (
+                <React.Suspense fallback={<div className="flex flex-col items-center justify-center py-24 animate-fade-in"><Loader2 size={24} className="animate-spin text-zinc-400 mb-4" /><p className="text-[13px] font-bold text-zinc-500">正在加载管理面板...</p></div>}>
+                  <AdminPanel currentUserId={auth.user?.id || ''} showToast={showToast} />
+                </React.Suspense>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-24 animate-fade-in">
+                  <AlertCircle size={28} className="text-zinc-400 mb-4" />
+                  <p className="text-[13px] font-bold text-zinc-500">仅管理员可访问管理面板</p>
+                </div>
+              )
             ) : (
               <>
                 <Header isEditing={isEditing} onEditStart={handleEditStart} onSave={handleSave} onCancel={handleCancel} onAddNew={() => setIsModalOpen(true)} onOpenCollect={() => setActiveModal('auto-collect')} onOpenModelConfig={() => setActiveModal('model-config')} sortBy={sortBy} onSortChange={handleSortChange} isDarkMode={theme.isDarkMode} onToggleDarkMode={() => theme.setIsDarkMode(!theme.isDarkMode)} searchQuery={searchQuery} onSearchChange={setSearchQuery} searchSuggestions={Array.from(new Set(sourceData.map(g => g.name)))} controlRadius={theme.uiPreferences.controlRadius} buttonStyle={theme.uiPreferences.buttonStyle} />

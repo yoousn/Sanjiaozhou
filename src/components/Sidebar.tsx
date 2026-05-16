@@ -1,4 +1,4 @@
-import { Home, Settings, Users, LogIn, LogOut, Palette, Crosshair } from 'lucide-react';
+import { Home, Settings, Users, LogIn, LogOut, Palette, Crosshair, ShieldAlert } from 'lucide-react';
 import { cn, getButtonClassName, radiusClassMap, sidebarWidthClassMap } from '../utils';
 import type { UiButtonStyle, UiRadius, UiSidebarWidth } from '../types';
 
@@ -132,6 +132,23 @@ export function Sidebar({
             <Palette size={16} strokeWidth={activeTab === 'appearance' ? 2.5 : 2} className={cn("transition-transform duration-300", activeTab === 'appearance' && "scale-110")} />
             <span className={cn("hidden lg:block text-[13px]", activeTab === 'appearance' ? "font-bold" : "font-semibold")}>外观设置</span>
           </button>
+
+          {auth.isAdmin && (
+            <button
+              onClick={() => setActiveTab('admin')}
+              className={cn(
+                "flex items-center lg:justify-start justify-center gap-3 px-3 py-2.5 transition duration-200 outline-none hover:bg-amber-500/10 w-full group",
+                radiusClass,
+                activeTab === 'admin'
+                  ? "bg-amber-500/15 text-amber-700 dark:text-amber-300"
+                  : "text-amber-600/80 hover:text-amber-700 dark:text-amber-400/80 dark:hover:text-amber-300"
+              )}
+              title="管理面板（仅管理员可见）"
+            >
+              <ShieldAlert size={16} strokeWidth={activeTab === 'admin' ? 2.5 : 2} className={cn("transition-transform duration-300", activeTab === 'admin' && "scale-110")} />
+              <span className={cn("hidden lg:block text-[13px]", activeTab === 'admin' ? "font-bold" : "font-semibold")}>管理面板</span>
+            </button>
+          )}
 
           <button
             onClick={onOpenSettings}

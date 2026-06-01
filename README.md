@@ -1,68 +1,92 @@
-# 项目说明
+# Sanjiaozhou (三角洲行动)
 
-这是一个围绕枪械配置整理、自动采集与每日密码展示的全栈站点。当前项目由 [server.ts](server.ts) 统一启动 Express 服务与 Vite 前端，数据以 JSON 文件形式持久化，部分采集能力依赖 Python 脚本。
+[简体中文](./README.zh-CN.md) | English
 
-## 技术栈
-- 前端：React 19 + Vite 6 + Tailwind CSS 4
-- 后端：Express + TypeScript
-- 数据存储：本地 JSON 文件 / 服务器 `runtime/` 持久化文件
-- 辅助脚本：Python（B 站采集、每日密码抓取）
-- 部署：GitHub Actions + SSH + Docker Compose
+A full-stack website for firearm configuration management, automated video collection, and daily password display for the game *Delta Force* (三角洲行动). The project is powered by [server.ts](server.ts), which runs an Express backend and Vite frontend together. Data is persisted as JSON files, with some collection features relying on Python scripts.
 
-## 项目结构
-- [server.ts](server.ts)：服务端入口，统一处理 API、静态资源与运行态文件读写
-- [src/](src/)：前端页面与组件
-- [server/](server/)：后端路由与工具模块
-- [scripts/](scripts/)：部署脚本、采集配置、运行日志模板
-- `爬取每日密码.py`：每日密码抓取脚本
-- `runtime/`：仅服务器保留的真实运行态数据目录（不应被代码发布覆盖）
-- [docs/](docs/)：项目规则、部署、版本说明和优化方案
-- [AGENTS.md](AGENTS.md)：提供给 AI / CLI 工具的协作入口
+## Tech Stack
 
-## 本地开发
-### 前置要求
+- **Frontend:** React 19 + Vite 6 + Tailwind CSS 4
+- **Backend:** Express + TypeScript
+- **Data Storage:** Local JSON files / Server `runtime/` persistent files
+- **Scripts:** Python (Bilibili video collection, daily password scraping)
+- **Deployment:** GitHub Actions + SSH + Docker Compose
+
+## Project Structure
+
+| Path | Description |
+|---|---|
+| [server.ts](server.ts) | Server entry point — handles API routes, static assets, and runtime file I/O |
+| [src/](src/) | Frontend pages and components |
+| [server/](server/) | Backend routes and utility modules |
+| [scripts/](scripts/) | Deployment scripts, collection configs, and log templates |
+| `爬取每日密码.py` | Daily password scraping script |
+| `runtime/` | Server-only runtime data directory (must **never** be overwritten by deployments) |
+| [docs/](docs/) | Project rules, deployment guide, versioning, and optimization plans |
+| [AGENTS.md](AGENTS.md) | Entry point for AI / CLI tool collaboration |
+
+## Getting Started
+
+### Prerequisites
+
 - Node.js 20+
 - npm
 - Python 3
-- Docker / Docker Compose（仅部署需要）
+- Docker / Docker Compose (for deployment only)
 
-### 常用命令
-- 安装依赖：`npm install`
-- 本地开发：`npm run dev`
-- 类型检查：`npm run lint`
-- 前端构建：`npm run build`
-- 端口冲突时重启：`npm run restart`
+### Common Commands
 
-默认本地地址：`http://127.0.0.1:3000`
+| Command | Description |
+|---|---|
+| `npm install` | Install dependencies |
+| `npm run dev` | Start local development server |
+| `npm run lint` | Run type checking |
+| `npm run build` | Build frontend for production |
+| `npm run restart` | Kill port 3000 and restart dev server |
 
-## 运行态数据
-项目运行时会直接读写以下文件对应的数据：
-- `data.json`
-- `daily_pwd.json`
-- `collect_settings.json`
-- `auto_logs.json`
-- `daily_pwd_logs.json`
-- `auto_processed_videos.json`
-- `cookies.txt`
-- `users.json`
-- `community_posts.json`
-- `community_activity.json`
-- `community_comments.json`
+Default local address: `http://127.0.0.1:3000`
 
-生产环境中，这些文件必须统一放在服务器 `/opt/xiujiao-era/runtime/` 下，并通过 Docker Compose 单文件挂载给容器；不要再把整目录随代码仓库一起覆盖。
+## Runtime Data
 
-## 部署概览
-当前生产环境通过 GitHub Actions 在 `main` 分支 push 后自动部署到服务器 `/opt/xiujiao-era`，远程执行 [scripts/deploy_remote.sh](scripts/deploy_remote.sh) 完成：
-- `docker-compose build`
-- `docker-compose up -d`
-- `docker image prune -f`
+The application reads and writes the following data files at runtime:
 
-严禁在替换前执行 `docker-compose down`。
+- `data.json` — Firearm configuration data
+- `daily_pwd.json` — Daily passwords
+- `collect_settings.json` — Collection settings
+- `auto_logs.json` — Automation logs
+- `daily_pwd_logs.json` — Daily password scraping logs
+- `auto_processed_videos.json` — Processed video records
+- `cookies.txt` — Bilibili cookies
+- `users.json` — User accounts
+- `community_posts.json` — Community posts
+- `community_activity.json` — Community activity data
+- `community_comments.json` — Community comments
 
-## 文档索引
-- [AGENTS.md](AGENTS.md)：AI / CLI 工具协作入口
-- [docs/project-rules.md](docs/project-rules.md)：项目硬规则与产品约束
-- [docs/deployment.md](docs/deployment.md)：部署、运行态与 GitHub Actions 说明
-- [docs/versioning.md](docs/versioning.md)：版本号规则
-- [docs/release-notes.md](docs/release-notes.md)：正式版本更新说明
-- [docs/optimization-plan.md](docs/optimization-plan.md)：性能、图片、分页、CDN、压缩与安全配置优化方案
+> **⚠️ Important:** In production, all runtime data files must reside under `/opt/xiujiao-era/runtime/` on the server and be individually bind-mounted into the container via Docker Compose. **Never** overwrite them with repository deployments.
+
+## Deployment
+
+Production deployments are fully automated via GitHub Actions on every push to `main`. The workflow SSHs into the server at `/opt/xiujiao-era` and runs [scripts/deploy_remote.sh](scripts/deploy_remote.sh):
+
+```bash
+docker-compose build
+docker-compose up -d
+docker image prune -f
+```
+
+> **🚫 Never** run `docker-compose down` before updating. The deploy script performs a rolling update to avoid downtime.
+
+## Documentation Index
+
+| Document | Description |
+|---|---|
+| [AGENTS.md](AGENTS.md) | AI / CLI tool collaboration entry point |
+| [docs/project-rules.md](docs/project-rules.md) | Project hard rules and product constraints |
+| [docs/deployment.md](docs/deployment.md) | Deployment, runtime data, and GitHub Actions guide |
+| [docs/versioning.md](docs/versioning.md) | Version numbering rules |
+| [docs/release-notes.md](docs/release-notes.md) | Official release notes |
+| [docs/optimization-plan.md](docs/optimization-plan.md) | Performance, image, pagination, CDN, compression, and security optimization plan |
+
+## License
+
+This project is private and not open-sourced.

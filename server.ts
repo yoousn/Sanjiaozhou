@@ -20,6 +20,16 @@ function readAppearance() {
   return {};
 }
 
+/** 转义 HTML 特殊字符，防止 XSS 注入 */
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
@@ -125,12 +135,14 @@ async function startServer() {
         }
         const appearance = readAppearance();
         let html = fs.readFileSync(path.join(distPath, "index.html"), "utf-8");
-        const siteName = appearance.siteName || "坤坤改枪码";
-        const faviconUrl = appearance.faviconUrl || "";
+        const siteName = escapeHtml(String(appearance.siteName || "坤坤改枪码"));
+        const faviconUrl = escapeHtml(String(appearance.faviconUrl || ""));
         html = html.replace(/<title>.*?<\/title>/, `<title>${siteName}</title>`);
         if (faviconUrl) {
           html = html.replace(/<link rel="icon"[^>]*>/, `<link rel="icon" href="${faviconUrl}" />`);
         }
+        // 注意：customHead / customBody 是管理员自定义 HTML 注入，此处故意保留原始内容
+        // 安全性依赖 requireAdmin 鉴权。如需进一步防护，可加入 CSP 策略。
         if (appearance.customHead) {
           html = html.replace("</head>", appearance.customHead + "</head>");
         }

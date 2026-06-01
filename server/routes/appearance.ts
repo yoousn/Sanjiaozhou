@@ -59,25 +59,6 @@ function writeAppearance(data: unknown) {
   }
 }
 
-function saveFile(stream: NodeJS.ReadableStream, dest: string, maxBytes: number): Promise<void> {
-  return new Promise((resolve, reject) => {
-    let received = 0;
-    const chunks: Buffer[] = [];
-    stream.on("data", (chunk: Buffer) => {
-      received += chunk.length;
-      if (received > maxBytes) {
-        reject(new Error("File too large"));
-        return;
-      }
-      chunks.push(chunk);
-    });
-    stream.on("end", () => {
-      fs.writeFileSync(dest, Buffer.concat(chunks));
-      resolve();
-    });
-    stream.on("error", reject);
-  });
-}
 
 const router = Router();
 
@@ -89,7 +70,12 @@ router.post("/", requireAdmin, (req, res) => {
   try {
     const body = req.body || {};
     const current = readAppearance();
-    const next = { ...current, ...body };
+    // 白名单：仅允许以下字段写入，防止原型污染和任意字段注入
+    const ALLOWED_FIELDS = ["siteName", "faviconUrl", "customHead", "customBody", "backgroundUrl", "backgroundOpacity", "theme"];
+    const next = { ...current };
+    for (const key of ALLOWED_FIELDS) {
+      if (key in body) next[key] = body[key];
+    }
     writeAppearance(next);
     res.json({ success: true });
   } catch (e) {

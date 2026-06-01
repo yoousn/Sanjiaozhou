@@ -141,7 +141,7 @@ router.get("/posts/:id/comments", (req, res) => {
   }
 });
 
-router.post("/posts/:id/comments", requireAuth, (req, res) => {
+router.post("/posts/:id/comments", requireAuth, rateLimit(60, 60 * 60 * 1000, "评论过于频繁，请 1 小时后再试"), (req, res) => {
   try {
     const postId = req.params.id;
     const { content } = req.body || {};

@@ -8,6 +8,14 @@ type RateLimitEntry = {
 
 const store = new Map<string, RateLimitEntry>();
 
+// 每 60 秒清理一次过期的限流记录，避免内存泄漏
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of store) {
+    if (now > entry.resetAt) store.delete(key);
+  }
+}, 60 * 1000).unref();
+
 function getKey(req: Request, suffix: string): string {
   const ip = getClientIp(req);
   return `${ip}:${suffix}`;

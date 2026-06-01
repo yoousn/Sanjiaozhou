@@ -87,6 +87,3 @@ docker image prune -f
 | [docs/release-notes.md](docs/release-notes.md) | Official release notes |
 | [docs/optimization-plan.md](docs/optimization-plan.md) | Performance, image, pagination, CDN, compression, and security optimization plan |
 
-## License
-
-This project is private and not open-sourced.

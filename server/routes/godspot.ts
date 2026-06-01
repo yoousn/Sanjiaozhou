@@ -6,10 +6,10 @@ import { fileURLToPath } from "url";
 import { Router } from "express";
 import busboy from "busboy";
 import type { IncomingMessage } from "http";
-import { requireAuth } from "../lib/auth.js";
+import { requireAuth, requireAdmin } from "../lib/auth.js";
 import { rateLimit } from "../lib/rateLimiter.js";
 import { ALLOWED_GODSPOT_VIDEO_TYPES, getGodspotConfig } from "../lib/godspotConfig.js";
-import { buildGodspotObjectKey, createGodspotVideo, deleteGodspotVideo, GODSPOT_MAPS, queryGodspotVideos } from "../lib/godspotStore.js";
+import { buildGodspotObjectKey, createGodspotVideo, deleteGodspotVideo, getGodspotVideoById, GODSPOT_MAPS, queryGodspotVideos } from "../lib/godspotStore.js";
 import { storeObject } from "../lib/godspotStorage.js";
 import { logger } from "../lib/logger.js";
 
@@ -522,8 +522,13 @@ router.post("/upload", requireAuth, rateLimit(10, 60 * 60 * 1000, "上传请求�
 
 router.delete("/videos/:id", requireAuth, async (req, res) => {
   try {
-    const deleted = await deleteGodspotVideo(req.params.id);
-    if (!deleted) return res.status(404).json({ success: false, error: "视频不存在" });
+    const video = getGodspotVideoById(req.params.id);
+    if (!video) return res.status(404).json({ success: false, error: "视频不存在" });
+    const user = (req as any).authUser;
+    if (video.uploader !== user.username && user.role !== "admin") {
+      return res.status(403).json({ success: false, error: "无权删除他人上传的视频" });
+    }
+    await deleteGodspotVideo(req.params.id);
     res.json({ success: true });
   } catch (e) {
     logger.error("API GODSPOT DELETE Error", { error: e instanceof Error ? e.message : String(e) });

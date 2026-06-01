@@ -17,7 +17,7 @@ const DAILY_PWD_FILE = path.join(__dirname, "..", "..", "src", "daily_pwd.json")
 
 const router = Router();
 
-router.get("/logs", (_req, res) => {
+router.get("/logs", requireAdmin, (_req, res) => {
   res.json({ logs: readDailyPwdLogs() });
 });
 

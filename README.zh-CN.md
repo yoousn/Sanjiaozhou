@@ -87,6 +87,3 @@ docker image prune -f
 | [docs/release-notes.md](docs/release-notes.md) | 正式版本更新说明 |
 | [docs/optimization-plan.md](docs/optimization-plan.md) | 性能、图片、分页、CDN、压缩与安全配置优化方案 |
 
-## 许可
-
-本项目为私有项目，未开源。
